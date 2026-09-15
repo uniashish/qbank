@@ -1,0 +1,344 @@
+.teacher-form-card,
+.teachers-table-card,
+.teacher-invitations-section,
+.empty-teachers-state {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+}
+
+.teacher-form-card,
+.teacher-invitations-section {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+}
+
+.teachers-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.teachers-section-header h2,
+.teachers-section-header p,
+.teacher-table__identity strong,
+.teacher-table__identity span,
+.teacher-invitation-card h3,
+.teacher-invitation-card p {
+  margin: 0;
+}
+
+.teachers-section-header h2 {
+  color: var(--color-text);
+  font-size: 1.05rem;
+  line-height: 1.25;
+  font-weight: 850;
+}
+
+.teachers-section-header p {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+}
+
+.teachers-section-header > span,
+.teachers-section-header > svg {
+  min-width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+  font-weight: 850;
+}
+
+.teachers-table-card {
+  overflow: hidden;
+}
+
+.teachers-table-card .teachers-section-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.teachers-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.teachers-table th,
+.teachers-table td {
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.teachers-table th {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.teachers-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.teachers-table tbody tr:hover {
+  background: rgba(239, 246, 255, 0.5);
+}
+
+.teacher-table__identity {
+  display: grid;
+  gap: 2px;
+}
+
+.teacher-table__identity strong {
+  color: var(--color-text);
+  font-weight: 850;
+}
+
+.teacher-table__identity span,
+.teachers-table td,
+.teacher-table__muted {
+  color: var(--color-text-secondary);
+  font-size: 0.91rem;
+}
+
+.teacher-status-badge {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.teacher-status-badge span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.teacher-status-badge--active {
+  color: var(--color-success);
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+}
+
+.teacher-status-badge--disabled,
+.teacher-status-badge--invited {
+  color: #475569;
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-muted);
+}
+
+.empty-teachers-state {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 36px 22px;
+  border-style: dashed;
+  background: var(--color-surface-muted);
+  text-align: center;
+}
+
+.empty-teachers-state__icon {
+  width: 50px;
+  height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+}
+
+.empty-teachers-state h2,
+.empty-teachers-state p {
+  margin: 0;
+}
+
+.empty-teachers-state h2 {
+  color: var(--color-text);
+  font-size: 1.1rem;
+  line-height: 1.3;
+}
+
+.empty-teachers-state p,
+.teacher-invitations-section__empty {
+  color: var(--color-text-secondary);
+}
+
+.teacher-invitations-section__empty {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.teacher-invitations-list {
+  display: grid;
+  gap: 12px;
+}
+
+.teacher-invitation-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.teacher-invitation-card__details {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.teacher-invitation-card h3 {
+  color: var(--color-text);
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.teacher-invitation-card p,
+.teacher-invitation-card span {
+  color: var(--color-text-secondary);
+  font-size: 0.91rem;
+}
+
+.teacher-invitation-card__pending {
+  display: grid;
+  gap: 8px;
+}
+
+.teacher-invitation-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.teacher-invitation-card__actions .button {
+  width: auto;
+  min-width: 152px;
+  padding-inline: 18px;
+}
+
+.invite-teacher-form {
+  display: grid;
+  gap: 20px;
+}
+
+.invite-teacher-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.invite-teacher-form__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.invite-teacher-form__actions .button {
+  width: auto;
+  min-width: 206px;
+  padding-inline: 18px;
+}
+
+@media (max-width: 900px) {
+  .invite-teacher-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .teachers-table,
+  .teachers-table thead,
+  .teachers-table tbody,
+  .teachers-table th,
+  .teachers-table td,
+  .teachers-table tr {
+    display: block;
+  }
+
+  .teachers-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .teachers-table tbody {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .teachers-table tr {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .teachers-table td {
+    min-height: 46px;
+    display: grid;
+    grid-template-columns: minmax(108px, 0.4fr) minmax(0, 0.6fr);
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .teachers-table td::before {
+    content: attr(data-label);
+    color: var(--color-text-secondary);
+    font-size: 0.78rem;
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+
+  .teachers-table tbody tr:last-child td {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .teachers-table tr td:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .teacher-form-card,
+  .teacher-invitations-section {
+    padding: 18px;
+  }
+
+  .teachers-section-header,
+  .teacher-invitation-card__details {
+    display: grid;
+  }
+
+  .invite-teacher-form__actions,
+  .teacher-invitation-card__actions {
+    display: grid;
+  }
+
+  .invite-teacher-form__actions .button,
+  .teacher-invitation-card__actions .button,
+  .teacher-invitation-card__actions .link-button {
+    width: 100%;
+  }
+}

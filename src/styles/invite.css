@@ -1,0 +1,173 @@
+.invite-page {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    linear-gradient(rgba(37, 99, 235, 0.04), rgba(15, 118, 110, 0.04)),
+    var(--color-bg);
+}
+
+.invite-card {
+  width: min(100%, 520px);
+  display: grid;
+  gap: 24px;
+  padding: 34px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.invite-card__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.invite-card__brand p,
+.invite-card__brand span,
+.invite-card__intro h1,
+.invite-card__intro p,
+.invite-state h1,
+.invite-state p,
+.invite-current-user p {
+  margin: 0;
+}
+
+.invite-card__brand p {
+  color: var(--color-text);
+  font-weight: 850;
+}
+
+.invite-card__brand span:not(.brand-mark) {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.invite-card__intro {
+  display: grid;
+  gap: 10px;
+}
+
+.invite-card__eyebrow {
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.invite-card__intro h1,
+.invite-state h1 {
+  color: var(--color-text);
+  font-size: 2rem;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.invite-card__intro p,
+.invite-state p,
+.invite-current-user p {
+  color: var(--color-text-secondary);
+}
+
+.invite-card__intro strong,
+.invite-current-user strong {
+  color: var(--color-text);
+}
+
+.invite-signup-form,
+.invite-signup-form form {
+  display: grid;
+  gap: 18px;
+}
+
+.invite-state {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 28px 8px;
+  text-align: center;
+}
+
+.invite-state .spinner {
+  color: var(--color-primary);
+}
+
+.invite-state--error {
+  color: var(--color-danger);
+}
+
+.invite-current-user,
+.email-verification-notice {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.invite-current-user--mismatch {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+}
+
+.email-verification-notice {
+  border-color: rgba(37, 99, 235, 0.24);
+  background: var(--color-primary-soft);
+}
+
+.email-verification-notice h2,
+.email-verification-notice p {
+  margin: 0;
+}
+
+.email-verification-notice h2 {
+  margin-top: 4px;
+  color: var(--color-text);
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.email-verification-notice__eyebrow {
+  color: var(--color-primary-active);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.email-verification-notice__actions,
+.invite-current-user__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.email-verification-notice__actions .button {
+  width: auto;
+  min-width: 188px;
+  padding-inline: 16px;
+}
+
+@media (max-width: 520px) {
+  .invite-page {
+    padding: 14px;
+  }
+
+  .invite-card {
+    padding: 24px 18px;
+  }
+
+  .email-verification-notice__actions,
+  .invite-current-user__actions {
+    display: grid;
+  }
+
+  .email-verification-notice__actions .button,
+  .email-verification-notice__actions .link-button {
+    width: 100%;
+  }
+}

@@ -1,0 +1,174 @@
+.school-admin-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.school-admin-header__eyebrow,
+.school-admin-header h1,
+.school-admin-header__description,
+.school-admin-card__header h2,
+.school-admin-card__header p,
+.school-admin-stat-card p {
+  margin: 0;
+}
+
+.school-admin-header__eyebrow {
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.school-admin-header h1 {
+  color: var(--color-text);
+  font-size: clamp(1.9rem, 4vw, 2.55rem);
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.school-admin-header__description {
+  max-width: 720px;
+  color: var(--color-text-secondary);
+}
+
+.school-admin-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.school-admin-card {
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+}
+
+.school-admin-card__header {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 18px;
+}
+
+.school-admin-card__header h2 {
+  color: var(--color-text);
+  font-size: 1.05rem;
+  line-height: 1.25;
+  font-weight: 850;
+}
+
+.school-admin-card__header p {
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+}
+
+.school-admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.school-admin-stat-card {
+  min-height: 112px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.school-admin-stat-card__icon,
+.school-admin-action__icon {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+}
+
+.school-admin-stat-card p {
+  color: var(--color-text-secondary);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.school-admin-stat-card strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.school-admin-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.school-admin-action {
+  min-height: 94px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  font-weight: 850;
+  transition:
+    border-color var(--transition-base),
+    background-color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-base);
+}
+
+.school-admin-action:hover {
+  color: var(--color-text);
+  border-color: rgba(37, 99, 235, 0.24);
+  background: var(--color-surface);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.07);
+  transform: translateY(-1px);
+}
+
+.school-admin-action:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.24);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1180px) {
+  .school-admin-stats-grid,
+  .school-admin-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .school-admin-header {
+    display: grid;
+  }
+
+  .school-admin-header__actions {
+    justify-content: stretch;
+  }
+
+  .school-admin-header__actions .link-button {
+    width: 100%;
+  }
+
+  .school-admin-stats-grid,
+  .school-admin-actions {
+    grid-template-columns: 1fr;
+  }
+}

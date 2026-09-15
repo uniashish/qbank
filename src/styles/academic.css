@@ -1,0 +1,406 @@
+.academic-form-card,
+.academic-table-card,
+.empty-academic-state,
+.class-subject-group {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+}
+
+.academic-form-card,
+.empty-academic-state,
+.class-subject-group {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+}
+
+.academic-section-header,
+.class-subject-group__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.academic-section-header h2,
+.academic-section-header p,
+.academic-table__identity strong,
+.academic-table__identity span,
+.empty-academic-state h2,
+.empty-academic-state p,
+.class-subject-group__header h2,
+.class-subject-group__header p,
+.class-subject-option strong,
+.class-subject-option small,
+.academic-inline-confirmation p {
+  margin: 0;
+}
+
+.academic-section-header h2,
+.class-subject-group__header h2,
+.empty-academic-state h2 {
+  color: var(--color-text);
+  font-size: 1.05rem;
+  line-height: 1.25;
+  font-weight: 850;
+}
+
+.academic-section-header p,
+.empty-academic-state p,
+.class-subject-group__header p,
+.class-subject-option small,
+.academic-inline-confirmation p {
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+}
+
+.academic-section-header > span,
+.academic-section-header > svg,
+.class-subject-group__header > span,
+.empty-academic-state__icon {
+  min-width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+  font-weight: 850;
+}
+
+.academic-setup-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.academic-setup-nav__item {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font-size: 0.9rem;
+  font-weight: 820;
+}
+
+.academic-setup-nav__item:hover,
+.academic-setup-nav__item--active {
+  color: var(--color-primary-active);
+  border-color: rgba(37, 99, 235, 0.24);
+  background: var(--color-primary-soft);
+}
+
+.academic-form {
+  display: grid;
+  gap: 20px;
+}
+
+.academic-form__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.academic-form__select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--color-text-secondary) 50%)
+      calc(100% - 18px) 54% / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--color-text-secondary) 50%, transparent 50%)
+      calc(100% - 12px) 54% / 6px 6px no-repeat,
+    var(--color-surface);
+}
+
+.academic-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.academic-form__actions .button {
+  width: auto;
+  min-width: 156px;
+  padding-inline: 18px;
+}
+
+.academic-table-card {
+  overflow: hidden;
+}
+
+.academic-table-card .academic-section-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.academic-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.academic-table th,
+.academic-table td {
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.academic-table th {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.academic-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.academic-table tbody tr:hover {
+  background: rgba(239, 246, 255, 0.5);
+}
+
+.academic-table__identity {
+  display: grid;
+  gap: 2px;
+}
+
+.academic-table__identity strong {
+  color: var(--color-text);
+  font-weight: 850;
+}
+
+.academic-table__identity span,
+.academic-table td {
+  color: var(--color-text-secondary);
+  font-size: 0.91rem;
+}
+
+.academic-actions,
+.academic-inline-confirmation > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.academic-actions .link-button,
+.academic-inline-confirmation .link-button {
+  min-height: 34px;
+  padding-inline: 10px;
+  font-size: 0.86rem;
+}
+
+.academic-inline-confirmation {
+  display: grid;
+  gap: 8px;
+}
+
+.academic-status {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.academic-status span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.academic-status--active {
+  color: var(--color-success);
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+}
+
+.academic-status--inactive {
+  color: #475569;
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-muted);
+}
+
+.empty-academic-state {
+  justify-items: center;
+  border-style: dashed;
+  background: var(--color-surface-muted);
+  text-align: center;
+}
+
+.empty-academic-state__icon {
+  width: 50px;
+  height: 50px;
+}
+
+.class-subject-mapper {
+  display: grid;
+  gap: 14px;
+}
+
+.class-subject-group__header > span {
+  min-width: 82px;
+  padding: 0 10px;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.class-subject-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.class-subject-option {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.class-subject-option:has(input:checked) {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: var(--color-primary-soft);
+}
+
+.class-subject-option input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: var(--color-primary);
+}
+
+.class-subject-option span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.class-subject-option strong,
+.class-subject-option small {
+  overflow-wrap: anywhere;
+}
+
+.class-subject-option strong {
+  color: var(--color-text);
+  font-size: 0.94rem;
+}
+
+.class-subject-group__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.class-subject-group__actions .button {
+  width: auto;
+  min-width: 150px;
+}
+
+@media (max-width: 1100px) {
+  .academic-form__grid,
+  .class-subject-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .academic-table,
+  .academic-table thead,
+  .academic-table tbody,
+  .academic-table th,
+  .academic-table td,
+  .academic-table tr {
+    display: block;
+  }
+
+  .academic-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .academic-table tbody {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .academic-table tr {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .academic-table td {
+    min-height: 46px;
+    display: grid;
+    grid-template-columns: minmax(112px, 0.42fr) minmax(0, 0.58fr);
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .academic-table td::before {
+    content: attr(data-label);
+    color: var(--color-text-secondary);
+    font-size: 0.78rem;
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+
+  .academic-table tbody tr:last-child td {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .academic-table tr td:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .academic-form-card,
+  .class-subject-group {
+    padding: 18px;
+  }
+
+  .academic-section-header,
+  .class-subject-group__header {
+    display: grid;
+  }
+
+  .academic-form__grid,
+  .class-subject-options {
+    grid-template-columns: 1fr;
+  }
+
+  .academic-form__actions,
+  .class-subject-group__actions {
+    display: grid;
+  }
+
+  .academic-form__actions .button,
+  .academic-form__actions .link-button,
+  .class-subject-group__actions .button,
+  .academic-setup-nav__item {
+    width: 100%;
+  }
+}

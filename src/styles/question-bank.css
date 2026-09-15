@@ -1,0 +1,490 @@
+.question-bank-toolbar,
+.question-bank-panel,
+.question-bank-table-wrap,
+.question-bank-card,
+.question-preview-dialog,
+.delete-question-dialog {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+}
+
+.question-bank-toolbar,
+.question-bank-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.question-bank-search {
+  position: relative;
+  min-width: 0;
+}
+
+.question-bank-search__icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  color: var(--color-text-muted);
+  transform: translateY(-50%);
+}
+
+.question-bank-search__input {
+  padding-left: 42px;
+}
+
+.question-bank-filters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.question-bank-filter {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.question-bank-filter span {
+  color: var(--color-text);
+  font-size: 0.84rem;
+  font-weight: 780;
+}
+
+.question-bank-filter__select {
+  appearance: none;
+  min-width: 0;
+  padding-right: 36px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--color-text-secondary) 50%),
+    linear-gradient(135deg, var(--color-text-secondary) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 21px,
+    calc(100% - 13px) 21px;
+  background-repeat: no-repeat;
+  background-size:
+    5px 5px,
+    5px 5px;
+}
+
+.question-bank-filters__clear,
+.question-bank-toolbar__add {
+  width: auto;
+  padding-inline: 16px;
+  white-space: nowrap;
+}
+
+.question-bank-toolbar__add {
+  justify-self: end;
+  min-width: 190px;
+}
+
+.teacher-question-bank-feedback--error {
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+}
+
+.question-bank-state {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 34px 18px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  text-align: center;
+  font-weight: 740;
+}
+
+.question-bank-state p,
+.question-bank-prompt,
+.question-bank-card__meta,
+.question-bank-card__meta dt,
+.question-bank-card__meta dd,
+.question-preview-dialog__header h2,
+.delete-question-dialog__header h2,
+.delete-question-dialog__header p,
+.delete-question-dialog__prompt {
+  margin: 0;
+}
+
+.question-bank-state--error {
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+}
+
+.question-bank-list {
+  min-width: 0;
+}
+
+.question-bank-table-wrap {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.question-bank-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+
+.question-bank-table th,
+.question-bank-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.question-bank-table th {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.question-bank-table__row:last-child td {
+  border-bottom: 0;
+}
+
+.question-bank-prompt {
+  min-width: 0;
+  max-width: 360px;
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-text);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.question-bank-badge {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+  font-size: 0.78rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.question-bank-badge--difficulty {
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+}
+
+.question-bank-badge--easy {
+  color: var(--color-success);
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+}
+
+.question-bank-badge--medium {
+  color: var(--color-accent);
+  border-color: rgba(15, 118, 110, 0.22);
+  background: var(--color-accent-soft);
+}
+
+.question-bank-badge--hard {
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+}
+
+.question-bank-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.question-bank-action-button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font-size: 0.82rem;
+  font-weight: 800;
+  transition:
+    border-color var(--transition-base),
+    color var(--transition-base),
+    background-color var(--transition-base);
+}
+
+.question-bank-action-button:hover:not(:disabled) {
+  color: var(--color-primary-active);
+  border-color: rgba(37, 99, 235, 0.28);
+  background: var(--color-primary-soft);
+}
+
+.question-bank-action-button--danger:hover:not(:disabled) {
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+}
+
+.question-bank-card-list {
+  display: none;
+}
+
+.question-bank-card {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.question-bank-card__header {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.question-bank-card__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.question-bank-card__meta div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.question-bank-card__meta dt {
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.question-bank-card__meta dd {
+  min-width: 0;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 780;
+  overflow-wrap: anywhere;
+}
+
+.question-preview-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 920px);
+  max-height: min(780px, calc(100dvh - 48px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.question-preview-dialog:focus,
+.delete-question-dialog:focus {
+  outline: none;
+}
+
+.question-preview-dialog__header {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.question-preview-dialog__header h2 {
+  color: var(--color-text);
+  font-size: 1.35rem;
+  line-height: 1.2;
+  font-weight: 850;
+}
+
+.question-preview-dialog__body {
+  min-height: 0;
+  overflow: auto;
+  padding: 22px;
+}
+
+.delete-question-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 520px);
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+}
+
+.delete-question-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.delete-question-dialog__header > span {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+
+.delete-question-dialog__header h2 {
+  color: var(--color-text);
+  font-size: 1.2rem;
+  line-height: 1.25;
+  font-weight: 850;
+}
+
+.delete-question-dialog__header p {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+}
+
+.delete-question-dialog__prompt {
+  display: -webkit-box;
+  overflow: hidden;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  font-weight: 780;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.delete-question-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.delete-question-dialog__actions .button {
+  width: auto;
+  min-width: 132px;
+}
+
+.delete-question-dialog__confirm {
+  background: var(--color-danger);
+  box-shadow: 0 10px 20px rgba(185, 28, 28, 0.16);
+}
+
+.delete-question-dialog__confirm:hover:not(:disabled) {
+  background: #991b1b;
+}
+
+@media (max-width: 1180px) {
+  .question-bank-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .question-bank-filters__clear {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .question-bank-toolbar,
+  .question-bank-panel {
+    padding: 16px;
+  }
+
+  .question-bank-filters,
+  .question-bank-card__meta {
+    grid-template-columns: 1fr;
+  }
+
+  .question-bank-toolbar__add,
+  .question-bank-filters__clear {
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .question-bank-table-wrap {
+    display: none;
+  }
+
+  .question-bank-card-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .question-bank-card__header {
+    display: grid;
+  }
+
+  .question-bank-card__header .question-bank-badge {
+    justify-self: start;
+  }
+
+  .question-bank-actions,
+  .question-bank-action-button {
+    width: 100%;
+  }
+
+  .question-bank-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .question-preview-dialog {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .question-preview-dialog__header,
+  .question-preview-dialog__body {
+    padding-inline: 16px;
+  }
+
+  .delete-question-dialog {
+    width: calc(100% - 24px);
+    padding: 18px;
+  }
+
+  .delete-question-dialog__actions {
+    display: grid;
+  }
+
+  .delete-question-dialog__actions .button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  .question-bank-actions {
+    grid-template-columns: 1fr;
+  }
+}

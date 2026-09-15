@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userPath(userId) {
+      return /databases/(default)/documents/users/$(userId);
+    }
+
+    function questionPath(schoolId, questionId) {
+      return /databases/(default)/documents/schools/$(schoolId)/questions/$(questionId);
+    }
+
+    function currentUserExists() {
+      return signedIn() && firestore.exists(userPath(request.auth.uid));
+    }
+
+    function currentUser() {
+      return firestore.get(userPath(request.auth.uid)).data;
+    }
+
+    function isActiveRole(role) {
+      return currentUserExists()
+        && currentUser().role == role
+        && currentUser().status == "active";
+    }
+
+    function isActivePlatformAdmin() {
+      return isActiveRole("platform_admin");
+    }
+
+    function isActiveSchoolAdminInSchool(schoolId) {
+      return isActiveRole("school_admin")
+        && currentUser().schoolId == schoolId;
+    }
+
+    function isActiveTeacherInSchool(schoolId) {
+      return isActiveRole("teacher")
+        && currentUser().schoolId == schoolId;
+    }
+
+    function isValidQuestionImageUpload() {
+      return request.resource != null
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType in [
+          "image/jpeg",
+          "image/png",
+          "image/webp"
+        ];
+    }
+
+    function canReadQuestionImage(schoolId, questionId) {
+      return isActivePlatformAdmin()
+        || isActiveSchoolAdminInSchool(schoolId)
+        || (
+          isActiveTeacherInSchool(schoolId)
+          && (
+            !firestore.exists(questionPath(schoolId, questionId))
+            || firestore.get(questionPath(schoolId, questionId)).data.createdBy.uid
+              == request.auth.uid
+          )
+        );
+    }
+
+    function canDeleteQuestionImage(schoolId, questionId) {
+      return isActiveTeacherInSchool(schoolId)
+        && (
+          !firestore.exists(questionPath(schoolId, questionId))
+          || firestore.get(questionPath(schoolId, questionId)).data.createdBy.uid
+            == request.auth.uid
+        );
+    }
+
+    match /schools/{schoolId}/questions/{questionId}/question-image/{fileName} {
+      allow get: if canReadQuestionImage(schoolId, questionId);
+      allow list: if false;
+      allow create: if isActiveTeacherInSchool(schoolId)
+        && isValidQuestionImageUpload();
+      allow update: if false;
+      allow delete: if canDeleteQuestionImage(schoolId, questionId);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,1194 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userPath(userId) {
+      return /databases/$(database)/documents/users/$(userId);
+    }
+
+    function schoolPath(schoolId) {
+      return /databases/$(database)/documents/schools/$(schoolId);
+    }
+
+    function academicClassPath(schoolId, classId) {
+      return /databases/$(database)/documents/schools/$(schoolId)/classes/$(classId);
+    }
+
+    function academicSubjectPath(schoolId, subjectId) {
+      return /databases/$(database)/documents/schools/$(schoolId)/subjects/$(subjectId);
+    }
+
+    function academicClassSubjectPath(schoolId, mappingId) {
+      return /databases/$(database)/documents/schools/$(schoolId)/classSubjects/$(mappingId);
+    }
+
+    function invitationPath(invitationId) {
+      return /databases/$(database)/documents/invitations/$(invitationId);
+    }
+
+    function currentUserExists() {
+      return signedIn() && exists(userPath(request.auth.uid));
+    }
+
+    function currentUser() {
+      return get(userPath(request.auth.uid)).data;
+    }
+
+    function hasAuthEmail() {
+      return signedIn()
+        && request.auth.token.email is string
+        && request.auth.token.email.size() > 0;
+    }
+
+    function hasVerifiedAuthEmail() {
+      return hasAuthEmail()
+        && request.auth.token.email_verified == true;
+    }
+
+    function authEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function isActiveRole(role) {
+      return currentUserExists()
+        && currentUser().role == role
+        && currentUser().status == "active";
+    }
+
+    function isActivePlatformAdmin() {
+      return isActiveRole("platform_admin");
+    }
+
+    function isActiveSchoolAdmin() {
+      return isActiveRole("school_admin");
+    }
+
+    function isActiveTeacher() {
+      return isActiveRole("teacher");
+    }
+
+    function isAcademicSetupReader(schoolId) {
+      return isOwnSchool(schoolId)
+        || (isActiveTeacher() && currentUser().schoolId == schoolId);
+    }
+
+    function validSchoolStatus(status) {
+      return status in ["active", "inactive"];
+    }
+
+    function validAcademicStatus(status) {
+      return status in ["active", "inactive"];
+    }
+
+    function isValidAcademicCode(code) {
+      return code is string
+        && code.size() > 0
+        && code.matches("^[A-Z0-9][A-Z0-9_-]*$");
+    }
+
+    function isValidAcademicItemPayload(data) {
+      return data.name is string
+        && data.name.size() > 0
+        && isValidAcademicCode(data.code)
+        && validAcademicStatus(data.status);
+    }
+
+    function isValidAcademicItemCreate(schoolId) {
+      return isOwnSchool(schoolId)
+        && request.resource.data.keys().hasAll([
+          "name",
+          "code",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "createdBy"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "name",
+          "code",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "createdBy"
+        ])
+        && isValidAcademicItemPayload(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function isValidAcademicItemUpdate(schoolId) {
+      return isOwnSchool(schoolId)
+        && request.resource.data.keys().hasAll([
+          "name",
+          "code",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "createdBy"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "name",
+          "code",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "createdBy"
+        ])
+        && isValidAcademicItemPayload(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "name",
+          "code",
+          "status",
+          "updatedAt"
+        ]);
+    }
+
+    function isActiveAcademicClass(schoolId, classId) {
+      return exists(academicClassPath(schoolId, classId))
+        && get(academicClassPath(schoolId, classId)).data.status == "active";
+    }
+
+    function isActiveAcademicSubject(schoolId, subjectId) {
+      return exists(academicSubjectPath(schoolId, subjectId))
+        && get(academicSubjectPath(schoolId, subjectId)).data.status == "active";
+    }
+
+    function isValidClassSubjectMappingPayload(data) {
+      return data.classId is string
+        && data.classId.size() > 0
+        && data.subjectId is string
+        && data.subjectId.size() > 0;
+    }
+
+    function classSubjectMappingId(classId, subjectId) {
+      return classId + "__" + subjectId;
+    }
+
+    function isValidClassSubjectMappingCreate(schoolId, mappingId) {
+      return isOwnSchool(schoolId)
+        && request.resource.data.keys().hasAll([
+          "classId",
+          "subjectId",
+          "createdAt",
+          "createdBy"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "classId",
+          "subjectId",
+          "createdAt",
+          "createdBy"
+        ])
+        && isValidClassSubjectMappingPayload(request.resource.data)
+        && mappingId == classSubjectMappingId(
+          request.resource.data.classId,
+          request.resource.data.subjectId
+        )
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && isActiveAcademicClass(schoolId, request.resource.data.classId)
+        && isActiveAcademicSubject(schoolId, request.resource.data.subjectId);
+    }
+
+    function isTeacherProfileInSchool(schoolId, teacherId) {
+      return exists(userPath(teacherId))
+        && get(userPath(teacherId)).data.schoolId == schoolId
+        && get(userPath(teacherId)).data.role == "teacher"
+        && get(userPath(teacherId)).data.status == "active";
+    }
+
+    function isMappedClassSubject(schoolId, classId, subjectId) {
+      return exists(academicClassSubjectPath(
+          schoolId,
+          classSubjectMappingId(classId, subjectId)
+        ))
+        && get(academicClassSubjectPath(
+          schoolId,
+          classSubjectMappingId(classId, subjectId)
+        )).data.classId == classId
+        && get(academicClassSubjectPath(
+          schoolId,
+          classSubjectMappingId(classId, subjectId)
+        )).data.subjectId == subjectId
+        && (
+          !get(academicClassSubjectPath(
+            schoolId,
+            classSubjectMappingId(classId, subjectId)
+          )).data.keys().hasAny(["status"])
+          || get(academicClassSubjectPath(
+            schoolId,
+            classSubjectMappingId(classId, subjectId)
+          )).data.status == "active"
+        );
+    }
+
+    function teacherAssignmentId(teacherId, classId, subjectId) {
+      return teacherId + "__" + classId + "__" + subjectId;
+    }
+
+    function isTeacherAssignmentReader(schoolId) {
+      return isOwnSchool(schoolId)
+        || (
+          isActiveTeacher()
+          && currentUser().schoolId == schoolId
+          && resource.data.teacherId == request.auth.uid
+        );
+    }
+
+    function isValidTeacherAssignmentPayload(data) {
+      return data.teacherId is string
+        && data.teacherId.size() > 0
+        && data.classId is string
+        && data.classId.size() > 0
+        && data.subjectId is string
+        && data.subjectId.size() > 0
+        && data.status == "active";
+    }
+
+    function isValidTeacherAssignmentCreate(schoolId, assignmentId) {
+      return isOwnSchool(schoolId)
+        && request.resource.data.keys().hasAll([
+          "teacherId",
+          "classId",
+          "subjectId",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "teacherId",
+          "classId",
+          "subjectId",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ])
+        && isValidTeacherAssignmentPayload(request.resource.data)
+        && assignmentId == teacherAssignmentId(
+          request.resource.data.teacherId,
+          request.resource.data.classId,
+          request.resource.data.subjectId
+        )
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && isTeacherProfileInSchool(schoolId, request.resource.data.teacherId)
+        && isActiveAcademicClass(schoolId, request.resource.data.classId)
+        && isActiveAcademicSubject(schoolId, request.resource.data.subjectId)
+        && isMappedClassSubject(
+          schoolId,
+          request.resource.data.classId,
+          request.resource.data.subjectId
+        );
+    }
+
+    function teacherAssignmentPath(schoolId, teacherId, classId, subjectId) {
+      return /databases/$(database)/documents/schools/$(schoolId)/teacherAssignments/$(teacherAssignmentId(teacherId, classId, subjectId));
+    }
+
+    function validQuestionDifficulty(difficulty) {
+      return difficulty in ["easy", "medium", "hard"];
+    }
+
+    function isTeacherAssignedToQuestionSubject(schoolId, classId, subjectId) {
+      return exists(teacherAssignmentPath(
+          schoolId,
+          request.auth.uid,
+          classId,
+          subjectId
+        ))
+        && get(teacherAssignmentPath(
+          schoolId,
+          request.auth.uid,
+          classId,
+          subjectId
+        )).data.status == "active"
+        && get(teacherAssignmentPath(
+          schoolId,
+          request.auth.uid,
+          classId,
+          subjectId
+        )).data.teacherId == request.auth.uid
+        && get(teacherAssignmentPath(
+          schoolId,
+          request.auth.uid,
+          classId,
+          subjectId
+        )).data.classId == classId
+        && get(teacherAssignmentPath(
+          schoolId,
+          request.auth.uid,
+          classId,
+          subjectId
+        )).data.subjectId == subjectId;
+    }
+
+    function isValidQuestionCreator(createdBy) {
+      return createdBy is map
+        && createdBy.keys().hasAll([
+          "uid",
+          "name",
+          "email"
+        ])
+        && createdBy.keys().hasOnly([
+          "uid",
+          "name",
+          "email"
+        ])
+        && createdBy.uid == request.auth.uid
+        && createdBy.uid == currentUser().uid
+        && createdBy.name is string
+        && createdBy.name.size() > 0
+        && createdBy.name == currentUser().name
+        && createdBy.email is string
+        && createdBy.email.size() > 0
+        && createdBy.email == currentUser().email;
+    }
+
+    function isValidQuestionImage(schoolId, questionId, image) {
+      return image is map
+        && image.keys().hasAll([
+          "storagePath",
+          "downloadUrl"
+        ])
+        && image.keys().hasOnly([
+          "storagePath",
+          "downloadUrl"
+        ])
+        && (
+          (
+            image.storagePath == null
+            && image.downloadUrl == null
+          )
+          || (
+            image.storagePath is string
+            && image.storagePath.size() > 0
+            && image.storagePath.matches(
+              "^schools/" + schoolId + "/questions/" + questionId + "/question-image/[^/]+$"
+            )
+            && image.downloadUrl is string
+            && image.downloadUrl.size() > 0
+          )
+        );
+    }
+
+    function isValidQuestionOption(option) {
+      return option is map
+        && option.keys().hasAll([
+          "id",
+          "text"
+        ])
+        && option.keys().hasOnly([
+          "id",
+          "text"
+        ])
+        && option.id is string
+        && option.id.size() > 0
+        && option.text is string
+        && option.text.size() > 0;
+    }
+
+    function isValidQuestionOptions(options) {
+      return options is list
+        && options.size() >= 2
+        && options.size() <= 8
+        && isValidQuestionOption(options[0])
+        && isValidQuestionOption(options[1])
+        && (options.size() < 3 || isValidQuestionOption(options[2]))
+        && (options.size() < 4 || isValidQuestionOption(options[3]))
+        && (options.size() < 5 || isValidQuestionOption(options[4]))
+        && (options.size() < 6 || isValidQuestionOption(options[5]))
+        && (options.size() < 7 || isValidQuestionOption(options[6]))
+        && (options.size() < 8 || isValidQuestionOption(options[7]));
+    }
+
+    function isQuestionCorrectOptionId(answerData) {
+      return answerData.correctOptionId == answerData.options[0].id
+        || answerData.correctOptionId == answerData.options[1].id
+        || (
+          answerData.options.size() > 2
+          && answerData.correctOptionId == answerData.options[2].id
+        )
+        || (
+          answerData.options.size() > 3
+          && answerData.correctOptionId == answerData.options[3].id
+        )
+        || (
+          answerData.options.size() > 4
+          && answerData.correctOptionId == answerData.options[4].id
+        )
+        || (
+          answerData.options.size() > 5
+          && answerData.correctOptionId == answerData.options[5].id
+        )
+        || (
+          answerData.options.size() > 6
+          && answerData.correctOptionId == answerData.options[6].id
+        )
+        || (
+          answerData.options.size() > 7
+          && answerData.correctOptionId == answerData.options[7].id
+        );
+    }
+
+    function isValidMultipleChoiceAnswerData(answerData) {
+      return answerData is map
+        && answerData.keys().hasAll([
+          "options",
+          "correctOptionId"
+        ])
+        && answerData.keys().hasOnly([
+          "options",
+          "correctOptionId"
+        ])
+        && answerData.correctOptionId is string
+        && answerData.correctOptionId.size() > 0
+        && isValidQuestionOptions(answerData.options)
+        && isQuestionCorrectOptionId(answerData);
+    }
+
+    function isValidTrueFalseAnswerData(answerData) {
+      return answerData is map
+        && answerData.keys().hasAll([
+          "correctAnswer"
+        ])
+        && answerData.keys().hasOnly([
+          "correctAnswer"
+        ])
+        && answerData.correctAnswer is bool;
+    }
+
+    function isValidFillBlankAcceptedAnswers(acceptedAnswers) {
+      return acceptedAnswers is list
+        && acceptedAnswers.size() >= 1
+        && acceptedAnswers.size() <= 10
+        && acceptedAnswers[0] is string
+        && acceptedAnswers[0].size() > 0
+        && (acceptedAnswers.size() < 2 || (
+          acceptedAnswers[1] is string
+          && acceptedAnswers[1].size() > 0
+        ))
+        && (acceptedAnswers.size() < 3 || (
+          acceptedAnswers[2] is string
+          && acceptedAnswers[2].size() > 0
+        ))
+        && (acceptedAnswers.size() < 4 || (
+          acceptedAnswers[3] is string
+          && acceptedAnswers[3].size() > 0
+        ))
+        && (acceptedAnswers.size() < 5 || (
+          acceptedAnswers[4] is string
+          && acceptedAnswers[4].size() > 0
+        ))
+        && (acceptedAnswers.size() < 6 || (
+          acceptedAnswers[5] is string
+          && acceptedAnswers[5].size() > 0
+        ))
+        && (acceptedAnswers.size() < 7 || (
+          acceptedAnswers[6] is string
+          && acceptedAnswers[6].size() > 0
+        ))
+        && (acceptedAnswers.size() < 8 || (
+          acceptedAnswers[7] is string
+          && acceptedAnswers[7].size() > 0
+        ))
+        && (acceptedAnswers.size() < 9 || (
+          acceptedAnswers[8] is string
+          && acceptedAnswers[8].size() > 0
+        ))
+        && (acceptedAnswers.size() < 10 || (
+          acceptedAnswers[9] is string
+          && acceptedAnswers[9].size() > 0
+        ));
+    }
+
+    function isValidFillBlankAnswer(blank) {
+      return blank is map
+        && blank.keys().hasAll([
+          "id",
+          "acceptedAnswers"
+        ])
+        && blank.keys().hasOnly([
+          "id",
+          "acceptedAnswers"
+        ])
+        && blank.id is string
+        && blank.id.size() > 0
+        && isValidFillBlankAcceptedAnswers(blank.acceptedAnswers);
+    }
+
+    function isValidFillBlankAnswers(blanks) {
+      return blanks is list
+        && blanks.size() >= 1
+        && blanks.size() <= 10
+        && isValidFillBlankAnswer(blanks[0])
+        && (blanks.size() < 2 || isValidFillBlankAnswer(blanks[1]))
+        && (blanks.size() < 3 || isValidFillBlankAnswer(blanks[2]))
+        && (blanks.size() < 4 || isValidFillBlankAnswer(blanks[3]))
+        && (blanks.size() < 5 || isValidFillBlankAnswer(blanks[4]))
+        && (blanks.size() < 6 || isValidFillBlankAnswer(blanks[5]))
+        && (blanks.size() < 7 || isValidFillBlankAnswer(blanks[6]))
+        && (blanks.size() < 8 || isValidFillBlankAnswer(blanks[7]))
+        && (blanks.size() < 9 || isValidFillBlankAnswer(blanks[8]))
+        && (blanks.size() < 10 || isValidFillBlankAnswer(blanks[9]));
+    }
+
+    function isValidFillBlanksAnswerData(answerData) {
+      return answerData is map
+        && answerData.keys().hasAll([
+          "blanks"
+        ])
+        && answerData.keys().hasOnly([
+          "blanks"
+        ])
+        && isValidFillBlankAnswers(answerData.blanks);
+    }
+
+    function isValidQuestionType(questionType) {
+      return questionType in [
+        "fill_blanks",
+        "multiple_choice",
+        "true_false"
+      ];
+    }
+
+    function isValidQuestionAnswerData(questionType, answerData) {
+      return (
+          questionType == "fill_blanks"
+          && isValidFillBlanksAnswerData(answerData)
+        )
+        || (
+          questionType == "multiple_choice"
+          && isValidMultipleChoiceAnswerData(answerData)
+        )
+        || (
+          questionType == "true_false"
+          && isValidTrueFalseAnswerData(answerData)
+        );
+    }
+
+    function isValidQuestionCreate(schoolId, questionId) {
+      return isActiveTeacher()
+        && currentUser().schoolId == schoolId
+        && request.resource.data.keys().hasAll([
+          "questionType",
+          "classId",
+          "subjectId",
+          "topicName",
+          "prompt",
+          "marks",
+          "difficulty",
+          "instructions",
+          "image",
+          "answerData",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "status"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "questionType",
+          "classId",
+          "subjectId",
+          "topicName",
+          "prompt",
+          "marks",
+          "difficulty",
+          "instructions",
+          "image",
+          "answerData",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "status"
+        ])
+        && isValidQuestionType(request.resource.data.questionType)
+        && request.resource.data.classId is string
+        && request.resource.data.classId.size() > 0
+        && request.resource.data.subjectId is string
+        && request.resource.data.subjectId.size() > 0
+        && request.resource.data.topicName is string
+        && request.resource.data.topicName.size() > 0
+        && request.resource.data.topicName.size() <= 100
+        && request.resource.data.prompt is string
+        && request.resource.data.prompt.size() > 0
+        && request.resource.data.marks is int
+        && request.resource.data.marks > 0
+        && validQuestionDifficulty(request.resource.data.difficulty)
+        && request.resource.data.instructions is string
+        && isValidQuestionImage(
+          schoolId,
+          questionId,
+          request.resource.data.image
+        )
+        && isValidQuestionAnswerData(
+          request.resource.data.questionType,
+          request.resource.data.answerData
+        )
+        && isValidQuestionCreator(request.resource.data.createdBy)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.status == "active"
+        && isTeacherAssignedToQuestionSubject(
+          schoolId,
+          request.resource.data.classId,
+          request.resource.data.subjectId
+        );
+    }
+
+    function isValidQuestionUpdate(schoolId, questionId) {
+      return isActiveTeacher()
+        && currentUser().schoolId == schoolId
+        && resource.data.status == "active"
+        && resource.data.createdBy.uid == request.auth.uid
+        && request.resource.data.keys().hasAll([
+          "questionType",
+          "classId",
+          "subjectId",
+          "topicName",
+          "prompt",
+          "marks",
+          "difficulty",
+          "instructions",
+          "image",
+          "answerData",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "status"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "questionType",
+          "classId",
+          "subjectId",
+          "topicName",
+          "prompt",
+          "marks",
+          "difficulty",
+          "instructions",
+          "image",
+          "answerData",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "status"
+        ])
+        && isValidQuestionType(request.resource.data.questionType)
+        && request.resource.data.classId is string
+        && request.resource.data.classId.size() > 0
+        && request.resource.data.subjectId is string
+        && request.resource.data.subjectId.size() > 0
+        && request.resource.data.topicName is string
+        && request.resource.data.topicName.size() > 0
+        && request.resource.data.topicName.size() <= 100
+        && request.resource.data.prompt is string
+        && request.resource.data.prompt.size() > 0
+        && request.resource.data.marks is int
+        && request.resource.data.marks > 0
+        && validQuestionDifficulty(request.resource.data.difficulty)
+        && request.resource.data.instructions is string
+        && isValidQuestionImage(
+          schoolId,
+          questionId,
+          request.resource.data.image
+        )
+        && isValidQuestionAnswerData(
+          request.resource.data.questionType,
+          request.resource.data.answerData
+        )
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdBy.uid == request.auth.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.status in ["active", "deleted"]
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "questionType",
+          "classId",
+          "subjectId",
+          "topicName",
+          "prompt",
+          "marks",
+          "difficulty",
+          "instructions",
+          "image",
+          "answerData",
+          "updatedAt",
+          "status"
+        ])
+        && isTeacherAssignedToQuestionSubject(
+          schoolId,
+          request.resource.data.classId,
+          request.resource.data.subjectId
+        );
+    }
+
+    function canReadQuestion(schoolId) {
+      return isActivePlatformAdmin()
+        || isOwnSchool(schoolId)
+        || (
+          isActiveTeacher()
+          && currentUser().schoolId == schoolId
+          && resource.data.createdBy.uid == request.auth.uid
+        );
+    }
+
+    function isValidSchoolPayload(data) {
+      return data.name is string
+        && data.name.size() > 0
+        && data.code is string
+        && data.code.size() > 0
+        && data.email is string
+        && data.phone is string
+        && data.address is string
+        && data.city is string
+        && data.country is string
+        && validSchoolStatus(data.status);
+    }
+
+    function isValidSchoolCreate() {
+      return request.resource.data.keys().hasAll([
+          "name",
+          "code",
+          "email",
+          "phone",
+          "address",
+          "city",
+          "country",
+          "status",
+          "primaryAdminId",
+          "createdAt",
+          "updatedAt",
+          "createdBy"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "name",
+          "code",
+          "email",
+          "phone",
+          "address",
+          "city",
+          "country",
+          "status",
+          "primaryAdminId",
+          "createdAt",
+          "updatedAt",
+          "createdBy"
+        ])
+        && isValidSchoolPayload(request.resource.data)
+        && request.resource.data.primaryAdminId == null
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function isValidSchoolUpdate() {
+      return isValidSchoolPayload(request.resource.data)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          "primaryAdminId",
+          "createdAt",
+          "createdBy"
+        ])
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function isOwnSchool(schoolId) {
+      return isActiveSchoolAdmin() && currentUser().schoolId == schoolId;
+    }
+
+    function isTeacherInOwnSchool() {
+      return isActiveSchoolAdmin()
+        && resource.data.role == "teacher"
+        && resource.data.schoolId == currentUser().schoolId;
+    }
+
+    function isTeacherInvitationInOwnSchool() {
+      return isActiveSchoolAdmin()
+        && resource.data.role == "teacher"
+        && resource.data.schoolId == currentUser().schoolId;
+    }
+
+    function isValidOwnProfileUpdate(userId) {
+      return signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.schoolId == resource.data.schoolId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "name",
+          "photoURL",
+          "updatedAt"
+        ]);
+    }
+
+    function validInvitationRole(role) {
+      return role in ["school_admin", "teacher"];
+    }
+
+    function isValidInvitationBaseCreate(invitationId) {
+      return request.resource.data.keys().hasAll([
+          "token",
+          "email",
+          "name",
+          "role",
+          "schoolId",
+          "status",
+          "invitedBy",
+          "createdAt",
+          "updatedAt",
+          "expiresAt",
+          "acceptedAt",
+          "acceptedBy"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "token",
+          "email",
+          "name",
+          "role",
+          "schoolId",
+          "schoolName",
+          "status",
+          "invitedBy",
+          "createdAt",
+          "updatedAt",
+          "expiresAt",
+          "acceptedAt",
+          "acceptedBy"
+        ])
+        && request.resource.data.token == invitationId
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 0
+        && request.resource.data.email == request.resource.data.email.lower()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && validInvitationRole(request.resource.data.role)
+        && request.resource.data.schoolId is string
+        && request.resource.data.status == "pending"
+        && request.resource.data.invitedBy == request.auth.uid
+        && request.resource.data.acceptedAt == null
+        && request.resource.data.acceptedBy == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.expiresAt > request.time
+        && exists(schoolPath(request.resource.data.schoolId))
+        && get(schoolPath(request.resource.data.schoolId)).data.status == "active";
+    }
+
+    function isValidSchoolAdminInvitationCreate(invitationId) {
+      return isActivePlatformAdmin()
+        && isValidInvitationBaseCreate(invitationId)
+        && request.resource.data.role == "school_admin"
+        && request.resource.data.schoolName is string
+        && get(schoolPath(request.resource.data.schoolId)).data.primaryAdminId == null
+        && get(schoolPath(request.resource.data.schoolId)).data.name
+          == request.resource.data.schoolName;
+    }
+
+    function isValidTeacherInvitationCreate(invitationId) {
+      return isActiveSchoolAdmin()
+        && isValidInvitationBaseCreate(invitationId)
+        && request.resource.data.role == "teacher"
+        && !request.resource.data.keys().hasAny(["schoolName"])
+        && request.resource.data.schoolId == currentUser().schoolId;
+    }
+
+    function isValidInvitationCreate(invitationId) {
+      return isValidSchoolAdminInvitationCreate(invitationId)
+        || isValidTeacherInvitationCreate(invitationId);
+    }
+
+    function canCancelInvitation() {
+      return isActivePlatformAdmin()
+        || (
+          isActiveSchoolAdmin()
+          && resource.data.role == "teacher"
+          && resource.data.schoolId == currentUser().schoolId
+        );
+    }
+
+    function isValidInvitationCancel() {
+      return canCancelInvitation()
+        && resource.data.status == "pending"
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status",
+          "updatedAt"
+        ])
+        && request.resource.data.status == "cancelled"
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function isPendingInvitation(invitationId) {
+      return exists(invitationPath(invitationId))
+        && get(invitationPath(invitationId)).data.token == invitationId
+        && validInvitationRole(get(invitationPath(invitationId)).data.role)
+        && get(invitationPath(invitationId)).data.status == "pending"
+        && get(invitationPath(invitationId)).data.expiresAt > request.time;
+    }
+
+    function authMatchesInvitation(invitationId) {
+      return hasVerifiedAuthEmail()
+        && authEmail() == get(invitationPath(invitationId)).data.email;
+    }
+
+    function isPendingInvitationForAuth(invitationId) {
+      return isPendingInvitation(invitationId)
+        && authMatchesInvitation(invitationId);
+    }
+
+    function isActiveInvitationSchool(schoolId, invitationId) {
+      return exists(schoolPath(schoolId))
+        && get(invitationPath(invitationId)).data.schoolId == schoolId
+        && get(schoolPath(schoolId)).data.status == "active";
+    }
+
+    function isRedeemableSchoolAdminSchool(schoolId, invitationId) {
+      return isActiveInvitationSchool(schoolId, invitationId)
+        && get(schoolPath(schoolId)).data.primaryAdminId == null;
+    }
+
+    function isAcceptedInvitationAfter(invitationId, userId) {
+      return existsAfter(invitationPath(invitationId))
+        && getAfter(invitationPath(invitationId)).data.status == "accepted"
+        && getAfter(invitationPath(invitationId)).data.acceptedBy == userId
+        && getAfter(invitationPath(invitationId)).data.acceptedAt == request.time
+        && getAfter(invitationPath(invitationId)).data.updatedAt == request.time;
+    }
+
+    function isPrimaryAdminAfter(schoolId, userId) {
+      return existsAfter(schoolPath(schoolId))
+        && getAfter(schoolPath(schoolId)).data.primaryAdminId == userId
+        && getAfter(schoolPath(schoolId)).data.updatedAt == request.time;
+    }
+
+    function isInviteeProfileAfter(userId, schoolId, invitationId, role) {
+      return existsAfter(userPath(userId))
+        && getAfter(userPath(userId)).data.uid == userId
+        && getAfter(userPath(userId)).data.email == authEmail()
+        && getAfter(userPath(userId)).data.email
+          == get(invitationPath(invitationId)).data.email
+        && getAfter(userPath(userId)).data.role == role
+        && getAfter(userPath(userId)).data.status == "active"
+        && getAfter(userPath(userId)).data.schoolId == schoolId
+        && getAfter(userPath(userId)).data.invitationId == invitationId;
+    }
+
+    function isValidInviteeProfileBaseCreate(userId) {
+      return signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasAll([
+          "uid",
+          "name",
+          "email",
+          "role",
+          "status",
+          "schoolId",
+          "photoURL",
+          "createdAt",
+          "updatedAt",
+          "invitationId"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "uid",
+          "name",
+          "email",
+          "role",
+          "status",
+          "schoolId",
+          "photoURL",
+          "createdAt",
+          "updatedAt",
+          "invitationId"
+        ])
+        && request.resource.data.invitationId is string
+        && isPendingInvitationForAuth(request.resource.data.invitationId)
+        && request.resource.data.uid == userId
+        && request.resource.data.name
+          == get(invitationPath(request.resource.data.invitationId)).data.name
+        && request.resource.data.email == authEmail()
+        && request.resource.data.email
+          == get(invitationPath(request.resource.data.invitationId)).data.email
+        && request.resource.data.role
+          == get(invitationPath(request.resource.data.invitationId)).data.role
+        && request.resource.data.status == "active"
+        && request.resource.data.schoolId
+          == get(invitationPath(request.resource.data.invitationId)).data.schoolId
+        && (
+          request.resource.data.photoURL == null
+          || request.resource.data.photoURL is string
+        )
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && isActiveInvitationSchool(
+          request.resource.data.schoolId,
+          request.resource.data.invitationId
+        )
+        && isAcceptedInvitationAfter(request.resource.data.invitationId, userId);
+    }
+
+    function isValidSchoolAdminProfileCreate(userId) {
+      return isValidInviteeProfileBaseCreate(userId)
+        && request.resource.data.role == "school_admin"
+        && isRedeemableSchoolAdminSchool(
+          request.resource.data.schoolId,
+          request.resource.data.invitationId
+        )
+        && isPrimaryAdminAfter(request.resource.data.schoolId, userId);
+    }
+
+    function isValidTeacherProfileCreate(userId) {
+      return isValidInviteeProfileBaseCreate(userId)
+        && request.resource.data.role == "teacher";
+    }
+
+    function isValidInviteeProfileCreate(userId) {
+      return isValidSchoolAdminProfileCreate(userId)
+        || isValidTeacherProfileCreate(userId);
+    }
+
+    function isValidSchoolPrimaryAdminRedemption(schoolId) {
+      return signedIn()
+        && request.resource.data.primaryAdminId == request.auth.uid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "primaryAdminId",
+          "updatedAt"
+        ])
+        && existsAfter(userPath(request.auth.uid))
+        && getAfter(userPath(request.auth.uid)).data.role == "school_admin"
+        && isPendingInvitationForAuth(
+          getAfter(userPath(request.auth.uid)).data.invitationId
+        )
+        && isRedeemableSchoolAdminSchool(
+          schoolId,
+          getAfter(userPath(request.auth.uid)).data.invitationId
+        )
+        && isInviteeProfileAfter(
+          request.auth.uid,
+          schoolId,
+          getAfter(userPath(request.auth.uid)).data.invitationId,
+          "school_admin"
+        )
+        && isAcceptedInvitationAfter(
+          getAfter(userPath(request.auth.uid)).data.invitationId,
+          request.auth.uid
+        );
+    }
+
+    function isValidInvitationRedemption(invitationId) {
+      return signedIn()
+        && hasVerifiedAuthEmail()
+        && resource.data.token == invitationId
+        && validInvitationRole(resource.data.role)
+        && resource.data.status == "pending"
+        && resource.data.expiresAt > request.time
+        && authEmail() == resource.data.email
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status",
+          "updatedAt",
+          "acceptedAt",
+          "acceptedBy"
+        ])
+        && request.resource.data.status == "accepted"
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.acceptedAt == request.time
+        && request.resource.data.acceptedBy == request.auth.uid
+        && isPendingInvitationForAuth(invitationId)
+        && isActiveInvitationSchool(resource.data.schoolId, invitationId)
+        && isInviteeProfileAfter(
+          request.auth.uid,
+          resource.data.schoolId,
+          invitationId,
+          resource.data.role
+        )
+        && (
+          resource.data.role == "teacher"
+          || (
+            resource.data.role == "school_admin"
+            && isRedeemableSchoolAdminSchool(resource.data.schoolId, invitationId)
+            && isPrimaryAdminAfter(resource.data.schoolId, request.auth.uid)
+          )
+        )
+        && isAcceptedInvitationAfter(invitationId, request.auth.uid);
+    }
+
+    match /users/{userId} {
+      allow get: if signedIn()
+        && (
+          request.auth.uid == userId
+          || isActivePlatformAdmin()
+          || isTeacherInOwnSchool()
+        );
+      allow list: if isActivePlatformAdmin() || isTeacherInOwnSchool();
+      allow create: if isValidInviteeProfileCreate(userId);
+      allow update: if isValidOwnProfileUpdate(userId);
+      allow delete: if false;
+    }
+
+    match /schools/{schoolId} {
+      allow get: if isActivePlatformAdmin() || isOwnSchool(schoolId);
+      allow list: if isActivePlatformAdmin();
+      allow create: if isActivePlatformAdmin() && isValidSchoolCreate();
+      allow update: if (
+        isActivePlatformAdmin() && isValidSchoolUpdate()
+      ) || isValidSchoolPrimaryAdminRedemption(schoolId);
+      allow delete: if false;
+    }
+
+    match /schools/{schoolId}/classes/{classId} {
+      allow get, list: if isAcademicSetupReader(schoolId);
+      allow create: if isValidAcademicItemCreate(schoolId);
+      allow update: if isValidAcademicItemUpdate(schoolId);
+      allow delete: if false;
+    }
+
+    match /schools/{schoolId}/subjects/{subjectId} {
+      allow get, list: if isAcademicSetupReader(schoolId);
+      allow create: if isValidAcademicItemCreate(schoolId);
+      allow update: if isValidAcademicItemUpdate(schoolId);
+      allow delete: if false;
+    }
+
+    match /schools/{schoolId}/classSubjects/{mappingId} {
+      allow get, list: if isAcademicSetupReader(schoolId);
+      allow create: if isValidClassSubjectMappingCreate(schoolId, mappingId);
+      allow update: if false;
+      allow delete: if isOwnSchool(schoolId);
+    }
+
+    match /schools/{schoolId}/teacherAssignments/{assignmentId} {
+      allow get, list: if isTeacherAssignmentReader(schoolId);
+      allow create: if isValidTeacherAssignmentCreate(schoolId, assignmentId);
+      allow update: if false;
+      allow delete: if isOwnSchool(schoolId);
+    }
+
+    match /schools/{schoolId}/questions/{questionId} {
+      allow get, list: if canReadQuestion(schoolId);
+      allow create: if isValidQuestionCreate(schoolId, questionId);
+      allow update: if isValidQuestionUpdate(schoolId, questionId);
+      allow delete: if false;
+    }
+
+    match /invitations/{invitationId} {
+      allow get: if true;
+      allow list: if isActivePlatformAdmin() || isTeacherInvitationInOwnSchool();
+      allow create: if isValidInvitationCreate(invitationId);
+      allow update: if isValidInvitationCancel()
+        || isValidInvitationRedemption(invitationId);
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
