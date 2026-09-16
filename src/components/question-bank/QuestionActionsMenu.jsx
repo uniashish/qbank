@@ -29,9 +29,13 @@ function QuestionActionButton({
 }
 
 function QuestionActionsMenu({
+  canDelete = true,
+  canEdit = true,
+  canRemove = false,
   disabled = false,
   onDelete,
   onEdit,
+  onRemove,
   onView,
 }) {
   return (
@@ -44,23 +48,38 @@ function QuestionActionsMenu({
       >
         View
       </QuestionActionButton>
-      <QuestionActionButton
-        disabled={disabled}
-        icon="edit"
-        label="Edit question"
-        onClick={onEdit}
-      >
-        Edit
-      </QuestionActionButton>
-      <QuestionActionButton
-        danger
-        disabled={disabled}
-        icon="trash"
-        label="Delete question"
-        onClick={onDelete}
-      >
-        Delete
-      </QuestionActionButton>
+      {canEdit && (
+        <QuestionActionButton
+          disabled={disabled}
+          icon="edit"
+          label="Edit question"
+          onClick={onEdit}
+        >
+          Edit
+        </QuestionActionButton>
+      )}
+      {canDelete && (
+        <QuestionActionButton
+          danger
+          disabled={disabled}
+          icon="trash"
+          label="Delete question"
+          onClick={onDelete}
+        >
+          Delete
+        </QuestionActionButton>
+      )}
+      {canRemove && (
+        <QuestionActionButton
+          danger
+          disabled={disabled}
+          icon="close"
+          label="Remove shared question"
+          onClick={onRemove}
+        >
+          Remove
+        </QuestionActionButton>
+      )}
     </div>
   );
 }

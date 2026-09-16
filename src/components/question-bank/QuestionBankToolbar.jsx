@@ -21,13 +21,15 @@ function QuestionBankToolbar({
     <section className="question-bank-toolbar" aria-label="Question bank tools">
       <div className="question-bank-toolbar__primary">
         <QuestionSearchInput onChange={onSearchChange} value={searchTerm} />
-        <Button
-          className="question-bank-toolbar__add"
-          onClick={onAddQuestion}
-        >
-          <Icon name="plus" size={18} />
-          <span>Add Question</span>
-        </Button>
+        {onAddQuestion && (
+          <Button
+            className="question-bank-toolbar__add"
+            onClick={onAddQuestion}
+          >
+            <Icon name="plus" size={18} />
+            <span>Add Question</span>
+          </Button>
+        )}
       </div>
       <QuestionFilters
         classOptions={classOptions}

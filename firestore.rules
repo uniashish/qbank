@@ -26,6 +26,14 @@ service cloud.firestore {
       return /databases/$(database)/documents/schools/$(schoolId)/classSubjects/$(mappingId);
     }
 
+    function questionPath(schoolId, questionId) {
+      return /databases/$(database)/documents/schools/$(schoolId)/questions/$(questionId);
+    }
+
+    function questionSharePath(schoolId, shareId) {
+      return /databases/$(database)/documents/schools/$(schoolId)/questionShares/$(shareId);
+    }
+
     function invitationPath(invitationId) {
       return /databases/$(database)/documents/invitations/$(invitationId);
     }
@@ -939,13 +947,175 @@ service cloud.firestore {
         );
     }
 
-    function canReadQuestion(schoolId) {
+    function questionShareId(questionId, teacherId) {
+      return questionId + "__" + teacherId;
+    }
+
+    function isOwnedActiveQuestion(schoolId, questionId, ownerId) {
+      return exists(questionPath(schoolId, questionId))
+        && get(questionPath(schoolId, questionId)).data.status == "active"
+        && get(questionPath(schoolId, questionId)).data.createdBy.uid == ownerId;
+    }
+
+    function hasActiveQuestionShare(schoolId, questionId) {
+      return exists(questionSharePath(
+          schoolId,
+          questionShareId(questionId, request.auth.uid)
+        ))
+        && get(questionSharePath(
+          schoolId,
+          questionShareId(questionId, request.auth.uid)
+        )).data.questionId == questionId
+        && get(questionSharePath(
+          schoolId,
+          questionShareId(questionId, request.auth.uid)
+        )).data.sharedWithTeacherId == request.auth.uid
+        && get(questionSharePath(
+          schoolId,
+          questionShareId(questionId, request.auth.uid)
+        )).data.status == "active";
+    }
+
+    function canReadQuestion(schoolId, questionId) {
       return isActivePlatformAdmin()
         || isOwnSchool(schoolId)
         || (
           isActiveTeacher()
           && currentUser().schoolId == schoolId
           && resource.data.createdBy.uid == request.auth.uid
+        )
+        || (
+          isActiveTeacher()
+          && currentUser().schoolId == schoolId
+          && resource.data.status == "active"
+          && hasActiveQuestionShare(schoolId, questionId)
+        );
+    }
+
+    function isValidQuestionSharePayload(data, shareId) {
+      return data.keys().hasAll([
+          "questionId",
+          "ownerId",
+          "sharedWithTeacherId",
+          "sharedByTeacherId",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "revokedAt"
+        ])
+        && data.keys().hasOnly([
+          "questionId",
+          "ownerId",
+          "sharedWithTeacherId",
+          "sharedByTeacherId",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "revokedAt"
+        ])
+        && data.questionId is string
+        && data.questionId.size() > 0
+        && data.ownerId is string
+        && data.ownerId.size() > 0
+        && data.sharedWithTeacherId is string
+        && data.sharedWithTeacherId.size() > 0
+        && data.sharedByTeacherId is string
+        && data.sharedByTeacherId.size() > 0
+        && data.ownerId != data.sharedWithTeacherId
+        && data.status in ["active", "revoked"]
+        && shareId == questionShareId(data.questionId, data.sharedWithTeacherId);
+    }
+
+    function isValidQuestionShareCreate(schoolId, shareId) {
+      return isActiveTeacher()
+        && currentUser().schoolId == schoolId
+        && isValidQuestionSharePayload(request.resource.data, shareId)
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.sharedByTeacherId == request.auth.uid
+        && request.resource.data.status == "active"
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.revokedAt == null
+        && isTeacherProfileInSchool(
+          schoolId,
+          request.resource.data.sharedWithTeacherId
+        )
+        && isOwnedActiveQuestion(
+          schoolId,
+          request.resource.data.questionId,
+          request.auth.uid
+        );
+    }
+
+    function hasStableQuestionShareIdentity(shareId) {
+      return isValidQuestionSharePayload(request.resource.data, shareId)
+        && request.resource.data.questionId == resource.data.questionId
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.sharedWithTeacherId
+          == resource.data.sharedWithTeacherId
+        && request.resource.data.sharedByTeacherId
+          == resource.data.sharedByTeacherId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status",
+          "updatedAt",
+          "revokedAt"
+        ]);
+    }
+
+    function isQuestionShareActor(schoolId) {
+      return isActiveTeacher()
+        && currentUser().schoolId == schoolId
+        && (
+          resource.data.ownerId == request.auth.uid
+          || resource.data.sharedWithTeacherId == request.auth.uid
+        );
+    }
+
+    function isValidQuestionShareRevoke(schoolId, shareId) {
+      return hasStableQuestionShareIdentity(shareId)
+        && isQuestionShareActor(schoolId)
+        && resource.data.status == "active"
+        && request.resource.data.status == "revoked"
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.revokedAt == request.time;
+    }
+
+    function isValidQuestionShareReactivate(schoolId, shareId) {
+      return hasStableQuestionShareIdentity(shareId)
+        && isActiveTeacher()
+        && currentUser().schoolId == schoolId
+        && resource.data.ownerId == request.auth.uid
+        && resource.data.status == "revoked"
+        && request.resource.data.status == "active"
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.revokedAt == null
+        && isTeacherProfileInSchool(
+          schoolId,
+          resource.data.sharedWithTeacherId
+        )
+        && isOwnedActiveQuestion(
+          schoolId,
+          resource.data.questionId,
+          request.auth.uid
+        );
+    }
+
+    function isValidQuestionShareUpdate(schoolId, shareId) {
+      return isValidQuestionShareRevoke(schoolId, shareId)
+        || isValidQuestionShareReactivate(schoolId, shareId);
+    }
+
+    function canReadQuestionShare(schoolId) {
+      return isActivePlatformAdmin()
+        || isOwnSchool(schoolId)
+        || (
+          isActiveTeacher()
+          && currentUser().schoolId == schoolId
+          && (
+            resource.data.ownerId == request.auth.uid
+            || resource.data.sharedWithTeacherId == request.auth.uid
+          )
         );
     }
 
@@ -1015,6 +1185,13 @@ service cloud.firestore {
     function isTeacherInOwnSchool() {
       return isActiveSchoolAdmin()
         && resource.data.role == "teacher"
+        && resource.data.schoolId == currentUser().schoolId;
+    }
+
+    function isTeacherPeerInOwnSchool() {
+      return isActiveTeacher()
+        && resource.data.role == "teacher"
+        && resource.data.status == "active"
         && resource.data.schoolId == currentUser().schoolId;
     }
 
@@ -1334,8 +1511,11 @@ service cloud.firestore {
           request.auth.uid == userId
           || isActivePlatformAdmin()
           || isTeacherInOwnSchool()
+          || isTeacherPeerInOwnSchool()
         );
-      allow list: if isActivePlatformAdmin() || isTeacherInOwnSchool();
+      allow list: if isActivePlatformAdmin()
+        || isTeacherInOwnSchool()
+        || isTeacherPeerInOwnSchool();
       allow create: if isValidInviteeProfileCreate(userId);
       allow update: if isValidOwnProfileUpdate(userId);
       allow delete: if false;
@@ -1380,9 +1560,16 @@ service cloud.firestore {
     }
 
     match /schools/{schoolId}/questions/{questionId} {
-      allow get, list: if canReadQuestion(schoolId);
+      allow get, list: if canReadQuestion(schoolId, questionId);
       allow create: if isValidQuestionCreate(schoolId, questionId);
       allow update: if isValidQuestionUpdate(schoolId, questionId);
+      allow delete: if false;
+    }
+
+    match /schools/{schoolId}/questionShares/{shareId} {
+      allow get, list: if canReadQuestionShare(schoolId);
+      allow create: if isValidQuestionShareCreate(schoolId, shareId);
+      allow update: if isValidQuestionShareUpdate(schoolId, shareId);
       allow delete: if false;
     }
 

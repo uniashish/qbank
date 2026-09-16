@@ -29,10 +29,28 @@ function QuestionList({
   isLoading = false,
   onDelete,
   onEdit,
+  onRemove,
+  onSelectionChange,
   onView,
   questions = [],
+  selectedIds = [],
+  selectionMode = false,
   totalQuestionCount = 0,
 }) {
+  const selectedIdSet = new Set(selectedIds);
+
+  function handleSelectionChange(questionId, isSelected) {
+    const nextSelectedIds = new Set(selectedIds);
+
+    if (isSelected) {
+      nextSelectedIds.add(questionId);
+    } else {
+      nextSelectedIds.delete(questionId);
+    }
+
+    onSelectionChange?.([...nextSelectedIds]);
+  }
+
   if (isLoading || error) {
     return <QuestionBankState error={error} isLoading={isLoading} />;
   }
@@ -54,6 +72,11 @@ function QuestionList({
         <table className="question-bank-table">
           <thead>
             <tr>
+              {selectionMode && (
+                <th className="question-bank-selection-column" scope="col">
+                  Select
+                </th>
+              )}
               <th scope="col">Question</th>
               <th scope="col">Type</th>
               <th scope="col">Class</th>
@@ -69,11 +92,15 @@ function QuestionList({
             {questions.map((question) => (
               <QuestionRow
                 isActionLoading={actionQuestionId === question.id}
+                isSelected={selectedIdSet.has(question.id)}
                 key={question.id}
                 onDelete={onDelete}
                 onEdit={onEdit}
+                onRemove={onRemove}
+                onSelectionChange={handleSelectionChange}
                 onView={onView}
                 question={question}
+                selectionMode={selectionMode}
               />
             ))}
           </tbody>
@@ -84,11 +111,15 @@ function QuestionList({
         {questions.map((question) => (
           <QuestionRow
             isActionLoading={actionQuestionId === question.id}
+            isSelected={selectedIdSet.has(question.id)}
             key={question.id}
             onDelete={onDelete}
             onEdit={onEdit}
+            onRemove={onRemove}
+            onSelectionChange={handleSelectionChange}
             onView={onView}
             question={question}
+            selectionMode={selectionMode}
             variant="card"
           />
         ))}

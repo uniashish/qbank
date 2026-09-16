@@ -9,6 +9,7 @@ import {
   where,
 } from "firebase/firestore";
 
+import { getActiveQuestionSharesForRecipient } from "../features/question-sharing/questionSharingService.js";
 import { QUESTION_TYPES } from "../features/question-designer/constants/questionTypes.js";
 import { createPersistableMatchPairs } from "../features/question-designer/utils/matchPairHelpers.js";
 import { cloneRichTextContent } from "../features/question-designer/utils/richTextContent.js";
@@ -23,6 +24,20 @@ const SCHOOLS_COLLECTION = "schools";
 const QUESTIONS_COLLECTION = "questions";
 const ACTIVE_STATUS = "active";
 const DELETED_STATUS = "deleted";
+
+const OWNER_ACCESS = {
+  canDelete: true,
+  canEdit: true,
+  canRemove: false,
+  type: "owner",
+};
+
+const SHARED_ACCESS = {
+  canDelete: false,
+  canEdit: false,
+  canRemove: true,
+  type: "shared",
+};
 
 export const QUESTION_BANK_ERROR_CODES = {
   INVALID_QUESTION: "INVALID_QUESTION",
@@ -97,6 +112,26 @@ function sortByNewestCreated(firstQuestion, secondQuestion) {
     getSortableTimestamp(secondQuestion.createdAt) -
     getSortableTimestamp(firstQuestion.createdAt)
   );
+}
+
+function withOwnerAccess(question) {
+  return {
+    ...question,
+    access: OWNER_ACCESS,
+    shareInfo: null,
+  };
+}
+
+function withSharedAccess(question, share) {
+  return {
+    ...question,
+    access: SHARED_ACCESS,
+    shareInfo: {
+      ownerId: share.ownerId,
+      ownerName: question.createdBy?.name ?? "Question owner",
+      shareId: share.id,
+    },
+  };
 }
 
 function createPersistedAnswerData(draft) {
@@ -197,7 +232,7 @@ function createQuestionUpdatePayload({ draft, image }) {
   };
 }
 
-export async function getTeacherQuestions(schoolId, teacherId) {
+export async function getOwnedTeacherQuestions(schoolId, teacherId) {
   if (!teacherId) {
     throw createQuestionBankError(
       QUESTION_BANK_ERROR_CODES.MISSING_TEACHER,
@@ -214,7 +249,58 @@ export async function getTeacherQuestions(schoolId, teacherId) {
 
   return questionsSnapshot.docs
     .map(normalizeQuestionSnapshot)
+    .map(withOwnerAccess)
     .sort(sortByNewestCreated);
+}
+
+export async function getSharedTeacherQuestions(schoolId, teacherId) {
+  if (!teacherId) {
+    throw createQuestionBankError(
+      QUESTION_BANK_ERROR_CODES.MISSING_TEACHER,
+      "Your teacher profile could not be verified.",
+    );
+  }
+
+  const shares = await getActiveQuestionSharesForRecipient({
+    schoolId,
+    teacherId,
+  });
+  const questionSnapshots = await Promise.all(
+    shares.map((share) => getDoc(getQuestionDocRef(schoolId, share.questionId))),
+  );
+
+  return questionSnapshots
+    .map((questionSnapshot, index) => {
+      if (!questionSnapshot.exists()) {
+        return null;
+      }
+
+      const question = normalizeQuestionSnapshot(questionSnapshot);
+
+      if (question.status !== ACTIVE_STATUS) {
+        return null;
+      }
+
+      return withSharedAccess(question, shares[index]);
+    })
+    .filter(Boolean)
+    .sort(sortByNewestCreated);
+}
+
+export async function getTeacherQuestions(
+  schoolId,
+  teacherId,
+  { ownedOnly = false } = {},
+) {
+  const ownedQuestions = await getOwnedTeacherQuestions(schoolId, teacherId);
+
+  if (ownedOnly) {
+    return ownedQuestions;
+  }
+
+  const sharedQuestions = await getSharedTeacherQuestions(schoolId, teacherId);
+
+  return [...ownedQuestions, ...sharedQuestions].sort(sortByNewestCreated);
 }
 
 export async function getQuestionById(schoolId, questionId) {

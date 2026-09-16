@@ -5,8 +5,9 @@ import {
   getQuestionTypeOption,
   QUESTION_TYPE_OPTIONS,
 } from "../features/question-designer/constants/questionTypes.js";
+import { getClassesForSchool } from "../services/classService.js";
 import { getTeacherQuestions } from "../services/questionBankService.js";
-import { getAssignmentsForCurrentTeacher } from "../services/teacherAssignmentService.js";
+import { getSubjectsForSchool } from "../services/subjectService.js";
 import {
   filterQuestionBankQuestions,
   hasQuestionBankFilters,
@@ -28,33 +29,54 @@ function resolveDifficultyLabel(difficulty) {
   );
 }
 
-function createAcademicLookups(assignmentGroups = []) {
-  const classOptions = assignmentGroups.map((group) => ({
-    id: group.classRecord.id,
-    label: group.classRecord.name,
-    record: group.classRecord,
-  }));
-  const classById = new Map(
-    classOptions.map((classOption) => [classOption.id, classOption.record]),
-  );
-  const subjectsByClassId = new Map();
-  const subjectById = new Map();
-
-  assignmentGroups.forEach((group) => {
-    subjectsByClassId.set(group.classRecord.id, group.subjects);
-    group.subjects.forEach((subject) => {
-      if (!subjectById.has(subject.id)) {
-        subjectById.set(subject.id, subject);
-      }
-    });
-  });
+function createAcademicLookups(classes = [], subjects = []) {
+  const classById = new Map(classes.map((classRecord) => [classRecord.id, classRecord]));
+  const subjectById = new Map(subjects.map((subject) => [subject.id, subject]));
 
   return {
     classById,
-    classOptions,
     subjectById,
-    subjectsByClassId,
   };
+}
+
+function createClassOptions(questions = [], classById) {
+  const classIds = [...new Set(questions.map((question) => question.classId))]
+    .filter(Boolean)
+    .sort((firstClassId, secondClassId) => {
+      const firstClassName = classById.get(firstClassId)?.name ?? firstClassId;
+      const secondClassName = classById.get(secondClassId)?.name ?? secondClassId;
+
+      return firstClassName.localeCompare(secondClassName);
+    });
+
+  return classIds.map((classId) => ({
+    id: classId,
+    label: classById.get(classId)?.name ?? "Unavailable class",
+    record: classById.get(classId) ?? null,
+  }));
+}
+
+function createSubjectOptions(questions = [], subjectById, classId = "") {
+  const subjectIds = [
+    ...new Set(
+      questions
+        .filter((question) => !classId || question.classId === classId)
+        .map((question) => question.subjectId),
+    ),
+  ]
+    .filter(Boolean)
+    .sort((firstSubjectId, secondSubjectId) => {
+      const firstSubjectName = subjectById.get(firstSubjectId)?.name ?? firstSubjectId;
+      const secondSubjectName =
+        subjectById.get(secondSubjectId)?.name ?? secondSubjectId;
+
+      return firstSubjectName.localeCompare(secondSubjectName);
+    });
+
+  return subjectIds.map((subjectId) => ({
+    id: subjectId,
+    name: subjectById.get(subjectId)?.name ?? "Unavailable subject",
+  }));
 }
 
 function createTopicOptions(questions = []) {
@@ -80,33 +102,36 @@ function enrichQuestion(question, academicLookups) {
   };
 }
 
-export function useQuestionBank() {
+export function useQuestionBank({ ownedOnly = false } = {}) {
   const { loading: isAuthLoading, userProfile } = useAuth();
   const [loadedQuestionBank, setLoadedQuestionBank] = useState({
-    assignmentGroups: [],
+    classes: [],
     error: "",
     questions: [],
     requestKey: "",
+    subjects: [],
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const schoolId = userProfile?.schoolId ?? "";
   const teacherId = userProfile?.uid ?? "";
   const requestKey = !isAuthLoading && schoolId && teacherId
-    ? `${schoolId}:${teacherId}`
+    ? `${schoolId}:${teacherId}:${ownedOnly ? "owned" : "all"}`
     : "";
 
   const loadQuestionBank = useCallback(async () => {
-    const [loadedQuestions, loadedAssignmentGroups] = await Promise.all([
-      getTeacherQuestions(schoolId, teacherId),
-      getAssignmentsForCurrentTeacher(schoolId, teacherId),
+    const [loadedQuestions, loadedClasses, loadedSubjects] = await Promise.all([
+      getTeacherQuestions(schoolId, teacherId, { ownedOnly }),
+      getClassesForSchool(schoolId),
+      getSubjectsForSchool(schoolId),
     ]);
 
     return {
-      assignmentGroups: loadedAssignmentGroups,
+      classes: loadedClasses,
       questions: loadedQuestions,
+      subjects: loadedSubjects,
     };
-  }, [schoolId, teacherId]);
+  }, [ownedOnly, schoolId, teacherId]);
 
   const refreshQuestions = useCallback(async () => {
     if (!schoolId || !teacherId) {
@@ -150,10 +175,11 @@ export function useQuestionBank() {
 
         if (isMounted) {
           setLoadedQuestionBank({
-            assignmentGroups: [],
+            classes: [],
             error: "Questions could not be loaded.",
             questions: [],
             requestKey,
+            subjects: [],
           });
         }
       });
@@ -172,8 +198,12 @@ export function useQuestionBank() {
       : loadedQuestionBank.error;
 
   const academicLookups = useMemo(
-    () => createAcademicLookups(loadedQuestionBank.assignmentGroups),
-    [loadedQuestionBank.assignmentGroups],
+    () =>
+      createAcademicLookups(
+        loadedQuestionBank.classes,
+        loadedQuestionBank.subjects,
+      ),
+    [loadedQuestionBank.classes, loadedQuestionBank.subjects],
   );
   const enrichedQuestions = useMemo(
     () =>
@@ -186,15 +216,19 @@ export function useQuestionBank() {
     () => createTopicOptions(enrichedQuestions),
     [enrichedQuestions],
   );
-  const subjectOptions = useMemo(() => {
-    if (filters.classId) {
-      return academicLookups.subjectsByClassId.get(filters.classId) ?? [];
-    }
-
-    return [...academicLookups.subjectById.values()].sort((firstSubject, secondSubject) =>
-      firstSubject.name.localeCompare(secondSubject.name),
-    );
-  }, [academicLookups, filters.classId]);
+  const classOptions = useMemo(
+    () => createClassOptions(enrichedQuestions, academicLookups.classById),
+    [academicLookups.classById, enrichedQuestions],
+  );
+  const subjectOptions = useMemo(
+    () =>
+      createSubjectOptions(
+        enrichedQuestions,
+        academicLookups.subjectById,
+        filters.classId,
+      ),
+    [academicLookups.subjectById, enrichedQuestions, filters.classId],
+  );
   const filteredQuestions = useMemo(
     () =>
       filterQuestionBankQuestions(enrichedQuestions, {
@@ -215,9 +249,9 @@ export function useQuestionBank() {
 
         if (filterName === "classId") {
           const validSubjectIds = new Set(
-            (academicLookups.subjectsByClassId.get(value) ?? []).map(
-              (subject) => subject.id,
-            ),
+            enrichedQuestions
+              .filter((question) => !value || question.classId === value)
+              .map((question) => question.subjectId),
           );
 
           if (!value || !validSubjectIds.has(currentFilters.subjectId)) {
@@ -228,7 +262,7 @@ export function useQuestionBank() {
         return nextFilters;
       });
     },
-    [academicLookups.subjectsByClassId],
+    [enrichedQuestions],
   );
 
   const clearFilters = useCallback(() => {
@@ -237,7 +271,7 @@ export function useQuestionBank() {
   }, []);
 
   return {
-    classOptions: academicLookups.classOptions,
+    classOptions,
     clearFilters,
     difficultyOptions: DIFFICULTY_LEVEL_OPTIONS,
     error,

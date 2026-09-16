@@ -7,6 +7,7 @@ import QuestionPreviewDialog from "../../components/question-bank/QuestionPrevie
 import PageContainer from "../../components/layout/PageContainer.jsx";
 import QuestionDesigner from "../../features/question-designer/components/QuestionDesigner.jsx";
 import { saveQuestion } from "../../features/question-designer/persistence/saveQuestion.js";
+import { removeSharedQuestion } from "../../features/question-sharing/questionSharingService.js";
 import { useAuth } from "../../hooks/useAuth.js";
 import { useQuestionBank } from "../../hooks/useQuestionBank.js";
 import {
@@ -108,6 +109,11 @@ function TeacherQuestionBankPage() {
 
   const handleEditQuestion = useCallback(
     async (question) => {
+      if (question.access?.canEdit === false) {
+        setActionError("Shared questions cannot be edited.");
+        return;
+      }
+
       const freshQuestion = await loadFreshQuestion(question.id);
 
       if (freshQuestion) {
@@ -123,9 +129,51 @@ function TeacherQuestionBankPage() {
   );
 
   const handleDeleteQuestion = useCallback((question) => {
+    if (question.access?.canDelete === false) {
+      setActionError("Shared questions cannot be deleted.");
+      return;
+    }
+
     setDeleteError("");
     setDeleteQuestion(question);
   }, []);
+
+  const handleRemoveSharedQuestion = useCallback(
+    async (question) => {
+      const shareId = question.shareInfo?.shareId;
+
+      if (!shareId) {
+        setActionError("This shared question could not be removed.");
+        return;
+      }
+
+      setActionError("");
+      setActiveQuestionId(question.id);
+
+      try {
+        await removeSharedQuestion({ schoolId, shareId });
+        await refreshQuestions();
+        setSaveState({
+          message: "Shared question removed.",
+          status: "success",
+        });
+      } catch (removeError) {
+        console.error("[Question bank] Failed to remove shared question.", {
+          error: removeError,
+          questionId: question.id,
+          schoolId,
+          shareId,
+        });
+
+        setActionError(
+          removeError?.message || "Shared question could not be removed.",
+        );
+      } finally {
+        setActiveQuestionId("");
+      }
+    },
+    [refreshQuestions, schoolId],
+  );
 
   const handleCancelDelete = useCallback(() => {
     if (isDeleteInFlight) {
@@ -271,6 +319,7 @@ function TeacherQuestionBankPage() {
             isLoading={isLoading}
             onDelete={handleDeleteQuestion}
             onEdit={handleEditQuestion}
+            onRemove={handleRemoveSharedQuestion}
             onView={handleViewQuestion}
             questions={questions}
             totalQuestionCount={totalQuestionCount}

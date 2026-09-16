@@ -17,6 +17,11 @@ const teacherNavItems = [
     label: "Exam Papers",
     path: "/teacher/exam-papers",
   },
+  {
+    icon: "link",
+    label: "Share Questions",
+    path: "/teacher/share-questions",
+  },
 ];
 
 function TeacherLayout() {

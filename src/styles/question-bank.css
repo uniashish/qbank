@@ -3,7 +3,8 @@
 .question-bank-table-wrap,
 .question-bank-card,
 .question-preview-dialog,
-.delete-question-dialog {
+.delete-question-dialog,
+.share-questions-dialog {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -197,6 +198,38 @@
   border-bottom: 0;
 }
 
+.question-bank-selection-column,
+.question-bank-selection-cell {
+  width: 72px;
+}
+
+.question-bank-selection-cell {
+  text-align: center;
+}
+
+.question-selection-checkbox {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.question-selection-checkbox input,
+.teacher-multi-select__teacher input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
+.question-bank-question {
+  min-width: 0;
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+}
+
 .question-bank-prompt {
   min-width: 0;
   max-width: 360px;
@@ -245,6 +278,13 @@
   color: var(--color-danger);
   border-color: var(--color-danger-border);
   background: var(--color-danger-bg);
+}
+
+.question-bank-badge--shared {
+  gap: 5px;
+  color: var(--color-accent);
+  border-color: rgba(15, 118, 110, 0.24);
+  background: var(--color-accent-soft);
 }
 
 .question-bank-actions {
@@ -371,6 +411,17 @@
   font-weight: 850;
 }
 
+.question-preview-dialog__share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--color-text-secondary);
+  font-size: 0.86rem;
+  font-weight: 760;
+}
+
 .question-preview-dialog__body {
   min-height: 0;
   overflow: auto;
@@ -451,6 +502,179 @@
   background: #991b1b;
 }
 
+.share-question-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.share-question-toolbar__summary {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 780;
+}
+
+.share-question-toolbar__summary strong {
+  color: var(--color-text);
+  font-size: 1.05rem;
+}
+
+.share-question-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.share-question-toolbar__actions .button {
+  width: auto;
+  min-width: 128px;
+}
+
+.share-questions-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 680px);
+  max-height: min(720px, calc(100dvh - 48px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.share-questions-dialog:focus {
+  outline: none;
+}
+
+.share-questions-dialog__header,
+.share-questions-dialog__actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px;
+}
+
+.share-questions-dialog__header {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.share-questions-dialog__header h2,
+.share-questions-dialog__header p {
+  margin: 0;
+}
+
+.share-questions-dialog__header h2 {
+  color: var(--color-text);
+  font-size: 1.28rem;
+  line-height: 1.2;
+  font-weight: 850;
+}
+
+.share-questions-dialog__header p:not(.question-designer-header__eyebrow) {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.share-questions-dialog__body {
+  min-height: 0;
+  display: grid;
+  gap: 12px;
+  overflow: auto;
+  padding: 18px 22px;
+}
+
+.share-questions-dialog__actions {
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-border);
+}
+
+.share-questions-dialog__actions .button {
+  width: auto;
+  min-width: 124px;
+}
+
+.teacher-multi-select {
+  display: grid;
+  gap: 10px;
+}
+
+.teacher-multi-select__empty {
+  padding: 22px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  text-align: center;
+  font-weight: 760;
+}
+
+.teacher-multi-select__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.teacher-multi-select__teacher {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.teacher-multi-select__teacher span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.teacher-multi-select__teacher strong,
+.teacher-multi-select__teacher small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teacher-multi-select__teacher strong {
+  color: var(--color-text);
+  font-size: 0.94rem;
+  font-weight: 820;
+}
+
+.teacher-multi-select__teacher small {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 680;
+}
+
+.teacher-multi-select__status {
+  color: var(--color-success);
+  font-size: 0.8rem;
+  font-weight: 820;
+  white-space: nowrap;
+}
+
+.teacher-multi-select__revoke {
+  width: auto;
+  min-width: 86px;
+  padding-inline: 12px;
+}
+
 @media (max-width: 1180px) {
   .question-bank-filters {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -471,7 +695,8 @@
     padding: 16px;
   }
 
-  .question-bank-toolbar__primary {
+  .question-bank-toolbar__primary,
+  .share-question-toolbar {
     display: grid;
   }
 
@@ -532,12 +757,37 @@
     padding: 18px;
   }
 
+  .share-question-toolbar__actions,
   .delete-question-dialog__actions {
     display: grid;
   }
 
+  .share-question-toolbar__actions .button,
   .delete-question-dialog__actions .button {
     width: 100%;
+  }
+
+  .share-questions-dialog {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .share-questions-dialog__header,
+  .share-questions-dialog__body,
+  .share-questions-dialog__actions {
+    padding-inline: 16px;
+  }
+
+  .share-questions-dialog__actions,
+  .teacher-multi-select__row {
+    display: grid;
+  }
+
+  .teacher-multi-select__status,
+  .teacher-multi-select__revoke {
+    justify-self: start;
   }
 }
 

@@ -4,6 +4,7 @@ import Icon from "../common/Icon.jsx";
 import { DIFFICULTY_LEVEL_OPTIONS } from "../../features/question-designer/constants/difficultyLevels.js";
 import { getQuestionTypeOption } from "../../features/question-designer/constants/questionTypes.js";
 import QuestionReviewStep from "../../features/question-designer/components/review/QuestionReviewStep.jsx";
+import SharedQuestionBadge from "../../features/question-sharing/SharedQuestionBadge.jsx";
 
 function resolveDifficultyLabel(difficulty) {
   return (
@@ -92,6 +93,14 @@ function QuestionPreviewDialog({ onClose, question }) {
           <div>
             <p className="question-designer-header__eyebrow">Question Preview</p>
             <h2 id="question-preview-title">View Question</h2>
+            {question.access?.type === "shared" && (
+              <div className="question-preview-dialog__share">
+                <SharedQuestionBadge ownerName={question.shareInfo?.ownerName} />
+                {question.shareInfo?.ownerName && (
+                  <span>Owner: {question.shareInfo.ownerName}</span>
+                )}
+              </div>
+            )}
           </div>
           <button
             aria-label="Close question preview"

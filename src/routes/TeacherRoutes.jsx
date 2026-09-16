@@ -7,6 +7,7 @@ import TeacherLayout from "../layouts/TeacherLayout.jsx";
 import TeacherDashboardPage from "../pages/teacher/TeacherDashboardPage.jsx";
 import TeacherPlaceholderPage from "../pages/teacher/TeacherPlaceholderPage.jsx";
 import TeacherQuestionBankPage from "../pages/teacher/TeacherQuestionBankPage.jsx";
+import ShareQuestionsPage from "../features/question-sharing/ShareQuestionsPage.jsx";
 
 export function getTeacherRoutes() {
   return (
@@ -31,6 +32,7 @@ export function getTeacherRoutes() {
           />
         }
       />
+      <Route path="share-questions" element={<ShareQuestionsPage />} />
     </Route>
   );
 }
