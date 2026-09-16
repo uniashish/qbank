@@ -7,9 +7,18 @@ import {
 } from "../editors/questionTypeEditorValidation.js";
 import { syncBlankAnswers } from "../editors/fill-blanks/fillBlanksUtils.js";
 import {
+  MAX_MATCH_FOLLOWING_PAIRS,
+  MIN_MATCH_FOLLOWING_PAIRS,
+} from "../editors/match-following/matchFollowingValidation.js";
+import {
   MAX_MULTIPLE_CHOICE_OPTIONS,
   MIN_MULTIPLE_CHOICE_OPTIONS,
 } from "../editors/multiple-choice/multipleChoiceValidation.js";
+import {
+  createMatchPair,
+  getMatchPairIdCounterSeed,
+  normalizeMatchPairs,
+} from "../utils/matchPairHelpers.js";
 import {
   isQuestionDetailsValid,
   validateQuestionDetails,
@@ -61,6 +70,12 @@ function createInitialMultipleChoiceState() {
   };
 }
 
+function createInitialMatchFollowingState() {
+  return {
+    pairs: normalizeMatchPairs([], { minPairs: MIN_MATCH_FOLLOWING_PAIRS }),
+  };
+}
+
 function createInitialTrueFalseState() {
   return {
     correctAnswer: null,
@@ -74,10 +89,20 @@ function createInitialShortAnswerState() {
   };
 }
 
+function createInitialLongAnswerState() {
+  return {
+    modelAnswer: null,
+    questionContent: null,
+    suggestedWordCount: null,
+  };
+}
+
 export function createInitialQuestionDesignerState(overrides = {}) {
   return {
     ...INITIAL_DESIGNER_STATE,
     fillBlanks: createInitialFillBlanksState(),
+    longAnswer: createInitialLongAnswerState(),
+    matchFollowing: createInitialMatchFollowingState(),
     multipleChoice: createInitialMultipleChoiceState(),
     questionImage: createInitialQuestionImageState(),
     shortAnswer: createInitialShortAnswerState(),
@@ -132,6 +157,14 @@ function getMultipleChoiceState(question = {}) {
   };
 }
 
+function getMatchFollowingState(question = {}) {
+  return {
+    pairs: normalizeMatchPairs(question.answerData?.pairs, {
+      minPairs: MIN_MATCH_FOLLOWING_PAIRS,
+    }),
+  };
+}
+
 function getTrueFalseState(question = {}) {
   const correctAnswer = question.answerData?.correctAnswer;
 
@@ -148,6 +181,14 @@ function getShortAnswerState(question = {}) {
   };
 }
 
+function getLongAnswerState(question = {}) {
+  return {
+    modelAnswer: question.answerData?.modelAnswer ?? null,
+    questionContent: question.answerData?.questionContent ?? null,
+    suggestedWordCount: question.answerData?.suggestedWordCount ?? null,
+  };
+}
+
 function getMultipleChoiceOptionCounterSeed(options = []) {
   return options.reduce((highestOptionNumber, option, index) => {
     const optionNumber = Number(String(option.id ?? "").replace(/^opt-/, ""));
@@ -161,6 +202,8 @@ function getMultipleChoiceOptionCounterSeed(options = []) {
 function hasSupportedQuestionTypeEditor(questionType) {
   return (
     questionType === QUESTION_TYPES.FILL_BLANKS ||
+    questionType === QUESTION_TYPES.LONG_ANSWER ||
+    questionType === QUESTION_TYPES.MATCH_FOLLOWING ||
     questionType === QUESTION_TYPES.MULTIPLE_CHOICE ||
     questionType === QUESTION_TYPES.SHORT_ANSWER ||
     questionType === QUESTION_TYPES.TRUE_FALSE
@@ -178,6 +221,8 @@ function createQuestionDesignerStateFromQuestion(question, mode) {
     difficulty: question.difficulty ?? null,
     fillBlanks: getFillBlanksState(question),
     instructions: question.instructions ?? "",
+    longAnswer: getLongAnswerState(question),
+    matchFollowing: getMatchFollowingState(question),
     marks: question.marks ?? 1,
     mode,
     multipleChoice: getMultipleChoiceState(question),
@@ -193,6 +238,7 @@ function createQuestionDesignerStateFromQuestion(question, mode) {
 
 export function useQuestionDesigner({ initialQuestion = null, mode = "create" } = {}) {
   const imagePreviewUrlRef = useRef(null);
+  const matchPairIdCounterRef = useRef(MIN_MATCH_FOLLOWING_PAIRS);
   const optionIdCounterRef = useRef(INITIAL_MULTIPLE_CHOICE_OPTIONS.length);
   const [designerState, setDesignerState] = useState(() =>
     createQuestionDesignerStateFromQuestion(initialQuestion, mode),
@@ -215,6 +261,9 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
     );
     optionIdCounterRef.current = getMultipleChoiceOptionCounterSeed(
       nextDesignerState.multipleChoice.options,
+    );
+    matchPairIdCounterRef.current = getMatchPairIdCounterSeed(
+      nextDesignerState.matchFollowing.pairs,
     );
     setDesignerState(nextDesignerState);
   }, [initialQuestion, mode, revokeQuestionImagePreview]);
@@ -393,6 +442,64 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
     }));
   }, []);
 
+  const addMatchFollowingPair = useCallback(() => {
+    setDesignerState((currentState) => {
+      if (currentState.matchFollowing.pairs.length >= MAX_MATCH_FOLLOWING_PAIRS) {
+        return currentState;
+      }
+
+      matchPairIdCounterRef.current += 1;
+
+      return {
+        ...currentState,
+        matchFollowing: {
+          ...currentState.matchFollowing,
+          pairs: [
+            ...currentState.matchFollowing.pairs,
+            createMatchPair(matchPairIdCounterRef.current),
+          ],
+        },
+      };
+    });
+  }, []);
+
+  const updateMatchFollowingPair = useCallback((pairId, fieldName, value) => {
+    if (fieldName !== "left" && fieldName !== "right") {
+      return;
+    }
+
+    setDesignerState((currentState) => ({
+      ...currentState,
+      matchFollowing: {
+        ...currentState.matchFollowing,
+        pairs: currentState.matchFollowing.pairs.map((pair) =>
+          pair.id === pairId ? { ...pair, [fieldName]: value } : pair,
+        ),
+      },
+    }));
+  }, []);
+
+  const removeMatchFollowingPair = useCallback((pairId) => {
+    setDesignerState((currentState) => {
+      if (
+        currentState.matchFollowing.pairs.length <= MIN_MATCH_FOLLOWING_PAIRS ||
+        !currentState.matchFollowing.pairs.some((pair) => pair.id === pairId)
+      ) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        matchFollowing: {
+          ...currentState.matchFollowing,
+          pairs: currentState.matchFollowing.pairs.filter(
+            (pair) => pair.id !== pairId,
+          ),
+        },
+      };
+    });
+  }, []);
+
   const setCorrectTrueFalseAnswer = useCallback((correctAnswer) => {
     setDesignerState((currentState) => ({
       ...currentState,
@@ -416,6 +523,30 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
       shortAnswer: {
         ...currentState.shortAnswer,
         [fieldName]: content,
+      },
+    }));
+  }, []);
+
+  const updateLongAnswerContent = useCallback((fieldName, content) => {
+    if (fieldName !== "questionContent" && fieldName !== "modelAnswer") {
+      return;
+    }
+
+    setDesignerState((currentState) => ({
+      ...currentState,
+      longAnswer: {
+        ...currentState.longAnswer,
+        [fieldName]: content,
+      },
+    }));
+  }, []);
+
+  const updateLongAnswerSuggestedWordCount = useCallback((value) => {
+    setDesignerState((currentState) => ({
+      ...currentState,
+      longAnswer: {
+        ...currentState.longAnswer,
+        suggestedWordCount: String(value ?? "").trim() ? value : null,
       },
     }));
   }, []);
@@ -557,7 +688,9 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
   const questionTypeEditorActions = useMemo(
     () => ({
       addFillBlankAcceptedAnswer,
+      addMatchFollowingPair,
       addMultipleChoiceOption,
+      removeMatchFollowingPair,
       removeMultipleChoiceOption,
       removeFillBlankAcceptedAnswer,
       removeQuestionImage,
@@ -566,12 +699,17 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
       setQuestionImage,
       setQuestionImageError,
       updateFillBlankAcceptedAnswer,
+      updateLongAnswerContent,
+      updateLongAnswerSuggestedWordCount,
+      updateMatchFollowingPair,
       updateMultipleChoiceOption,
       updateShortAnswerContent,
     }),
     [
       addFillBlankAcceptedAnswer,
+      addMatchFollowingPair,
       addMultipleChoiceOption,
+      removeMatchFollowingPair,
       removeMultipleChoiceOption,
       removeFillBlankAcceptedAnswer,
       removeQuestionImage,
@@ -580,6 +718,9 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
       setQuestionImage,
       setQuestionImageError,
       updateFillBlankAcceptedAnswer,
+      updateLongAnswerContent,
+      updateLongAnswerSuggestedWordCount,
+      updateMatchFollowingPair,
       updateMultipleChoiceOption,
       updateShortAnswerContent,
     ],

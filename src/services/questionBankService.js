@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 
 import { QUESTION_TYPES } from "../features/question-designer/constants/questionTypes.js";
+import { createPersistableMatchPairs } from "../features/question-designer/utils/matchPairHelpers.js";
 import { cloneRichTextContent } from "../features/question-designer/utils/richTextContent.js";
 import {
   deleteQuestionImage,
@@ -110,6 +111,13 @@ function createPersistedAnswerData(draft) {
         })),
       };
 
+    case QUESTION_TYPES.LONG_ANSWER:
+      return {
+        modelAnswer: cloneRichTextContent(draft.answerData.modelAnswer),
+        questionContent: cloneRichTextContent(draft.answerData.questionContent),
+        suggestedWordCount: draft.answerData.suggestedWordCount ?? null,
+      };
+
     case QUESTION_TYPES.MULTIPLE_CHOICE:
       return {
         correctOptionId: draft.answerData.correctOptionId,
@@ -117,6 +125,11 @@ function createPersistedAnswerData(draft) {
           id: option.id,
           text: trimText(option.text),
         })),
+      };
+
+    case QUESTION_TYPES.MATCH_FOLLOWING:
+      return {
+        pairs: createPersistableMatchPairs(draft.answerData.pairs),
       };
 
     case QUESTION_TYPES.SHORT_ANSWER:

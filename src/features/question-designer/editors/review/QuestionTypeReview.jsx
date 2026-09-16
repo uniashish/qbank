@@ -1,6 +1,8 @@
 import { QUESTION_TYPES } from "../../constants/questionTypes.js";
 import ReviewSection from "../../components/review/ReviewSection.jsx";
 import FillBlanksReview from "./fill-blanks/FillBlanksReview.jsx";
+import LongAnswerReview from "./long-answer/LongAnswerReview.jsx";
+import MatchFollowingReview from "./match-following/MatchFollowingReview.jsx";
 import MultipleChoiceReview from "./multiple-choice/MultipleChoiceReview.jsx";
 import ShortAnswerReview from "./short-answer/ShortAnswerReview.jsx";
 import TrueFalseReview from "./true-false/TrueFalseReview.jsx";
@@ -23,8 +25,14 @@ function QuestionTypeReview({ questionDraft }) {
     case QUESTION_TYPES.FILL_BLANKS:
       return <FillBlanksReview answerData={questionDraft.answerData} />;
 
+    case QUESTION_TYPES.LONG_ANSWER:
+      return <LongAnswerReview answerData={questionDraft.answerData} />;
+
     case QUESTION_TYPES.MULTIPLE_CHOICE:
       return <MultipleChoiceReview answerData={questionDraft.answerData} />;
+
+    case QUESTION_TYPES.MATCH_FOLLOWING:
+      return <MatchFollowingReview answerData={questionDraft.answerData} />;
 
     case QUESTION_TYPES.SHORT_ANSWER:
       return <ShortAnswerReview answerData={questionDraft.answerData} />;

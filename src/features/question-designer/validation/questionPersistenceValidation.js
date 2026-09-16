@@ -7,6 +7,14 @@ import {
   hasFillBlanksValidationErrors,
   validateFillBlanks,
 } from "../editors/fill-blanks/fillBlanksValidation.js";
+import {
+  hasLongAnswerValidationErrors,
+  validateLongAnswer,
+} from "../editors/long-answer/longAnswerValidation.js";
+import {
+  hasMatchFollowingValidationErrors,
+  validateMatchFollowing,
+} from "../editors/match-following/matchFollowingValidation.js";
 import { validateTrueFalse } from "../editors/true-false/trueFalseValidation.js";
 import {
   hasShortAnswerValidationErrors,
@@ -18,6 +26,8 @@ const MAX_MULTIPLE_CHOICE_OPTIONS = 8;
 const VALID_DIFFICULTIES = new Set(Object.values(DIFFICULTY_LEVELS));
 const VALID_PERSISTED_QUESTION_TYPES = new Set([
   QUESTION_TYPES.FILL_BLANKS,
+  QUESTION_TYPES.LONG_ANSWER,
+  QUESTION_TYPES.MATCH_FOLLOWING,
   QUESTION_TYPES.MULTIPLE_CHOICE,
   QUESTION_TYPES.SHORT_ANSWER,
   QUESTION_TYPES.TRUE_FALSE,
@@ -132,6 +142,38 @@ function validateShortAnswerData(answerData, errors) {
   }
 }
 
+function validateLongAnswerData(answerData, errors) {
+  const longAnswerErrors = validateLongAnswer(answerData);
+
+  if (!hasLongAnswerValidationErrors(longAnswerErrors)) {
+    return;
+  }
+
+  if (longAnswerErrors.questionContent) {
+    errors.questionContent = longAnswerErrors.questionContent;
+  }
+
+  if (longAnswerErrors.modelAnswer) {
+    errors.modelAnswer = longAnswerErrors.modelAnswer;
+  }
+
+  if (longAnswerErrors.suggestedWordCount) {
+    errors.suggestedWordCount = longAnswerErrors.suggestedWordCount;
+  }
+}
+
+function validateMatchFollowingAnswerData(answerData, errors) {
+  const matchFollowingErrors = validateMatchFollowing(answerData);
+
+  if (!hasMatchFollowingValidationErrors(matchFollowingErrors)) {
+    return;
+  }
+
+  errors.answerData =
+    matchFollowingErrors.pairs ||
+    "Every matching pair must have unique Column A and Column B values.";
+}
+
 export function validateQuestionPersistenceInput({ draft, teacherProfile }) {
   const errors = {};
 
@@ -176,6 +218,14 @@ export function validateQuestionPersistenceInput({ draft, teacherProfile }) {
 
   if (draft.questionType === QUESTION_TYPES.MULTIPLE_CHOICE) {
     validateMultipleChoiceAnswerData(draft.answerData, errors);
+  }
+
+  if (draft.questionType === QUESTION_TYPES.MATCH_FOLLOWING) {
+    validateMatchFollowingAnswerData(draft.answerData, errors);
+  }
+
+  if (draft.questionType === QUESTION_TYPES.LONG_ANSWER) {
+    validateLongAnswerData(draft.answerData, errors);
   }
 
   if (draft.questionType === QUESTION_TYPES.SHORT_ANSWER) {

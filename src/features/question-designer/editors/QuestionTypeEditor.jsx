@@ -1,5 +1,7 @@
 import { getQuestionTypeOption, QUESTION_TYPES } from "../constants/questionTypes.js";
 import FillBlanksEditor from "./fill-blanks/FillBlanksEditor.jsx";
+import LongAnswerEditor from "./long-answer/LongAnswerEditor.jsx";
+import MatchFollowingEditor from "./match-following/MatchFollowingEditor.jsx";
 import MultipleChoiceEditor from "./multiple-choice/MultipleChoiceEditor.jsx";
 import ShortAnswerEditor from "./short-answer/ShortAnswerEditor.jsx";
 import TrueFalseEditor from "./true-false/TrueFalseEditor.jsx";
@@ -37,6 +39,15 @@ function QuestionTypeEditor({
         />
       );
 
+    case QUESTION_TYPES.LONG_ANSWER:
+      return (
+        <LongAnswerEditor
+          editorActions={editorActions}
+          longAnswer={designerState.longAnswer}
+          validationErrors={validationErrors.longAnswer}
+        />
+      );
+
     case QUESTION_TYPES.MULTIPLE_CHOICE:
       return (
         <MultipleChoiceEditor
@@ -44,6 +55,15 @@ function QuestionTypeEditor({
           multipleChoice={designerState.multipleChoice}
           questionImage={designerState.questionImage}
           validationErrors={validationErrors.multipleChoice}
+        />
+      );
+
+    case QUESTION_TYPES.MATCH_FOLLOWING:
+      return (
+        <MatchFollowingEditor
+          editorActions={editorActions}
+          matchFollowing={designerState.matchFollowing}
+          validationErrors={validationErrors.matchFollowing}
         />
       );
 

@@ -61,7 +61,10 @@ export function getQuestionTypeOption(type) {
 }
 
 export function usesRichQuestionContent(type) {
-  return type === QUESTION_TYPES.SHORT_ANSWER;
+  return (
+    type === QUESTION_TYPES.LONG_ANSWER ||
+    type === QUESTION_TYPES.SHORT_ANSWER
+  );
 }
 
 export function usesSharedPromptField(type) {

@@ -7,6 +7,10 @@ import {
   usesRichQuestionContent,
 } from "../constants/questionTypes.js";
 import {
+  normalizeSuggestedWordCount,
+} from "../editors/long-answer/longAnswerValidation.js";
+import { createPersistableMatchPairs } from "../utils/matchPairHelpers.js";
+import {
   cloneRichTextContent,
   getRichTextPlainText,
 } from "../utils/richTextContent.js";
@@ -57,6 +61,12 @@ function createMultipleChoiceAnswerData(multipleChoice = {}) {
   };
 }
 
+function createMatchFollowingAnswerData(matchFollowing = {}) {
+  return {
+    pairs: createPersistableMatchPairs(matchFollowing.pairs),
+  };
+}
+
 function createFillBlanksAnswerData(fillBlanks = {}) {
   return {
     blanks: (fillBlanks.blanks ?? []).map((blank) => ({
@@ -84,13 +94,29 @@ function createShortAnswerAnswerData(shortAnswer = {}) {
   };
 }
 
+function createLongAnswerAnswerData(longAnswer = {}) {
+  return {
+    modelAnswer: cloneRichTextContent(longAnswer.modelAnswer),
+    questionContent: cloneRichTextContent(longAnswer.questionContent),
+    suggestedWordCount: normalizeSuggestedWordCount(
+      longAnswer.suggestedWordCount,
+    ),
+  };
+}
+
 function createAnswerData(designerState) {
   switch (designerState.questionType) {
     case QUESTION_TYPES.FILL_BLANKS:
       return createFillBlanksAnswerData(designerState.fillBlanks);
 
+    case QUESTION_TYPES.LONG_ANSWER:
+      return createLongAnswerAnswerData(designerState.longAnswer);
+
     case QUESTION_TYPES.MULTIPLE_CHOICE:
       return createMultipleChoiceAnswerData(designerState.multipleChoice);
+
+    case QUESTION_TYPES.MATCH_FOLLOWING:
+      return createMatchFollowingAnswerData(designerState.matchFollowing);
 
     case QUESTION_TYPES.SHORT_ANSWER:
       return createShortAnswerAnswerData(designerState.shortAnswer);
@@ -106,6 +132,10 @@ function createAnswerData(designerState) {
 function createQuestionPrompt(designerState) {
   if (!usesRichQuestionContent(designerState.questionType)) {
     return trimText(designerState.prompt);
+  }
+
+  if (designerState.questionType === QUESTION_TYPES.LONG_ANSWER) {
+    return getRichTextPlainText(designerState.longAnswer?.questionContent);
   }
 
   return getRichTextPlainText(designerState.shortAnswer?.questionContent);

@@ -3,7 +3,7 @@ import ReviewSection from "../../../components/review/ReviewSection.jsx";
 
 function ShortAnswerReview({ answerData = {} }) {
   return (
-    <div className="short-answer-review">
+    <div className="rich-answer-review short-answer-review">
       <ReviewSection
         className="short-answer-review__section"
         title="Question"

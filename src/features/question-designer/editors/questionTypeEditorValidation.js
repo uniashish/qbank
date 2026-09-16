@@ -4,6 +4,14 @@ import {
   validateFillBlanks,
 } from "./fill-blanks/fillBlanksValidation.js";
 import {
+  hasLongAnswerValidationErrors,
+  validateLongAnswer,
+} from "./long-answer/longAnswerValidation.js";
+import {
+  hasMatchFollowingValidationErrors,
+  validateMatchFollowing,
+} from "./match-following/matchFollowingValidation.js";
+import {
   hasMultipleChoiceValidationErrors,
   validateMultipleChoice,
 } from "./multiple-choice/multipleChoiceValidation.js";
@@ -27,12 +35,22 @@ export function validateQuestionTypeEditor(designerState) {
         ),
       };
 
+    case QUESTION_TYPES.LONG_ANSWER:
+      return {
+        longAnswer: validateLongAnswer(designerState.longAnswer),
+      };
+
     case QUESTION_TYPES.MULTIPLE_CHOICE:
       return {
         multipleChoice: validateMultipleChoice(
           designerState.multipleChoice,
           designerState.questionImage,
         ),
+      };
+
+    case QUESTION_TYPES.MATCH_FOLLOWING:
+      return {
+        matchFollowing: validateMatchFollowing(designerState.matchFollowing),
       };
 
     case QUESTION_TYPES.SHORT_ANSWER:
@@ -61,8 +79,16 @@ export function hasQuestionTypeEditorValidationErrors(errors = {}) {
     return hasFillBlanksValidationErrors(errors.fillBlanks);
   }
 
+  if (errors.longAnswer) {
+    return hasLongAnswerValidationErrors(errors.longAnswer);
+  }
+
   if (errors.multipleChoice) {
     return hasMultipleChoiceValidationErrors(errors.multipleChoice);
+  }
+
+  if (errors.matchFollowing) {
+    return hasMatchFollowingValidationErrors(errors.matchFollowing);
   }
 
   if (errors.shortAnswer) {

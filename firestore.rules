@@ -467,6 +467,57 @@ service cloud.firestore {
         && answerData.correctAnswer is bool;
     }
 
+    function isValidMatchFollowingPair(pair) {
+      return pair is map
+        && pair.keys().hasAll([
+          "id",
+          "left",
+          "right"
+        ])
+        && pair.keys().hasOnly([
+          "id",
+          "left",
+          "right"
+        ])
+        && pair.id is string
+        && pair.id.size() > 0
+        && pair.left is string
+        && pair.left.size() > 0
+        && pair.left.matches(".*\\S.*")
+        && pair.right is string
+        && pair.right.size() > 0
+        && pair.right.matches(".*\\S.*");
+    }
+
+    function isValidMatchFollowingPairs(pairs) {
+      return pairs is list
+        && pairs.size() >= 2
+        && pairs.size() <= 12
+        && isValidMatchFollowingPair(pairs[0])
+        && isValidMatchFollowingPair(pairs[1])
+        && (pairs.size() < 3 || isValidMatchFollowingPair(pairs[2]))
+        && (pairs.size() < 4 || isValidMatchFollowingPair(pairs[3]))
+        && (pairs.size() < 5 || isValidMatchFollowingPair(pairs[4]))
+        && (pairs.size() < 6 || isValidMatchFollowingPair(pairs[5]))
+        && (pairs.size() < 7 || isValidMatchFollowingPair(pairs[6]))
+        && (pairs.size() < 8 || isValidMatchFollowingPair(pairs[7]))
+        && (pairs.size() < 9 || isValidMatchFollowingPair(pairs[8]))
+        && (pairs.size() < 10 || isValidMatchFollowingPair(pairs[9]))
+        && (pairs.size() < 11 || isValidMatchFollowingPair(pairs[10]))
+        && (pairs.size() < 12 || isValidMatchFollowingPair(pairs[11]));
+    }
+
+    function isValidMatchFollowingAnswerData(answerData) {
+      return answerData is map
+        && answerData.keys().hasAll([
+          "pairs"
+        ])
+        && answerData.keys().hasOnly([
+          "pairs"
+        ])
+        && isValidMatchFollowingPairs(answerData.pairs);
+    }
+
     function isMeaningfulRichTextNode(node) {
       return node is map
         && node.keys().hasAll([
@@ -586,6 +637,29 @@ service cloud.firestore {
         && isValidRichTextDocument(answerData.modelAnswer);
     }
 
+    function isValidLongAnswerAnswerData(answerData) {
+      return answerData is map
+        && answerData.keys().hasAll([
+          "questionContent",
+          "modelAnswer",
+          "suggestedWordCount"
+        ])
+        && answerData.keys().hasOnly([
+          "questionContent",
+          "modelAnswer",
+          "suggestedWordCount"
+        ])
+        && isValidRichTextDocument(answerData.questionContent)
+        && isValidRichTextDocument(answerData.modelAnswer)
+        && (
+          answerData.suggestedWordCount == null
+          || (
+            answerData.suggestedWordCount is int
+            && answerData.suggestedWordCount > 0
+          )
+        );
+    }
+
     function isValidFillBlankAcceptedAnswers(acceptedAnswers) {
       return acceptedAnswers is list
         && acceptedAnswers.size() >= 1
@@ -675,6 +749,8 @@ service cloud.firestore {
     function isValidQuestionType(questionType) {
       return questionType in [
         "fill_blanks",
+        "long_answer",
+        "match_following",
         "multiple_choice",
         "short_answer",
         "true_false"
@@ -687,8 +763,16 @@ service cloud.firestore {
           && isValidFillBlanksAnswerData(answerData)
         )
         || (
+          questionType == "match_following"
+          && isValidMatchFollowingAnswerData(answerData)
+        )
+        || (
           questionType == "multiple_choice"
           && isValidMultipleChoiceAnswerData(answerData)
+        )
+        || (
+          questionType == "long_answer"
+          && isValidLongAnswerAnswerData(answerData)
         )
         || (
           questionType == "short_answer"
