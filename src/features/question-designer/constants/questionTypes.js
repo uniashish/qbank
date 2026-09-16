@@ -5,7 +5,6 @@ export const QUESTION_TYPES = {
   MATCH_FOLLOWING: "match_following",
   SHORT_ANSWER: "short_answer",
   LONG_ANSWER: "long_answer",
-  SEQUENCING: "sequencing",
 };
 
 export const QUESTION_TYPE_OPTIONS = [
@@ -44,12 +43,6 @@ export const QUESTION_TYPE_OPTIONS = [
     icon: "fileText",
     title: "Long Answer Question",
     type: QUESTION_TYPES.LONG_ANSWER,
-  },
-  {
-    description: "Arrange items or steps in the correct order.",
-    icon: "settings",
-    title: "Sequencing the Steps",
-    type: QUESTION_TYPES.SEQUENCING,
   },
 ];
 
