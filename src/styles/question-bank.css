@@ -10,16 +10,45 @@
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
 }
 
+.app-shell__main:has(.question-bank-page) {
+  height: calc(100svh - var(--topbar-height));
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.question-bank-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .question-bank-toolbar,
 .question-bank-panel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   padding: 18px;
+}
+
+.question-bank-toolbar {
+  flex: 0 0 auto;
+}
+
+.question-bank-toolbar__primary {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .question-bank-search {
   position: relative;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .question-bank-search__icon {
@@ -77,8 +106,8 @@
 }
 
 .question-bank-toolbar__add {
-  justify-self: end;
-  min-width: 190px;
+  flex: 0 0 168px;
+  min-width: 168px;
 }
 
 .teacher-question-bank-feedback--error {
@@ -120,6 +149,19 @@
 
 .question-bank-list {
   min-width: 0;
+  min-height: 0;
+}
+
+.question-bank-panel {
+  flex: 1;
+  min-height: 0;
+}
+
+.question-bank-panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .question-bank-table-wrap {
@@ -207,8 +249,9 @@
 
 .question-bank-actions {
   display: inline-flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .question-bank-action-button {
@@ -216,17 +259,22 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 9px;
+  padding: 6px 8px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   background: var(--color-surface);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 800;
   transition:
     border-color var(--transition-base),
     color var(--transition-base),
     background-color var(--transition-base);
+}
+
+.question-bank-action-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.24);
+  outline-offset: 2px;
 }
 
 .question-bank-action-button:hover:not(:disabled) {
@@ -414,9 +462,17 @@
 }
 
 @media (max-width: 760px) {
+  .app-shell__main:has(.question-bank-page) {
+    padding: 16px;
+  }
+
   .question-bank-toolbar,
   .question-bank-panel {
     padding: 16px;
+  }
+
+  .question-bank-toolbar__primary {
+    display: grid;
   }
 
   .question-bank-filters,
@@ -427,6 +483,8 @@
   .question-bank-toolbar__add,
   .question-bank-filters__clear {
     width: 100%;
+    min-width: 0;
+    flex-basis: auto;
     justify-self: stretch;
   }
 

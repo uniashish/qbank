@@ -19,7 +19,16 @@ function QuestionBankToolbar({
 }) {
   return (
     <section className="question-bank-toolbar" aria-label="Question bank tools">
-      <QuestionSearchInput onChange={onSearchChange} value={searchTerm} />
+      <div className="question-bank-toolbar__primary">
+        <QuestionSearchInput onChange={onSearchChange} value={searchTerm} />
+        <Button
+          className="question-bank-toolbar__add"
+          onClick={onAddQuestion}
+        >
+          <Icon name="plus" size={18} />
+          <span>Add Question</span>
+        </Button>
+      </div>
       <QuestionFilters
         classOptions={classOptions}
         difficultyOptions={difficultyOptions}
@@ -31,13 +40,6 @@ function QuestionBankToolbar({
         subjectOptions={subjectOptions}
         topicOptions={topicOptions}
       />
-      <Button
-        className="question-bank-toolbar__add"
-        onClick={onAddQuestion}
-      >
-        <Icon name="plus" size={19} />
-        <span>Add New Question</span>
-      </Button>
     </section>
   );
 }

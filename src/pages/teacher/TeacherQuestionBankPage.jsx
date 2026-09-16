@@ -219,7 +219,7 @@ function TeacherQuestionBankPage() {
   );
 
   return (
-    <PageContainer>
+    <PageContainer className="question-bank-page">
       {saveState.status === "success" && (
         <div
           className="teacher-question-bank-feedback teacher-question-bank-feedback--success"
@@ -264,16 +264,18 @@ function TeacherQuestionBankPage() {
           </div>
         </div>
 
-        <QuestionList
-          actionQuestionId={activeQuestionId}
-          error={error}
-          isLoading={isLoading}
-          onDelete={handleDeleteQuestion}
-          onEdit={handleEditQuestion}
-          onView={handleViewQuestion}
-          questions={questions}
-          totalQuestionCount={totalQuestionCount}
-        />
+        <div className="question-bank-panel__body">
+          <QuestionList
+            actionQuestionId={activeQuestionId}
+            error={error}
+            isLoading={isLoading}
+            onDelete={handleDeleteQuestion}
+            onEdit={handleEditQuestion}
+            onView={handleViewQuestion}
+            questions={questions}
+            totalQuestionCount={totalQuestionCount}
+          />
+        </div>
       </section>
 
       <QuestionPreviewDialog
