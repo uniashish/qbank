@@ -12,6 +12,7 @@ import SchoolDetailsCard from "../../components/schools/SchoolDetailsCard.jsx";
 import SchoolStatusBadge from "../../components/schools/SchoolStatusBadge.jsx";
 import { SCHOOL_STATUSES } from "../../constants/schoolStatus.js";
 import { useAuth } from "../../hooks/useAuth.js";
+import { sendInvitationEmail } from "../../services/invitationEmailService.js";
 import {
   cancelInvitation,
   createSchoolAdminInvitation,
@@ -133,12 +134,32 @@ function AssignSchoolAdminPage() {
         invitedByUid: firebaseUser?.uid ?? null,
         school,
       });
+      let emailSent = true;
+
+      try {
+        await sendInvitationEmail(
+          {
+            invitationId: invitation.id,
+            schoolId: invitation.schoolId,
+          },
+          firebaseUser,
+        );
+      } catch (emailError) {
+        emailSent = false;
+        console.error("[School admin assignment] Failed to send invitation email.", {
+          invitationId: invitation.id,
+          schoolId: invitation.schoolId,
+          error: emailError,
+        });
+      }
 
       setPendingInvitation(invitation);
       setValues(initialValues);
       setFeedback({
-        message: "School Admin invitation created.",
-        type: "success",
+        message: emailSent
+          ? "School Admin invitation created and emailed."
+          : "School Admin invitation created, but email delivery failed. Copy the invite link below.",
+        type: emailSent ? "success" : "warning",
       });
     } catch (error) {
       setFeedback({

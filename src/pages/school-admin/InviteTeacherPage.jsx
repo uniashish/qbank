@@ -7,6 +7,7 @@ import PageContainer from "../../components/layout/PageContainer.jsx";
 import DashboardHeader from "../../components/school-admin/DashboardHeader.jsx";
 import InviteTeacherForm from "../../components/teachers/InviteTeacherForm.jsx";
 import { useAuth } from "../../hooks/useAuth.js";
+import { sendInvitationEmail } from "../../services/invitationEmailService.js";
 import { getInvitationUrl } from "../../services/invitationService.js";
 import { createTeacherInvitation } from "../../services/teacherService.js";
 import { validateInviteTeacherForm } from "../../utils/invitationValidation.js";
@@ -65,13 +66,33 @@ function InviteTeacherPage() {
         invitedByUid: firebaseUser?.uid ?? null,
         schoolId,
       });
+      let emailSent = true;
+
+      try {
+        await sendInvitationEmail(
+          {
+            invitationId: invitation.id,
+            schoolId: invitation.schoolId,
+          },
+          firebaseUser,
+        );
+      } catch (emailError) {
+        emailSent = false;
+        console.error("[Teacher management] Failed to send teacher invitation email.", {
+          invitationId: invitation.id,
+          schoolId: invitation.schoolId,
+          error: emailError,
+        });
+      }
 
       setCreatedInvitation(invitation);
       setValues(initialValues);
       setErrors(initialErrors);
       setFeedback({
-        message: "Teacher invitation created.",
-        type: "success",
+        message: emailSent
+          ? "Teacher invitation created and emailed."
+          : "Teacher invitation created, but email delivery failed. Copy the invite link below.",
+        type: emailSent ? "success" : "warning",
       });
     } catch (error) {
       console.error("[Teacher management] Failed to create teacher invitation.", {
