@@ -1,4 +1,5 @@
 import QuestionTypeReview from "../../editors/review/QuestionTypeReview.jsx";
+import { usesSharedPromptField } from "../../constants/questionTypes.js";
 import QuestionImageReview from "./QuestionImageReview.jsx";
 import ReviewEmptyValue from "./ReviewEmptyValue.jsx";
 import ReviewField from "./ReviewField.jsx";
@@ -37,13 +38,15 @@ function QuestionReviewStep({ questionDraft }) {
         </dl>
       </ReviewSection>
 
-      <ReviewSection
-        className="question-review-section--prompt"
-        title="Question Prompt"
-        titleId="question-review-prompt-title"
-      >
-        <p className="question-review-prompt">{questionDraft.prompt}</p>
-      </ReviewSection>
+      {usesSharedPromptField(questionDraft.questionType) && (
+        <ReviewSection
+          className="question-review-section--prompt"
+          title="Question Prompt"
+          titleId="question-review-prompt-title"
+        >
+          <p className="question-review-prompt">{questionDraft.prompt}</p>
+        </ReviewSection>
+      )}
 
       <ReviewSection
         title="Instructions"

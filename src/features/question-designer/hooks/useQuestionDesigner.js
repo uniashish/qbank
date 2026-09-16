@@ -67,12 +67,20 @@ function createInitialTrueFalseState() {
   };
 }
 
+function createInitialShortAnswerState() {
+  return {
+    modelAnswer: null,
+    questionContent: null,
+  };
+}
+
 export function createInitialQuestionDesignerState(overrides = {}) {
   return {
     ...INITIAL_DESIGNER_STATE,
     fillBlanks: createInitialFillBlanksState(),
     multipleChoice: createInitialMultipleChoiceState(),
     questionImage: createInitialQuestionImageState(),
+    shortAnswer: createInitialShortAnswerState(),
     trueFalse: createInitialTrueFalseState(),
     ...overrides,
   };
@@ -133,6 +141,13 @@ function getTrueFalseState(question = {}) {
   };
 }
 
+function getShortAnswerState(question = {}) {
+  return {
+    modelAnswer: question.answerData?.modelAnswer ?? null,
+    questionContent: question.answerData?.questionContent ?? null,
+  };
+}
+
 function getMultipleChoiceOptionCounterSeed(options = []) {
   return options.reduce((highestOptionNumber, option, index) => {
     const optionNumber = Number(String(option.id ?? "").replace(/^opt-/, ""));
@@ -147,6 +162,7 @@ function hasSupportedQuestionTypeEditor(questionType) {
   return (
     questionType === QUESTION_TYPES.FILL_BLANKS ||
     questionType === QUESTION_TYPES.MULTIPLE_CHOICE ||
+    questionType === QUESTION_TYPES.SHORT_ANSWER ||
     questionType === QUESTION_TYPES.TRUE_FALSE
   );
 }
@@ -168,6 +184,7 @@ function createQuestionDesignerStateFromQuestion(question, mode) {
     prompt: question.prompt ?? "",
     questionImage: getQuestionImageState(question),
     questionType: question.questionType ?? null,
+    shortAnswer: getShortAnswerState(question),
     subjectId: question.subjectId ?? null,
     topicName: question.topicName ?? "",
     trueFalse: getTrueFalseState(question),
@@ -389,6 +406,20 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
     }));
   }, []);
 
+  const updateShortAnswerContent = useCallback((fieldName, content) => {
+    if (fieldName !== "questionContent" && fieldName !== "modelAnswer") {
+      return;
+    }
+
+    setDesignerState((currentState) => ({
+      ...currentState,
+      shortAnswer: {
+        ...currentState.shortAnswer,
+        [fieldName]: content,
+      },
+    }));
+  }, []);
+
   const addFillBlankAcceptedAnswer = useCallback((blankId) => {
     setDesignerState((currentState) => ({
       ...currentState,
@@ -536,6 +567,7 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
       setQuestionImageError,
       updateFillBlankAcceptedAnswer,
       updateMultipleChoiceOption,
+      updateShortAnswerContent,
     }),
     [
       addFillBlankAcceptedAnswer,
@@ -549,6 +581,7 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
       setQuestionImageError,
       updateFillBlankAcceptedAnswer,
       updateMultipleChoiceOption,
+      updateShortAnswerContent,
     ],
   );
 

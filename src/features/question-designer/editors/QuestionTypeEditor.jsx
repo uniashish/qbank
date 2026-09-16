@@ -1,6 +1,7 @@
 import { getQuestionTypeOption, QUESTION_TYPES } from "../constants/questionTypes.js";
 import FillBlanksEditor from "./fill-blanks/FillBlanksEditor.jsx";
 import MultipleChoiceEditor from "./multiple-choice/MultipleChoiceEditor.jsx";
+import ShortAnswerEditor from "./short-answer/ShortAnswerEditor.jsx";
 import TrueFalseEditor from "./true-false/TrueFalseEditor.jsx";
 
 function UnsupportedQuestionType({ questionType }) {
@@ -43,6 +44,15 @@ function QuestionTypeEditor({
           multipleChoice={designerState.multipleChoice}
           questionImage={designerState.questionImage}
           validationErrors={validationErrors.multipleChoice}
+        />
+      );
+
+    case QUESTION_TYPES.SHORT_ANSWER:
+      return (
+        <ShortAnswerEditor
+          editorActions={editorActions}
+          shortAnswer={designerState.shortAnswer}
+          validationErrors={validationErrors.shortAnswer}
         />
       );
 

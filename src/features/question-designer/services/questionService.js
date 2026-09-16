@@ -6,6 +6,7 @@ import {
 } from "firebase/firestore";
 
 import { QUESTION_TYPES } from "../constants/questionTypes.js";
+import { cloneRichTextContent } from "../utils/richTextContent.js";
 import { db } from "../../../services/firebase.js";
 
 const SCHOOLS_COLLECTION = "schools";
@@ -35,6 +36,12 @@ function createPersistedAnswerData(draft) {
           id: option.id,
           text: trimText(option.text),
         })),
+      };
+
+    case QUESTION_TYPES.SHORT_ANSWER:
+      return {
+        modelAnswer: cloneRichTextContent(draft.answerData.modelAnswer),
+        questionContent: cloneRichTextContent(draft.answerData.questionContent),
       };
 
     case QUESTION_TYPES.TRUE_FALSE:

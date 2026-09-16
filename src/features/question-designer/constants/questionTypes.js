@@ -59,3 +59,11 @@ export function getQuestionTypeOption(type) {
     null
   );
 }
+
+export function usesRichQuestionContent(type) {
+  return type === QUESTION_TYPES.SHORT_ANSWER;
+}
+
+export function usesSharedPromptField(type) {
+  return !usesRichQuestionContent(type);
+}

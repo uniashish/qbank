@@ -467,6 +467,125 @@ service cloud.firestore {
         && answerData.correctAnswer is bool;
     }
 
+    function isMeaningfulRichTextNode(node) {
+      return node is map
+        && node.keys().hasAll([
+          "type"
+        ])
+        && node.type is string
+        && (
+          (
+            node.type == "text"
+            && node.keys().hasAny([
+              "text"
+            ])
+            && node.text is string
+            && node.text.size() > 0
+          )
+          || (
+            node.type == "image"
+            && node.keys().hasAny([
+              "attrs"
+            ])
+            && node.attrs is map
+            && node.attrs.keys().hasAny([
+              "src"
+            ])
+            && node.attrs.src is string
+            && node.attrs.src.size() > 0
+          )
+          || (
+            node.type == "table"
+            && node.keys().hasAny([
+              "content"
+            ])
+            && node.content is list
+            && node.content.size() > 0
+          )
+          || (
+            node.keys().hasAny([
+              "content"
+            ])
+            && node.content is list
+            && node.content.size() > 0
+          )
+        );
+    }
+
+    function hasMeaningfulRichTextTopLevelContent(content) {
+      return content is list
+        && content.size() > 0
+        && (
+          isMeaningfulRichTextNode(content[0])
+          || (
+            content.size() > 1
+            && isMeaningfulRichTextNode(content[1])
+          )
+          || (
+            content.size() > 2
+            && isMeaningfulRichTextNode(content[2])
+          )
+          || (
+            content.size() > 3
+            && isMeaningfulRichTextNode(content[3])
+          )
+          || (
+            content.size() > 4
+            && isMeaningfulRichTextNode(content[4])
+          )
+          || (
+            content.size() > 5
+            && isMeaningfulRichTextNode(content[5])
+          )
+          || (
+            content.size() > 6
+            && isMeaningfulRichTextNode(content[6])
+          )
+          || (
+            content.size() > 7
+            && isMeaningfulRichTextNode(content[7])
+          )
+          || (
+            content.size() > 8
+            && isMeaningfulRichTextNode(content[8])
+          )
+          || (
+            content.size() > 9
+            && isMeaningfulRichTextNode(content[9])
+          )
+        );
+    }
+
+    function isValidRichTextDocument(contentDoc) {
+      return contentDoc is map
+        && contentDoc.keys().hasAll([
+          "type",
+          "content"
+        ])
+        && contentDoc.keys().hasOnly([
+          "type",
+          "content"
+        ])
+        && contentDoc.type == "doc"
+        && contentDoc.content is list
+        && contentDoc.content.size() <= 100
+        && hasMeaningfulRichTextTopLevelContent(contentDoc.content);
+    }
+
+    function isValidShortAnswerAnswerData(answerData) {
+      return answerData is map
+        && answerData.keys().hasAll([
+          "questionContent",
+          "modelAnswer"
+        ])
+        && answerData.keys().hasOnly([
+          "questionContent",
+          "modelAnswer"
+        ])
+        && isValidRichTextDocument(answerData.questionContent)
+        && isValidRichTextDocument(answerData.modelAnswer);
+    }
+
     function isValidFillBlankAcceptedAnswers(acceptedAnswers) {
       return acceptedAnswers is list
         && acceptedAnswers.size() >= 1
@@ -557,6 +676,7 @@ service cloud.firestore {
       return questionType in [
         "fill_blanks",
         "multiple_choice",
+        "short_answer",
         "true_false"
       ];
     }
@@ -569,6 +689,10 @@ service cloud.firestore {
         || (
           questionType == "multiple_choice"
           && isValidMultipleChoiceAnswerData(answerData)
+        )
+        || (
+          questionType == "short_answer"
+          && isValidShortAnswerAnswerData(answerData)
         )
         || (
           questionType == "true_false"

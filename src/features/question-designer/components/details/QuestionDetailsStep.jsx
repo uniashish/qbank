@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 
 import Spinner from "../../../../components/common/Spinner.jsx";
+import { usesSharedPromptField } from "../../constants/questionTypes.js";
 import AssignedClassField from "./AssignedClassField.jsx";
 import AssignedSubjectField from "./AssignedSubjectField.jsx";
 import DifficultyField from "./DifficultyField.jsx";
@@ -156,11 +157,13 @@ function QuestionDetailsStep({
           value={designerState.topicName}
         />
 
-        <QuestionPromptField
-          error={validationErrors.prompt}
-          onChange={(value) => onFieldChange("prompt", value)}
-          value={designerState.prompt}
-        />
+        {usesSharedPromptField(designerState.questionType) && (
+          <QuestionPromptField
+            error={validationErrors.prompt}
+            onChange={(value) => onFieldChange("prompt", value)}
+            value={designerState.prompt}
+          />
+        )}
 
         <div className="question-details-grid question-details-grid--two">
           <MarksField

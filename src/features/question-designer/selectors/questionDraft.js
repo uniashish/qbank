@@ -1,7 +1,15 @@
 import {
   DIFFICULTY_LEVEL_OPTIONS,
 } from "../constants/difficultyLevels.js";
-import { getQuestionTypeOption, QUESTION_TYPES } from "../constants/questionTypes.js";
+import {
+  getQuestionTypeOption,
+  QUESTION_TYPES,
+  usesRichQuestionContent,
+} from "../constants/questionTypes.js";
+import {
+  cloneRichTextContent,
+  getRichTextPlainText,
+} from "../utils/richTextContent.js";
 
 function trimText(value) {
   return String(value ?? "").trim();
@@ -69,6 +77,13 @@ function createTrueFalseAnswerData(trueFalse = {}) {
   };
 }
 
+function createShortAnswerAnswerData(shortAnswer = {}) {
+  return {
+    modelAnswer: cloneRichTextContent(shortAnswer.modelAnswer),
+    questionContent: cloneRichTextContent(shortAnswer.questionContent),
+  };
+}
+
 function createAnswerData(designerState) {
   switch (designerState.questionType) {
     case QUESTION_TYPES.FILL_BLANKS:
@@ -77,12 +92,23 @@ function createAnswerData(designerState) {
     case QUESTION_TYPES.MULTIPLE_CHOICE:
       return createMultipleChoiceAnswerData(designerState.multipleChoice);
 
+    case QUESTION_TYPES.SHORT_ANSWER:
+      return createShortAnswerAnswerData(designerState.shortAnswer);
+
     case QUESTION_TYPES.TRUE_FALSE:
       return createTrueFalseAnswerData(designerState.trueFalse);
 
     default:
       return null;
   }
+}
+
+function createQuestionPrompt(designerState) {
+  if (!usesRichQuestionContent(designerState.questionType)) {
+    return trimText(designerState.prompt);
+  }
+
+  return getRichTextPlainText(designerState.shortAnswer?.questionContent);
 }
 
 export function createQuestionDraft(designerState, assignmentState = {}) {
@@ -96,7 +122,7 @@ export function createQuestionDraft(designerState, assignmentState = {}) {
     difficultyLabel: resolveDifficultyLabel(designerState.difficulty),
     instructions: trimText(designerState.instructions),
     marks: Number(designerState.marks),
-    prompt: trimText(designerState.prompt),
+    prompt: createQuestionPrompt(designerState),
     questionImage: designerState.questionImage,
     questionType: designerState.questionType,
     questionTypeLabel: questionTypeOption?.title ?? "",

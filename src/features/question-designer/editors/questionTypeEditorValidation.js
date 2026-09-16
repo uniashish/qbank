@@ -8,6 +8,10 @@ import {
   validateMultipleChoice,
 } from "./multiple-choice/multipleChoiceValidation.js";
 import {
+  hasShortAnswerValidationErrors,
+  validateShortAnswer,
+} from "./short-answer/shortAnswerValidation.js";
+import {
   hasTrueFalseValidationErrors,
   validateTrueFalse,
 } from "./true-false/trueFalseValidation.js";
@@ -29,6 +33,11 @@ export function validateQuestionTypeEditor(designerState) {
           designerState.multipleChoice,
           designerState.questionImage,
         ),
+      };
+
+    case QUESTION_TYPES.SHORT_ANSWER:
+      return {
+        shortAnswer: validateShortAnswer(designerState.shortAnswer),
       };
 
     case QUESTION_TYPES.TRUE_FALSE:
@@ -54,6 +63,10 @@ export function hasQuestionTypeEditorValidationErrors(errors = {}) {
 
   if (errors.multipleChoice) {
     return hasMultipleChoiceValidationErrors(errors.multipleChoice);
+  }
+
+  if (errors.shortAnswer) {
+    return hasShortAnswerValidationErrors(errors.shortAnswer);
   }
 
   if (errors.trueFalse) {

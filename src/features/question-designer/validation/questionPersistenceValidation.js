@@ -1,10 +1,17 @@
 import { DIFFICULTY_LEVELS } from "../constants/difficultyLevels.js";
-import { QUESTION_TYPES } from "../constants/questionTypes.js";
+import {
+  QUESTION_TYPES,
+  usesSharedPromptField,
+} from "../constants/questionTypes.js";
 import {
   hasFillBlanksValidationErrors,
   validateFillBlanks,
 } from "../editors/fill-blanks/fillBlanksValidation.js";
 import { validateTrueFalse } from "../editors/true-false/trueFalseValidation.js";
+import {
+  hasShortAnswerValidationErrors,
+  validateShortAnswer,
+} from "../editors/short-answer/shortAnswerValidation.js";
 
 const MIN_MULTIPLE_CHOICE_OPTIONS = 2;
 const MAX_MULTIPLE_CHOICE_OPTIONS = 8;
@@ -12,6 +19,7 @@ const VALID_DIFFICULTIES = new Set(Object.values(DIFFICULTY_LEVELS));
 const VALID_PERSISTED_QUESTION_TYPES = new Set([
   QUESTION_TYPES.FILL_BLANKS,
   QUESTION_TYPES.MULTIPLE_CHOICE,
+  QUESTION_TYPES.SHORT_ANSWER,
   QUESTION_TYPES.TRUE_FALSE,
 ]);
 
@@ -108,6 +116,22 @@ function validateTrueFalseAnswerData(answerData, errors) {
   }
 }
 
+function validateShortAnswerData(answerData, errors) {
+  const shortAnswerErrors = validateShortAnswer(answerData);
+
+  if (!hasShortAnswerValidationErrors(shortAnswerErrors)) {
+    return;
+  }
+
+  if (shortAnswerErrors.questionContent) {
+    errors.questionContent = shortAnswerErrors.questionContent;
+  }
+
+  if (shortAnswerErrors.modelAnswer) {
+    errors.modelAnswer = shortAnswerErrors.modelAnswer;
+  }
+}
+
 export function validateQuestionPersistenceInput({ draft, teacherProfile }) {
   const errors = {};
 
@@ -134,7 +158,7 @@ export function validateQuestionPersistenceInput({ draft, teacherProfile }) {
     errors.topicName = "Enter a topic name.";
   }
 
-  if (!hasText(draft.prompt)) {
+  if (usesSharedPromptField(draft.questionType) && !hasText(draft.prompt)) {
     errors.prompt = "Enter the question text or prompt.";
   }
 
@@ -152,6 +176,10 @@ export function validateQuestionPersistenceInput({ draft, teacherProfile }) {
 
   if (draft.questionType === QUESTION_TYPES.MULTIPLE_CHOICE) {
     validateMultipleChoiceAnswerData(draft.answerData, errors);
+  }
+
+  if (draft.questionType === QUESTION_TYPES.SHORT_ANSWER) {
+    validateShortAnswerData(draft.answerData, errors);
   }
 
   if (draft.questionType === QUESTION_TYPES.FILL_BLANKS) {

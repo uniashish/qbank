@@ -1,4 +1,5 @@
 import { DIFFICULTY_LEVELS } from "../constants/difficultyLevels.js";
+import { usesSharedPromptField } from "../constants/questionTypes.js";
 
 const MIN_MARKS = 1;
 const MAX_TOPIC_NAME_LENGTH = 100;
@@ -33,7 +34,7 @@ export function validateQuestionDetails(details) {
     errors.topicName = `Topic name must be ${MAX_TOPIC_NAME_LENGTH} characters or fewer.`;
   }
 
-  if (!hasValue(details.prompt)) {
+  if (usesSharedPromptField(details.questionType) && !hasValue(details.prompt)) {
     errors.prompt = "Enter the question text or prompt.";
   }
 
