@@ -5,6 +5,7 @@ import EmailVerificationNotice from "../../components/invitations/EmailVerificat
 import InviteSignupForm from "../../components/invitations/InviteSignupForm.jsx";
 import Spinner from "../../components/common/Spinner.jsx";
 import { INVITATION_STATUSES } from "../../constants/invitationStatus.js";
+import { USER_ROLES } from "../../constants/roles.js";
 import { useAuth } from "../../hooks/useAuth.js";
 import {
   loginWithGoogle,
@@ -80,6 +81,13 @@ function getInvitationState(invitation) {
   if (invitation.status !== INVITATION_STATUSES.PENDING) {
     return {
       description: "This invitation is no longer available.",
+      title: "Invitation unavailable",
+    };
+  }
+
+  if (invitation.role !== USER_ROLES.SCHOOL_ADMIN) {
+    return {
+      description: "This invitation type is no longer supported.",
       title: "Invitation unavailable",
     };
   }

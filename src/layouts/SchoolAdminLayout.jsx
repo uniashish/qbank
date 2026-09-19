@@ -13,6 +13,11 @@ const schoolAdminNavItems = [
     path: "/school-admin/teachers",
   },
   {
+    icon: "administrators",
+    label: "Users",
+    path: "/school-admin/users",
+  },
+  {
     key: "academic-setup",
     label: "Academic Setup",
     type: "section",

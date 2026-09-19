@@ -1,5 +1,6 @@
 import { Route } from "react-router-dom";
 
+import ActiveTeacherRoute from "../components/auth/ActiveTeacherRoute.jsx";
 import ProtectedRoute from "../components/auth/ProtectedRoute.jsx";
 import RoleRoute from "../components/auth/RoleRoute.jsx";
 import { USER_ROLES } from "../constants/roles.js";
@@ -22,17 +23,33 @@ export function getTeacherRoutes() {
       path="/teacher"
     >
       <Route index element={<TeacherDashboardPage />} />
-      <Route path="question-bank" element={<TeacherQuestionBankPage />} />
+      <Route
+        path="question-bank"
+        element={
+          <ActiveTeacherRoute>
+            <TeacherQuestionBankPage />
+          </ActiveTeacherRoute>
+        }
+      />
       <Route
         path="exam-papers"
         element={
-          <TeacherPlaceholderPage
-            description="Exam paper workflows will be implemented in a later phase."
-            title="Exam Papers"
-          />
+          <ActiveTeacherRoute>
+            <TeacherPlaceholderPage
+              description="Exam paper workflows will be implemented in a later phase."
+              title="Exam Papers"
+            />
+          </ActiveTeacherRoute>
         }
       />
-      <Route path="share-questions" element={<ShareQuestionsPage />} />
+      <Route
+        path="share-questions"
+        element={
+          <ActiveTeacherRoute>
+            <ShareQuestionsPage />
+          </ActiveTeacherRoute>
+        }
+      />
     </Route>
   );
 }

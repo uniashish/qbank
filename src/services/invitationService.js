@@ -18,10 +18,7 @@ import { db } from "./firebase";
 
 const INVITATIONS_COLLECTION = "invitations";
 const INVITATION_TTL_DAYS = 7;
-const INVITATION_ROLES = new Set([
-  USER_ROLES.SCHOOL_ADMIN,
-  USER_ROLES.TEACHER,
-]);
+const INVITATION_ROLES = new Set([USER_ROLES.SCHOOL_ADMIN]);
 
 function normalizeInvitationSnapshot(snapshot) {
   return {
@@ -93,7 +90,7 @@ export async function getInvitationByToken(token) {
   return normalizeInvitationSnapshot(invitationSnapshot);
 }
 
-export async function getInvitationsForSchoolByRole(schoolId, role) {
+async function getInvitationsForSchoolByRole(schoolId, role) {
   if (!schoolId || !INVITATION_ROLES.has(role)) {
     return [];
   }
@@ -117,7 +114,7 @@ export async function getInvitationsForSchoolByRole(schoolId, role) {
     });
 }
 
-export async function getPendingInvitationByRole(schoolId, role, email) {
+async function getPendingInvitationByRole(schoolId, role, email) {
   if (!schoolId) {
     return null;
   }

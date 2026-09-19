@@ -26,6 +26,8 @@ export async function createSchool(data, createdByUid) {
   const schoolsRef = collection(db, SCHOOLS_COLLECTION);
   const schoolPayload = {
     name: data.name,
+    adminIds: [],
+    allowJoinRequests: data.allowJoinRequests ?? true,
     code: data.code,
     email: data.email,
     phone: data.phone,
@@ -78,4 +80,8 @@ export function updateSchool(id, data) {
 
 export function updateSchoolStatus(id, status) {
   return updateSchool(id, { status });
+}
+
+export function updateSchoolJoinRequestSetting(id, allowJoinRequests) {
+  return updateSchool(id, { allowJoinRequests });
 }

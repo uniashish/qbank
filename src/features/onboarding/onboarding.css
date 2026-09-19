@@ -1,0 +1,234 @@
+.onboarding-page {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background:
+    linear-gradient(rgba(37, 99, 235, 0.04), rgba(15, 118, 110, 0.04)),
+    var(--color-bg);
+}
+
+.onboarding-card {
+  width: min(100%, 540px);
+  display: grid;
+  gap: 22px;
+  padding: 34px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.onboarding-card--wide {
+  width: min(100%, 760px);
+}
+
+.onboarding-card__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.onboarding-card__brand p,
+.onboarding-card__brand span,
+.onboarding-card__intro h1,
+.onboarding-card__intro p,
+.onboarding-current-user p,
+.onboarding-match-panel span,
+.onboarding-match-panel strong,
+.onboarding-success-state h2,
+.onboarding-success-state p {
+  margin: 0;
+}
+
+.onboarding-card__brand p {
+  color: var(--color-text);
+  font-weight: 850;
+}
+
+.onboarding-card__brand span:not(.brand-mark) {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.onboarding-card__intro {
+  display: grid;
+  gap: 10px;
+}
+
+.onboarding-card__eyebrow {
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.onboarding-card__intro h1 {
+  color: var(--color-text);
+  font-size: 2rem;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.onboarding-card__intro p,
+.onboarding-current-user p,
+.onboarding-success-state p {
+  color: var(--color-text-secondary);
+}
+
+.signup-choice-grid,
+.onboarding-form {
+  display: grid;
+  gap: 16px;
+}
+
+.signup-choice-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 96px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  background: var(--color-surface);
+  transition:
+    border-color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-base);
+}
+
+.signup-choice-card:hover {
+  color: var(--color-text);
+  border-color: rgba(37, 99, 235, 0.44);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
+}
+
+.signup-choice-card__icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+  font-weight: 850;
+}
+
+.signup-choice-card__content {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.signup-choice-card__content strong {
+  color: var(--color-text);
+  font-size: 1.02rem;
+}
+
+.signup-choice-card__content span {
+  color: var(--color-text-secondary);
+  font-size: 0.94rem;
+  font-weight: 500;
+}
+
+.onboarding-fieldset {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.onboarding-fieldset legend {
+  margin-bottom: 4px;
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.onboarding-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.onboarding-current-user,
+.onboarding-match-panel,
+.onboarding-success-state {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.onboarding-current-user strong {
+  color: var(--color-text);
+}
+
+.onboarding-current-user__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.onboarding-current-user__actions .button {
+  width: auto;
+}
+
+.onboarding-match-panel {
+  gap: 2px;
+  border-color: rgba(15, 118, 110, 0.22);
+  background: var(--color-accent-soft);
+}
+
+.onboarding-match-panel span {
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.onboarding-match-panel strong {
+  color: var(--color-text);
+}
+
+.onboarding-success-state {
+  justify-items: start;
+}
+
+.onboarding-success-state h2 {
+  color: var(--color-text);
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+  .onboarding-page {
+    padding: 14px;
+  }
+
+  .onboarding-card {
+    padding: 24px 18px;
+  }
+
+  .onboarding-form__grid,
+  .onboarding-current-user__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-current-user__actions {
+    display: grid;
+  }
+
+  .onboarding-current-user__actions .button,
+  .onboarding-current-user__actions .link-button {
+    width: 100%;
+  }
+}

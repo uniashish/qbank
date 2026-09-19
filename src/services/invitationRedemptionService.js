@@ -20,15 +20,7 @@ const SCHOOL_ADMIN_REDEMPTION_RULE_EXPECTATIONS = [
   "invitations/{invitationId} update -> isValidInvitationRedemption(invitationId)",
 ];
 
-const TEACHER_REDEMPTION_RULE_EXPECTATIONS = [
-  "users/{uid} create -> isValidTeacherProfileCreate(userId)",
-  "invitations/{invitationId} update -> isValidInvitationRedemption(invitationId)",
-];
-
-const INVITATION_ROLES = new Set([
-  USER_ROLES.SCHOOL_ADMIN,
-  USER_ROLES.TEACHER,
-]);
+const INVITATION_ROLES = new Set([USER_ROLES.SCHOOL_ADMIN]);
 
 export const INVITATION_REDEMPTION_ERROR_CODES = {
   EMAIL_MISMATCH: "EMAIL_MISMATCH",
@@ -73,10 +65,8 @@ function setRedemptionDebugPhase(context, phase, operations) {
   context.operations = operations;
 }
 
-function getRuleExpectations(role) {
-  return role === USER_ROLES.TEACHER
-    ? TEACHER_REDEMPTION_RULE_EXPECTATIONS
-    : SCHOOL_ADMIN_REDEMPTION_RULE_EXPECTATIONS;
+function getRuleExpectations() {
+  return SCHOOL_ADMIN_REDEMPTION_RULE_EXPECTATIONS;
 }
 
 function logRedemptionFailure(error, context) {
@@ -92,7 +82,7 @@ function logRedemptionFailure(error, context) {
       operations: context.operations,
       phase: context.phase,
       role: context.role,
-      ruleExpectations: getRuleExpectations(context.role),
+      ruleExpectations: getRuleExpectations(),
       schoolId: context.schoolId,
     },
     error,
@@ -242,41 +232,27 @@ export async function redeemInvitation(invitation, firebaseUser) {
 
       const schoolRef = doc(db, COLLECTIONS.SCHOOLS, freshInvitation.schoolId);
       const now = serverTimestamp();
-      const isTeacherInvitation = freshInvitation.role === USER_ROLES.TEACHER;
 
       setRedemptionDebugPhase(
         debugContext,
         "commit invitation redemption writes",
-        isTeacherInvitation
-          ? [
-              {
-                operation: "create",
-                path: `${COLLECTIONS.USERS}/${firebaseUser.uid}`,
-                rule: TEACHER_REDEMPTION_RULE_EXPECTATIONS[0],
-              },
-              {
-                operation: "update",
-                path: REDACTED_INVITATION_PATH,
-                rule: TEACHER_REDEMPTION_RULE_EXPECTATIONS[1],
-              },
-            ]
-          : [
-              {
-                operation: "create",
-                path: `${COLLECTIONS.USERS}/${firebaseUser.uid}`,
-                rule: SCHOOL_ADMIN_REDEMPTION_RULE_EXPECTATIONS[0],
-              },
-              {
-                operation: "update",
-                path: `${COLLECTIONS.SCHOOLS}/${freshInvitation.schoolId}`,
-                rule: SCHOOL_ADMIN_REDEMPTION_RULE_EXPECTATIONS[1],
-              },
-              {
-                operation: "update",
-                path: REDACTED_INVITATION_PATH,
-                rule: SCHOOL_ADMIN_REDEMPTION_RULE_EXPECTATIONS[2],
-              },
-            ],
+        [
+          {
+            operation: "create",
+            path: `${COLLECTIONS.USERS}/${firebaseUser.uid}`,
+            rule: SCHOOL_ADMIN_REDEMPTION_RULE_EXPECTATIONS[0],
+          },
+          {
+            operation: "update",
+            path: `${COLLECTIONS.SCHOOLS}/${freshInvitation.schoolId}`,
+            rule: SCHOOL_ADMIN_REDEMPTION_RULE_EXPECTATIONS[1],
+          },
+          {
+            operation: "update",
+            path: REDACTED_INVITATION_PATH,
+            rule: SCHOOL_ADMIN_REDEMPTION_RULE_EXPECTATIONS[2],
+          },
+        ],
       );
 
       transaction.set(userRef, {
@@ -292,12 +268,11 @@ export async function redeemInvitation(invitation, firebaseUser) {
         updatedAt: now,
       });
 
-      if (!isTeacherInvitation) {
-        transaction.update(schoolRef, {
-          primaryAdminId: firebaseUser.uid,
-          updatedAt: now,
-        });
-      }
+      transaction.update(schoolRef, {
+        adminIds: [firebaseUser.uid],
+        primaryAdminId: firebaseUser.uid,
+        updatedAt: now,
+      });
 
       transaction.update(invitationRef, {
         acceptedAt: now,

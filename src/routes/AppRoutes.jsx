@@ -4,9 +4,11 @@ import ProtectedRoute from "../components/auth/ProtectedRoute.jsx";
 import RoleRoute from "../components/auth/RoleRoute.jsx";
 import FullPageLoader from "../components/common/FullPageLoader.jsx";
 import { USER_ROLES } from "../constants/roles.js";
+import CreateSchoolSignupPage from "../features/onboarding/CreateSchoolSignupPage.jsx";
+import JoinSchoolSignupPage from "../features/onboarding/JoinSchoolSignupPage.jsx";
+import SignupChoicePage from "../features/onboarding/SignupChoicePage.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import LoginPage from "../pages/LoginPage.jsx";
-import RegisterPlaceholderPage from "../pages/RegisterPlaceholderPage.jsx";
 import RolePlaceholderPage from "../pages/RolePlaceholderPage.jsx";
 import AccountDisabledPage from "../pages/auth/AccountDisabledPage.jsx";
 import InvitationSignupPage from "../pages/auth/InvitationSignupPage.jsx";
@@ -19,6 +21,11 @@ import { getAccountAccessRedirect } from "../utils/getAccountAccessRedirect.js";
 import { getDefaultRouteForRole } from "../utils/getDefaultRouteForRole.js";
 
 const INVITATION_ROUTE_PATTERN = "/invite/:token";
+const ONBOARDING_ROUTE_PATTERNS = [
+  "/signup",
+  "/signup/create-school",
+  "/signup/join-school",
+];
 
 function isInvitationRoute(pathname) {
   return Boolean(
@@ -26,11 +33,22 @@ function isInvitationRoute(pathname) {
   );
 }
 
+function isOnboardingRoute(pathname) {
+  return ONBOARDING_ROUTE_PATTERNS.some((routePattern) =>
+    matchPath({ end: true, path: routePattern }, pathname),
+  );
+}
+
 function AccountAccessRouteBoundary({ children }) {
   const location = useLocation();
   const { isAuthenticated, loading, userProfile } = useAuth();
 
-  if (!loading && isAuthenticated && !isInvitationRoute(location.pathname)) {
+  if (
+    !loading &&
+    isAuthenticated &&
+    !isInvitationRoute(location.pathname) &&
+    !isOnboardingRoute(location.pathname)
+  ) {
     const accountRedirect = getAccountAccessRedirect(userProfile);
 
     if (accountRedirect && location.pathname !== accountRedirect) {
@@ -67,8 +85,14 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<DefaultRouteRedirect />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupChoicePage />} />
+        <Route
+          path="/signup/create-school"
+          element={<CreateSchoolSignupPage />}
+        />
+        <Route path="/signup/join-school" element={<JoinSchoolSignupPage />} />
         <Route path={INVITATION_ROUTE_PATTERN} element={<InvitationSignupPage />} />
-        <Route path="/register" element={<RegisterPlaceholderPage />} />
+        <Route path="/register" element={<Navigate replace to="/signup" />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route
           path="/account-not-provisioned"

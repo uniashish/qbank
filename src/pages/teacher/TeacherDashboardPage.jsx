@@ -6,7 +6,9 @@ import PageContainer from "../../components/layout/PageContainer.jsx";
 import TeacherAssignmentsSummary from "../../components/teacher/dashboard/TeacherAssignmentsSummary.jsx";
 import TeacherDashboardHeader from "../../components/teacher/dashboard/TeacherDashboardHeader.jsx";
 import TeacherQuickActions from "../../components/teacher/dashboard/TeacherQuickActions.jsx";
+import { ACCOUNT_STATUSES } from "../../constants/userStatus.js";
 import { useAuth } from "../../hooks/useAuth.js";
+import { getSchoolById } from "../../services/schoolService.js";
 import { getAssignmentsForCurrentTeacher } from "../../services/teacherAssignmentService.js";
 
 function TeacherDashboardPage() {
@@ -16,11 +18,17 @@ function TeacherDashboardPage() {
   const [pageError, setPageError] = useState("");
   const teacherId = userProfile?.uid ?? "";
   const schoolId = userProfile?.schoolId ?? "";
+  const isPendingApproval =
+    userProfile?.status === ACCOUNT_STATUSES.PENDING_APPROVAL;
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadAssignments() {
+      if (isPendingApproval) {
+        return;
+      }
+
       if (!teacherId || !schoolId) {
         setAssignmentGroups([]);
         setPageError("Your teacher account is not linked to a school.");
@@ -62,7 +70,11 @@ function TeacherDashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, [schoolId, teacherId]);
+  }, [isPendingApproval, schoolId, teacherId]);
+
+  if (isPendingApproval) {
+    return <PendingTeacherDashboard teacher={userProfile} />;
+  }
 
   if (isLoading) {
     return (
@@ -94,6 +106,71 @@ function TeacherDashboardPage() {
       <TeacherDashboardHeader teacher={userProfile} />
       <TeacherAssignmentsSummary assignmentGroups={assignmentGroups} />
       <TeacherQuickActions />
+    </PageContainer>
+  );
+}
+
+function PendingTeacherDashboard({ teacher }) {
+  const [schoolName, setSchoolName] = useState("");
+  const [isLoadingSchool, setIsLoadingSchool] = useState(true);
+  const schoolId = teacher?.schoolId ?? "";
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSchoolName() {
+      if (!schoolId) {
+        setIsLoadingSchool(false);
+        return;
+      }
+
+      try {
+        const school = await getSchoolById(schoolId);
+
+        if (isMounted) {
+          setSchoolName(school?.name ?? "your school");
+        }
+      } catch (error) {
+        console.error("[Teacher dashboard] Failed to load pending school.", {
+          error,
+          schoolId,
+        });
+
+        if (isMounted) {
+          setSchoolName("your school");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingSchool(false);
+        }
+      }
+    }
+
+    loadSchoolName();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [schoolId]);
+
+  return (
+    <PageContainer size="narrow">
+      <TeacherDashboardHeader teacher={teacher} />
+      <section className="teacher-dashboard-pending" aria-live="polite">
+        <Icon name="clock" size={24} />
+        <div>
+          <h2>Account awaiting approval</h2>
+          <p>
+            Your request to join{" "}
+            <strong>{isLoadingSchool ? "your school" : schoolName}</strong> is
+            awaiting approval.
+          </p>
+          <p>
+            Your school administrator must approve your account and assign your
+            classes and subjects before you can use QBank.
+          </p>
+        </div>
+      </section>
     </PageContainer>
   );
 }

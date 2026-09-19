@@ -38,6 +38,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/invitations/$(invitationId);
     }
 
+    function joinRequestPath(schoolId, userId) {
+      return /databases/$(database)/documents/schools/$(schoolId)/joinRequests/$(userId);
+    }
+
     function currentUserExists() {
       return signedIn() && exists(userPath(request.auth.uid));
     }
@@ -55,6 +59,16 @@ service cloud.firestore {
     function hasVerifiedAuthEmail() {
       return hasAuthEmail()
         && request.auth.token.email_verified == true;
+    }
+
+    function isGoogleAuthProvider() {
+      return signedIn()
+        && request.auth.token.firebase.sign_in_provider == "google.com";
+    }
+
+    function hasVerifiedOrGoogleAuthEmail() {
+      return hasAuthEmail()
+        && (request.auth.token.email_verified == true || isGoogleAuthProvider());
     }
 
     function authEmail() {
@@ -206,10 +220,10 @@ service cloud.firestore {
     }
 
     function isTeacherProfileInSchool(schoolId, teacherId) {
-      return exists(userPath(teacherId))
-        && get(userPath(teacherId)).data.schoolId == schoolId
-        && get(userPath(teacherId)).data.role == "teacher"
-        && get(userPath(teacherId)).data.status == "active";
+      return existsAfter(userPath(teacherId))
+        && getAfter(userPath(teacherId)).data.schoolId == schoolId
+        && getAfter(userPath(teacherId)).data.role == "teacher"
+        && getAfter(userPath(teacherId)).data.status == "active";
     }
 
     function isMappedClassSubject(schoolId, classId, subjectId) {
@@ -1129,7 +1143,15 @@ service cloud.firestore {
         && data.address is string
         && data.city is string
         && data.country is string
-        && validSchoolStatus(data.status);
+        && validSchoolStatus(data.status)
+        && (
+          !data.keys().hasAny(["adminIds"])
+          || data.adminIds is list
+        )
+        && (
+          !data.keys().hasAny(["allowJoinRequests"])
+          || data.allowJoinRequests is bool
+        );
     }
 
     function isValidSchoolCreate() {
@@ -1142,6 +1164,8 @@ service cloud.firestore {
           "city",
           "country",
           "status",
+          "adminIds",
+          "allowJoinRequests",
           "primaryAdminId",
           "createdAt",
           "updatedAt",
@@ -1156,12 +1180,16 @@ service cloud.firestore {
           "city",
           "country",
           "status",
+          "adminIds",
+          "allowJoinRequests",
           "primaryAdminId",
           "createdAt",
           "updatedAt",
           "createdBy"
         ])
         && isValidSchoolPayload(request.resource.data)
+        && request.resource.data.adminIds.size() == 0
+        && request.resource.data.allowJoinRequests == true
         && request.resource.data.primaryAdminId == null
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt == request.time
@@ -1171,6 +1199,7 @@ service cloud.firestore {
     function isValidSchoolUpdate() {
       return isValidSchoolPayload(request.resource.data)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          "adminIds",
           "primaryAdminId",
           "createdAt",
           "createdBy"
@@ -1178,26 +1207,244 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
+    function isSelfServiceSchoolAdminProfileAfter(userId, schoolId) {
+      return existsAfter(userPath(userId))
+        && getAfter(userPath(userId)).data.uid == userId
+        && getAfter(userPath(userId)).data.email == authEmail()
+        && getAfter(userPath(userId)).data.role == "school_admin"
+        && getAfter(userPath(userId)).data.status == "active"
+        && getAfter(userPath(userId)).data.schoolId == schoolId
+        && getAfter(userPath(userId)).data.createdAt == request.time
+        && getAfter(userPath(userId)).data.updatedAt == request.time
+        && getAfter(schoolPath(schoolId)).data.adminIds is list
+        && getAfter(schoolPath(schoolId)).data.adminIds.size() == 1
+        && getAfter(schoolPath(schoolId)).data.adminIds[0] == userId;
+    }
+
+    function isValidSelfServiceSchoolCreate(schoolId) {
+      return signedIn()
+        && hasVerifiedOrGoogleAuthEmail()
+        && !exists(userPath(request.auth.uid))
+        && request.resource.data.keys().hasAll([
+          "name",
+          "code",
+          "email",
+          "phone",
+          "address",
+          "city",
+          "country",
+          "status",
+          "adminIds",
+          "allowJoinRequests",
+          "primaryAdminId",
+          "createdAt",
+          "updatedAt",
+          "createdBy"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "name",
+          "code",
+          "email",
+          "phone",
+          "address",
+          "city",
+          "country",
+          "status",
+          "adminIds",
+          "allowJoinRequests",
+          "primaryAdminId",
+          "createdAt",
+          "updatedAt",
+          "createdBy"
+        ])
+        && isValidSchoolPayload(request.resource.data)
+        && request.resource.data.status == "active"
+        && request.resource.data.adminIds is list
+        && request.resource.data.adminIds.size() == 1
+        && request.resource.data.adminIds[0] == request.auth.uid
+        && request.resource.data.allowJoinRequests == true
+        && request.resource.data.primaryAdminId == request.auth.uid
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && isSelfServiceSchoolAdminProfileAfter(request.auth.uid, schoolId);
+    }
+
+    function isAcceptingJoinRequestsSchool(schoolId) {
+      return exists(schoolPath(schoolId))
+        && get(schoolPath(schoolId)).data.status == "active"
+        && (
+          !get(schoolPath(schoolId)).data.keys().hasAny(["allowJoinRequests"])
+          || get(schoolPath(schoolId)).data.allowJoinRequests == true
+        );
+    }
+
+    function isValidPendingTeacherProfileAfter(userId, schoolId) {
+      return existsAfter(userPath(userId))
+        && getAfter(userPath(userId)).data.uid == userId
+        && getAfter(userPath(userId)).data.name is string
+        && getAfter(userPath(userId)).data.name.size() > 0
+        && getAfter(userPath(userId)).data.email == authEmail()
+        && getAfter(userPath(userId)).data.role == "teacher"
+        && getAfter(userPath(userId)).data.status == "pending_approval"
+        && getAfter(userPath(userId)).data.schoolId == schoolId
+        && (
+          getAfter(userPath(userId)).data.photoURL == null
+          || getAfter(userPath(userId)).data.photoURL is string
+        )
+        && getAfter(userPath(userId)).data.createdAt == request.time
+        && getAfter(userPath(userId)).data.updatedAt == request.time;
+    }
+
+    function isValidJoinRequestCreate(schoolId, userId) {
+      return signedIn()
+        && hasVerifiedOrGoogleAuthEmail()
+        && request.auth.uid == userId
+        && !exists(userPath(request.auth.uid))
+        && request.resource.data.keys().hasAll([
+          "userId",
+          "name",
+          "email",
+          "requestedRole",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "reviewedAt",
+          "reviewedBy"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "userId",
+          "name",
+          "email",
+          "requestedRole",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "reviewedAt",
+          "reviewedBy"
+        ])
+        && request.resource.data.userId == userId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.email == authEmail()
+        && request.resource.data.requestedRole == "teacher"
+        && request.resource.data.status == "pending"
+        && request.resource.data.reviewedAt == null
+        && request.resource.data.reviewedBy == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && isAcceptingJoinRequestsSchool(schoolId)
+        && isValidPendingTeacherProfileAfter(userId, schoolId);
+    }
+
+    function isPendingTeacherInOwnSchool(schoolId) {
+      return currentUserExists()
+        && currentUser().role == "teacher"
+        && currentUser().status == "pending_approval"
+        && currentUser().schoolId == schoolId;
+    }
+
+    function isOwnJoinRequest(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isReviewedTeacherProfileAfter(userId, schoolId, reviewStatus) {
+      return existsAfter(userPath(userId))
+        && getAfter(userPath(userId)).data.uid == userId
+        && getAfter(userPath(userId)).data.role == "teacher"
+        && getAfter(userPath(userId)).data.schoolId == schoolId
+        && getAfter(userPath(userId)).data.updatedAt == request.time
+        && (
+          (
+            reviewStatus == "approved"
+            && getAfter(userPath(userId)).data.status == "active"
+          )
+          || (
+            reviewStatus == "rejected"
+            && getAfter(userPath(userId)).data.status == "disabled"
+          )
+        );
+    }
+
+    function isValidJoinRequestReview(schoolId, userId) {
+      return isOwnSchool(schoolId)
+        && request.auth.uid != userId
+        && resource.data.userId == userId
+        && resource.data.requestedRole == "teacher"
+        && resource.data.status == "pending"
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status",
+          "updatedAt",
+          "reviewedAt",
+          "reviewedBy"
+        ])
+        && request.resource.data.status in ["approved", "rejected"]
+        && request.resource.data.reviewedAt == request.time
+        && request.resource.data.reviewedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time
+        && isReviewedTeacherProfileAfter(
+          userId,
+          schoolId,
+          request.resource.data.status
+        );
+    }
+
+    function isValidSchoolJoinRequestSettingUpdate(schoolId) {
+      return isOwnSchool(schoolId)
+        && isValidSchoolPayload(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "allowJoinRequests",
+          "updatedAt"
+        ])
+        && request.resource.data.allowJoinRequests is bool
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function isActiveSchoolAdminProfileAfter(userId, schoolId) {
+      return existsAfter(userPath(userId))
+        && getAfter(userPath(userId)).data.uid == userId
+        && getAfter(userPath(userId)).data.schoolId == schoolId
+        && getAfter(userPath(userId)).data.role == "school_admin"
+        && getAfter(userPath(userId)).data.status == "active";
+    }
+
+    function isValidSchoolRoleRosterUpdate(schoolId) {
+      return isOwnSchool(schoolId)
+        && isValidSchoolPayload(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "adminIds",
+          "primaryAdminId",
+          "updatedAt"
+        ])
+        && request.resource.data.adminIds is list
+        && request.resource.data.adminIds.size() > 0
+        && request.resource.data.primaryAdminId is string
+        && request.resource.data.primaryAdminId.size() > 0
+        && request.resource.data.adminIds.hasAny([
+          request.resource.data.primaryAdminId
+        ])
+        && isActiveSchoolAdminProfileAfter(
+          request.resource.data.primaryAdminId,
+          schoolId
+        )
+        && request.resource.data.updatedAt == request.time;
+    }
+
     function isOwnSchool(schoolId) {
       return isActiveSchoolAdmin() && currentUser().schoolId == schoolId;
     }
 
-    function isTeacherInOwnSchool() {
+    function isSchoolUserInOwnSchool() {
       return isActiveSchoolAdmin()
-        && resource.data.role == "teacher"
-        && resource.data.schoolId == currentUser().schoolId;
+        && resource.data.schoolId == currentUser().schoolId
+        && resource.data.status == "active"
+        && resource.data.role in ["teacher", "school_admin"];
     }
 
     function isTeacherPeerInOwnSchool() {
       return isActiveTeacher()
         && resource.data.role == "teacher"
         && resource.data.status == "active"
-        && resource.data.schoolId == currentUser().schoolId;
-    }
-
-    function isTeacherInvitationInOwnSchool() {
-      return isActiveSchoolAdmin()
-        && resource.data.role == "teacher"
         && resource.data.schoolId == currentUser().schoolId;
     }
 
@@ -1216,7 +1463,7 @@ service cloud.firestore {
     }
 
     function validInvitationRole(role) {
-      return role in ["school_admin", "teacher"];
+      return role == "school_admin";
     }
 
     function isValidInvitationBaseCreate(invitationId) {
@@ -1278,26 +1525,12 @@ service cloud.firestore {
           == request.resource.data.schoolName;
     }
 
-    function isValidTeacherInvitationCreate(invitationId) {
-      return isActiveSchoolAdmin()
-        && isValidInvitationBaseCreate(invitationId)
-        && request.resource.data.role == "teacher"
-        && !request.resource.data.keys().hasAny(["schoolName"])
-        && request.resource.data.schoolId == currentUser().schoolId;
-    }
-
     function isValidInvitationCreate(invitationId) {
-      return isValidSchoolAdminInvitationCreate(invitationId)
-        || isValidTeacherInvitationCreate(invitationId);
+      return isValidSchoolAdminInvitationCreate(invitationId);
     }
 
     function canCancelInvitation() {
-      return isActivePlatformAdmin()
-        || (
-          isActiveSchoolAdmin()
-          && resource.data.role == "teacher"
-          && resource.data.schoolId == currentUser().schoolId
-        );
+      return isActivePlatformAdmin();
     }
 
     function isValidInvitationCancel() {
@@ -1429,21 +1662,210 @@ service cloud.firestore {
         && isPrimaryAdminAfter(request.resource.data.schoolId, userId);
     }
 
-    function isValidTeacherProfileCreate(userId) {
-      return isValidInviteeProfileBaseCreate(userId)
-        && request.resource.data.role == "teacher";
+    function isValidInviteeProfileCreate(userId) {
+      return isValidSchoolAdminProfileCreate(userId);
     }
 
-    function isValidInviteeProfileCreate(userId) {
-      return isValidSchoolAdminProfileCreate(userId)
-        || isValidTeacherProfileCreate(userId);
+    function isValidSelfServiceSchoolAdminProfileCreate(userId) {
+      return signedIn()
+        && request.auth.uid == userId
+        && hasVerifiedOrGoogleAuthEmail()
+        && request.resource.data.keys().hasAll([
+          "uid",
+          "name",
+          "email",
+          "role",
+          "status",
+          "schoolId",
+          "photoURL",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "uid",
+          "name",
+          "email",
+          "role",
+          "status",
+          "schoolId",
+          "photoURL",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.uid == userId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.email == authEmail()
+        && request.resource.data.role == "school_admin"
+        && request.resource.data.status == "active"
+        && request.resource.data.schoolId is string
+        && request.resource.data.schoolId.size() > 0
+        && (
+          request.resource.data.photoURL == null
+          || request.resource.data.photoURL is string
+        )
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && existsAfter(schoolPath(request.resource.data.schoolId))
+        && getAfter(schoolPath(request.resource.data.schoolId)).data.primaryAdminId
+          == userId
+        && getAfter(schoolPath(request.resource.data.schoolId)).data.adminIds
+          is list
+        && getAfter(schoolPath(request.resource.data.schoolId)).data.adminIds.size()
+          == 1
+        && getAfter(schoolPath(request.resource.data.schoolId)).data.adminIds[0]
+          == userId
+        && getAfter(schoolPath(request.resource.data.schoolId)).data.createdBy
+          == userId
+        && getAfter(schoolPath(request.resource.data.schoolId)).data.createdAt
+          == request.time
+        && getAfter(schoolPath(request.resource.data.schoolId)).data.updatedAt
+          == request.time
+        && getAfter(schoolPath(request.resource.data.schoolId)).data.status
+          == "active"
+        && getAfter(schoolPath(request.resource.data.schoolId)).data.allowJoinRequests
+          == true;
+    }
+
+    function isValidPendingTeacherProfileCreate(userId) {
+      return signedIn()
+        && request.auth.uid == userId
+        && hasVerifiedOrGoogleAuthEmail()
+        && request.resource.data.keys().hasAll([
+          "uid",
+          "name",
+          "email",
+          "role",
+          "status",
+          "schoolId",
+          "photoURL",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "uid",
+          "name",
+          "email",
+          "role",
+          "status",
+          "schoolId",
+          "photoURL",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.uid == userId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.email == authEmail()
+        && request.resource.data.role == "teacher"
+        && request.resource.data.status == "pending_approval"
+        && request.resource.data.schoolId is string
+        && request.resource.data.schoolId.size() > 0
+        && (
+          request.resource.data.photoURL == null
+          || request.resource.data.photoURL is string
+        )
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && existsAfter(joinRequestPath(request.resource.data.schoolId, userId))
+        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.userId
+          == userId
+        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.email
+          == authEmail()
+        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.requestedRole
+          == "teacher"
+        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.status
+          == "pending"
+        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.createdAt
+          == request.time
+        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.updatedAt
+          == request.time;
+    }
+
+    function isValidTeacherReviewProfileUpdate(userId) {
+      return isActiveSchoolAdmin()
+        && resource.data.uid == userId
+        && resource.data.role == "teacher"
+        && resource.data.status == "pending_approval"
+        && resource.data.schoolId == currentUser().schoolId
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.name == resource.data.name
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.schoolId == resource.data.schoolId
+        && request.resource.data.photoURL == resource.data.photoURL
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status",
+          "updatedAt"
+        ])
+        && request.resource.data.status in ["active", "disabled"]
+        && existsAfter(joinRequestPath(resource.data.schoolId, userId))
+        && (
+          (
+            request.resource.data.status == "active"
+            && getAfter(joinRequestPath(resource.data.schoolId, userId)).data.status
+              == "approved"
+          )
+          || (
+            request.resource.data.status == "disabled"
+            && getAfter(joinRequestPath(resource.data.schoolId, userId)).data.status
+              == "rejected"
+          )
+        )
+        && getAfter(joinRequestPath(resource.data.schoolId, userId)).data.reviewedBy
+          == request.auth.uid
+        && getAfter(joinRequestPath(resource.data.schoolId, userId)).data.reviewedAt
+          == request.time
+        && getAfter(joinRequestPath(resource.data.schoolId, userId)).data.updatedAt
+          == request.time;
+    }
+
+    function isValidSchoolUserRoleChange(userId) {
+      return isActiveSchoolAdmin()
+        && resource.data.uid == userId
+        && resource.data.schoolId == currentUser().schoolId
+        && resource.data.status == "active"
+        && resource.data.role in ["teacher", "school_admin"]
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.schoolId == resource.data.schoolId
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.role in ["teacher", "school_admin"]
+        && request.resource.data.role != resource.data.role
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "role",
+          "updatedAt"
+        ])
+        && existsAfter(schoolPath(resource.data.schoolId))
+        && getAfter(schoolPath(resource.data.schoolId)).data.adminIds is list
+        && getAfter(schoolPath(resource.data.schoolId)).data.adminIds.size() > 0
+        && (
+          (
+            request.resource.data.role == "school_admin"
+            && getAfter(schoolPath(resource.data.schoolId)).data.adminIds.hasAny([
+              userId
+            ])
+          )
+          || (
+            request.resource.data.role == "teacher"
+            && !getAfter(schoolPath(resource.data.schoolId)).data.adminIds.hasAny([
+              userId
+            ])
+          )
+        );
     }
 
     function isValidSchoolPrimaryAdminRedemption(schoolId) {
       return signedIn()
         && request.resource.data.primaryAdminId == request.auth.uid
+        && request.resource.data.adminIds is list
+        && request.resource.data.adminIds.size() == 1
+        && request.resource.data.adminIds[0] == request.auth.uid
         && request.resource.data.updatedAt == request.time
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "adminIds",
           "primaryAdminId",
           "updatedAt"
         ])
@@ -1494,14 +1916,9 @@ service cloud.firestore {
           invitationId,
           resource.data.role
         )
-        && (
-          resource.data.role == "teacher"
-          || (
-            resource.data.role == "school_admin"
-            && isRedeemableSchoolAdminSchool(resource.data.schoolId, invitationId)
-            && isPrimaryAdminAfter(resource.data.schoolId, request.auth.uid)
-          )
-        )
+        && resource.data.role == "school_admin"
+        && isRedeemableSchoolAdminSchool(resource.data.schoolId, invitationId)
+        && isPrimaryAdminAfter(resource.data.schoolId, request.auth.uid)
         && isAcceptedInvitationAfter(invitationId, request.auth.uid);
     }
 
@@ -1510,24 +1927,41 @@ service cloud.firestore {
         && (
           request.auth.uid == userId
           || isActivePlatformAdmin()
-          || isTeacherInOwnSchool()
+          || isSchoolUserInOwnSchool()
           || isTeacherPeerInOwnSchool()
         );
       allow list: if isActivePlatformAdmin()
-        || isTeacherInOwnSchool()
+        || isSchoolUserInOwnSchool()
         || isTeacherPeerInOwnSchool();
-      allow create: if isValidInviteeProfileCreate(userId);
-      allow update: if isValidOwnProfileUpdate(userId);
+      allow create: if isValidInviteeProfileCreate(userId)
+        || isValidSelfServiceSchoolAdminProfileCreate(userId)
+        || isValidPendingTeacherProfileCreate(userId);
+      allow update: if isValidOwnProfileUpdate(userId)
+        || isValidTeacherReviewProfileUpdate(userId)
+        || isValidSchoolUserRoleChange(userId);
       allow delete: if false;
     }
 
     match /schools/{schoolId} {
-      allow get: if isActivePlatformAdmin() || isOwnSchool(schoolId);
+      allow get: if isActivePlatformAdmin()
+        || isOwnSchool(schoolId)
+        || isPendingTeacherInOwnSchool(schoolId);
       allow list: if isActivePlatformAdmin();
-      allow create: if isActivePlatformAdmin() && isValidSchoolCreate();
+      allow create: if (isActivePlatformAdmin() && isValidSchoolCreate())
+        || isValidSelfServiceSchoolCreate(schoolId);
       allow update: if (
         isActivePlatformAdmin() && isValidSchoolUpdate()
-      ) || isValidSchoolPrimaryAdminRedemption(schoolId);
+      ) || isValidSchoolPrimaryAdminRedemption(schoolId)
+        || isValidSchoolJoinRequestSettingUpdate(schoolId)
+        || isValidSchoolRoleRosterUpdate(schoolId);
+      allow delete: if false;
+    }
+
+    match /schools/{schoolId}/joinRequests/{userId} {
+      allow get: if isOwnSchool(schoolId) || isOwnJoinRequest(userId);
+      allow list: if isOwnSchool(schoolId);
+      allow create: if isValidJoinRequestCreate(schoolId, userId);
+      allow update: if isValidJoinRequestReview(schoolId, userId);
       allow delete: if false;
     }
 
@@ -1575,7 +2009,7 @@ service cloud.firestore {
 
     match /invitations/{invitationId} {
       allow get: if true;
-      allow list: if isActivePlatformAdmin() || isTeacherInvitationInOwnSchool();
+      allow list: if isActivePlatformAdmin();
       allow create: if isValidInvitationCreate(invitationId);
       allow update: if isValidInvitationCancel()
         || isValidInvitationRedemption(invitationId);

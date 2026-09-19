@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-
 import Icon from "../common/Icon.jsx";
 
 function EmptyTeachersState() {
@@ -9,11 +7,7 @@ function EmptyTeachersState() {
         <Icon name="users" size={26} />
       </span>
       <h2>No teachers yet</h2>
-      <p>Invite the first teacher to start preparing your faculty workspace.</p>
-      <Link className="link-button link-button--primary" to="/school-admin/teachers/invite">
-        <Icon name="plus" size={18} />
-        <span>Invite Teacher</span>
-      </Link>
+      <p>Approved teacher accounts will appear here.</p>
     </section>
   );
 }

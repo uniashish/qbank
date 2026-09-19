@@ -59,7 +59,7 @@ function AuthCard({
       />
 
       <p className="auth-card__register">
-        Don&apos;t have an account? <Link to="/register">Create account</Link>
+        Don&apos;t have an account? <Link to="/signup">Sign up</Link>
       </p>
     </section>
   );

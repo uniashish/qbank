@@ -2,6 +2,8 @@ import Button from "../common/Button.jsx";
 import ResendVerificationButton from "./ResendVerificationButton.jsx";
 
 function EmailVerificationNotice({
+  actionDescription = "accepting this invitation",
+  checkVerificationLabel = "I've verified my email",
   cooldownSeconds = 0,
   email,
   hasSentVerificationEmail = false,
@@ -28,8 +30,8 @@ function EmailVerificationNotice({
           </p>
         ) : (
           <p>
-            Verify <strong>{email}</strong> before accepting this invitation.
-            You can resend the verification email if you need a fresh link.
+            Verify <strong>{email}</strong> before {actionDescription}. You can
+            resend the verification email if you need a fresh link.
           </p>
         )}
       </div>
@@ -41,7 +43,7 @@ function EmailVerificationNotice({
           onClick={onCheckVerification}
           type="button"
         >
-          {isChecking ? "Checking..." : "I've verified my email"}
+          {isChecking ? "Checking..." : checkVerificationLabel}
         </Button>
         <ResendVerificationButton
           cooldownSeconds={cooldownSeconds}

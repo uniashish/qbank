@@ -51,11 +51,3 @@ export function validateInviteAdminForm(values) {
     nameRequiredMessage: "Enter the administrator's full name.",
   });
 }
-
-export function validateInviteTeacherForm(values) {
-  return validateInviteForm(values, {
-    emailRequiredMessage: "Enter the teacher's email address.",
-    emailValidMessage: "Enter a valid teacher email address.",
-    nameRequiredMessage: "Enter the teacher's full name.",
-  });
-}

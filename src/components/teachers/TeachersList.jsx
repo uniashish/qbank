@@ -6,7 +6,7 @@ function TeachersList({ teachers }) {
       <div className="teachers-section-header">
         <div>
           <h2 id="teachers-list-title">Teachers</h2>
-          <p>Active teacher accounts for this school.</p>
+          <p>Teacher accounts and approval status for this school.</p>
         </div>
         <span>{teachers.length}</span>
       </div>

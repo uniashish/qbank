@@ -1,4 +1,6 @@
 import AppShell from "../components/layout/AppShell.jsx";
+import { ACCOUNT_STATUSES } from "../constants/userStatus.js";
+import { useAuth } from "../hooks/useAuth.js";
 
 const teacherNavItems = [
   {
@@ -25,7 +27,13 @@ const teacherNavItems = [
 ];
 
 function TeacherLayout() {
-  return <AppShell navItems={teacherNavItems} />;
+  const { userProfile } = useAuth();
+  const navItems =
+    userProfile?.status === ACCOUNT_STATUSES.PENDING_APPROVAL
+      ? teacherNavItems.filter((item) => item.end)
+      : teacherNavItems;
+
+  return <AppShell navItems={navItems} />;
 }
 
 export default TeacherLayout;

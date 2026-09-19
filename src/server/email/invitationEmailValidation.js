@@ -3,10 +3,7 @@ import { USER_ROLES } from "../../constants/roles.js";
 import { ACCOUNT_STATUSES } from "../../constants/userStatus.js";
 
 const ALLOWED_REQUEST_KEYS = new Set(["invitationId", "schoolId"]);
-const SUPPORTED_INVITATION_ROLES = new Set([
-  USER_ROLES.SCHOOL_ADMIN,
-  USER_ROLES.TEACHER,
-]);
+const SUPPORTED_INVITATION_ROLES = new Set([USER_ROLES.SCHOOL_ADMIN]);
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export class InvitationEmailError extends Error {
@@ -137,20 +134,6 @@ export function validateInvitationEmailPermission({
       throw new InvitationEmailError(
         403,
         "Platform admins can email School Admin invitations only.",
-      );
-    }
-
-    return;
-  }
-
-  if (callerProfile.role === USER_ROLES.SCHOOL_ADMIN) {
-    if (
-      invitation.role !== USER_ROLES.TEACHER ||
-      callerProfile.schoolId !== invitation.schoolId
-    ) {
-      throw new InvitationEmailError(
-        403,
-        "You do not have permission to send this invitation.",
       );
     }
 

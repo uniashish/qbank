@@ -1,6 +1,5 @@
-.teacher-form-card,
 .teachers-table-card,
-.teacher-invitations-section,
+.teacher-join-requests-section,
 .empty-teachers-state {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -8,8 +7,7 @@
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
 }
 
-.teacher-form-card,
-.teacher-invitations-section {
+.teacher-join-requests-section {
   display: grid;
   gap: 18px;
   padding: 20px;
@@ -25,9 +23,7 @@
 .teachers-section-header h2,
 .teachers-section-header p,
 .teacher-table__identity strong,
-.teacher-table__identity span,
-.teacher-invitation-card h3,
-.teacher-invitation-card p {
+.teacher-table__identity span {
   margin: 0;
 }
 
@@ -144,6 +140,12 @@
   background: var(--color-surface-muted);
 }
 
+.teacher-status-badge--pending_approval {
+  color: var(--color-primary-active);
+  border-color: rgba(37, 99, 235, 0.2);
+  background: var(--color-primary-soft);
+}
+
 .empty-teachers-state {
   display: grid;
   justify-items: center;
@@ -176,25 +178,16 @@
   line-height: 1.3;
 }
 
-.empty-teachers-state p,
-.teacher-invitations-section__empty {
+.empty-teachers-state p {
   color: var(--color-text-secondary);
 }
 
-.teacher-invitations-section__empty {
-  margin: 0;
-  padding: 16px;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-muted);
-}
-
-.teacher-invitations-list {
+.teacher-join-requests-list {
   display: grid;
   gap: 12px;
 }
 
-.teacher-invitation-card {
+.teacher-join-request-card {
   display: grid;
   gap: 14px;
   padding: 16px;
@@ -203,69 +196,56 @@
   background: var(--color-surface-muted);
 }
 
-.teacher-invitation-card__details {
+.teacher-join-request-card__details {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
 }
 
-.teacher-invitation-card h3 {
+.teacher-join-request-card h3,
+.teacher-join-request-card p,
+.teacher-join-request-card span {
+  margin: 0;
+}
+
+.teacher-join-request-card h3 {
   color: var(--color-text);
   font-size: 1rem;
   line-height: 1.25;
 }
 
-.teacher-invitation-card p,
-.teacher-invitation-card span {
+.teacher-join-request-card p,
+.teacher-join-request-card span {
   color: var(--color-text-secondary);
   font-size: 0.91rem;
 }
 
-.teacher-invitation-card__pending {
-  display: grid;
-  gap: 8px;
+.teacher-join-request-card__status {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 999px;
+  color: var(--color-primary-active) !important;
+  background: var(--color-primary-soft);
+  font-size: 0.78rem !important;
+  font-weight: 850;
+  text-transform: capitalize;
 }
 
-.teacher-invitation-card__actions {
+.teacher-join-request-card__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-.teacher-invitation-card__actions .button {
+.teacher-join-request-card__actions .button {
   width: auto;
-  min-width: 152px;
-  padding-inline: 18px;
-}
-
-.invite-teacher-form {
-  display: grid;
-  gap: 20px;
-}
-
-.invite-teacher-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.invite-teacher-form__actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.invite-teacher-form__actions .button {
-  width: auto;
-  min-width: 206px;
+  min-width: 132px;
   padding-inline: 18px;
 }
 
 @media (max-width: 900px) {
-  .invite-teacher-form__grid {
-    grid-template-columns: 1fr;
-  }
-
   .teachers-table,
   .teachers-table thead,
   .teachers-table tbody,
@@ -318,27 +298,14 @@
   .teachers-table tr td:last-child {
     border-bottom: 0;
   }
+
+  .teacher-join-request-card__details {
+    display: grid;
+  }
 }
 
 @media (max-width: 640px) {
-  .teacher-form-card,
-  .teacher-invitations-section {
-    padding: 18px;
-  }
-
-  .teachers-section-header,
-  .teacher-invitation-card__details {
+  .teachers-section-header {
     display: grid;
-  }
-
-  .invite-teacher-form__actions,
-  .teacher-invitation-card__actions {
-    display: grid;
-  }
-
-  .invite-teacher-form__actions .button,
-  .teacher-invitation-card__actions .button,
-  .teacher-invitation-card__actions .link-button {
-    width: 100%;
   }
 }

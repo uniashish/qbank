@@ -10,5 +10,7 @@
 @import "./styles/teacher-assignments.css";
 @import "./styles/teacher-dashboard.css";
 @import "./styles/invite.css";
+@import "./features/onboarding/onboarding.css";
+@import "./features/school-users/school-users.css";
 @import "./features/question-designer/styles/question-designer.css";
 @import "./styles/question-bank.css";

@@ -1,0 +1,414 @@
+.school-users-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.school-users-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.school-users-tab:hover {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.school-users-tab:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.24);
+  outline-offset: 2px;
+}
+
+.school-users-tab--active {
+  color: var(--color-primary-active);
+  border-color: rgba(37, 99, 235, 0.18);
+  background: var(--color-surface);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.school-users-tab strong {
+  min-width: 24px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.school-users-empty,
+.school-users-table-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+}
+
+.school-users-empty {
+  display: grid;
+  gap: 6px;
+  padding: 28px;
+}
+
+.school-users-empty h2,
+.school-users-empty p,
+.school-users-section-header h2,
+.school-users-section-header p,
+.school-users-dialog__header p,
+.school-users-dialog__header h2,
+.school-users-dialog__header span,
+.school-users-dialog-section-header h3,
+.school-users-dialog-section-header p,
+.school-users-confirmation-copy,
+.school-users-details-list {
+  margin: 0;
+}
+
+.school-users-empty h2,
+.school-users-section-header h2 {
+  color: var(--color-text);
+  font-size: 1.05rem;
+  line-height: 1.25;
+  font-weight: 850;
+}
+
+.school-users-empty p,
+.school-users-section-header p,
+.school-users-dialog-section-header p {
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+}
+
+.school-users-table-card {
+  overflow: hidden;
+}
+
+.school-users-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.school-users-section-header > span,
+.school-users-dialog-section-header > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 28px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: var(--color-primary-active);
+  background: var(--color-primary-soft);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.school-users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.school-users-table th,
+.school-users-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.school-users-table th {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.school-users-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.school-users-identity {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.school-users-identity strong {
+  color: var(--color-text);
+  font-weight: 850;
+}
+
+.school-users-identity span {
+  overflow-wrap: anywhere;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+}
+
+.school-users-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.school-users-dialog-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.school-users-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(15, 23, 42, 0.5);
+  cursor: pointer;
+}
+
+.school-users-dialog-backdrop:disabled {
+  cursor: default;
+}
+
+.school-users-dialog {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: min(860px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+}
+
+.school-users-dialog--narrow {
+  width: min(540px, 100%);
+}
+
+.school-users-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.school-users-dialog__header p {
+  color: var(--color-accent);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.school-users-dialog__header h2 {
+  margin-top: 4px;
+  color: var(--color-text);
+  font-size: 1.2rem;
+  line-height: 1.25;
+}
+
+.school-users-dialog__header span {
+  display: block;
+  margin-top: 3px;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.school-users-dialog__close {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.school-users-dialog__close:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.school-users-dialog__body,
+.school-users-details-list {
+  padding: 20px 22px;
+}
+
+.school-users-dialog__body {
+  overflow: auto;
+}
+
+.school-users-dialog-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.school-users-dialog-section-header h3 {
+  color: var(--color-text);
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.school-users-dialog__empty {
+  padding: 16px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+}
+
+.school-users-confirmation-copy {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.school-users-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 22px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+}
+
+.school-users-details-list {
+  display: grid;
+  gap: 12px;
+}
+
+.school-users-details-list div {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.school-users-details-list div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.school-users-details-list dt {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.school-users-details-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-weight: 750;
+}
+
+@media (max-width: 760px) {
+  .school-users-tabs {
+    display: grid;
+  }
+
+  .school-users-tab {
+    justify-content: space-between;
+  }
+
+  .school-users-table,
+  .school-users-table thead,
+  .school-users-table tbody,
+  .school-users-table tr,
+  .school-users-table th,
+  .school-users-table td {
+    display: block;
+  }
+
+  .school-users-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .school-users-table tr {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .school-users-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .school-users-table td {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 0;
+  }
+
+  .school-users-table td::before {
+    content: attr(data-label);
+    color: var(--color-text-secondary);
+    font-size: 0.76rem;
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+
+  .school-users-dialog-layer {
+    padding: 14px;
+  }
+
+  .school-users-dialog {
+    max-height: calc(100vh - 28px);
+  }
+
+  .school-users-dialog__header,
+  .school-users-dialog__actions {
+    padding-inline: 16px;
+  }
+
+  .school-users-dialog__body,
+  .school-users-details-list {
+    padding: 16px;
+  }
+
+  .school-users-dialog__actions {
+    display: grid;
+  }
+
+  .school-users-dialog__actions .button,
+  .school-users-dialog__actions .link-button {
+    width: 100%;
+  }
+}

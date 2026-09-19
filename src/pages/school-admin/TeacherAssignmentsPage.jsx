@@ -9,9 +9,14 @@ import DashboardHeader from "../../components/school-admin/DashboardHeader.jsx";
 import EmptyAssignmentsState from "../../components/teacher-assignments/EmptyAssignmentsState.jsx";
 import TeacherAssignmentEditor from "../../components/teacher-assignments/TeacherAssignmentEditor.jsx";
 import TeacherSelector from "../../components/teacher-assignments/TeacherSelector.jsx";
+import {
+  buildAssignmentGroups,
+  buildSelectionsFromAssignments,
+  countDirtySelections,
+  countSelections,
+} from "../../components/teacher-assignments/assignmentSelectionUtils.js";
 import { ACCOUNT_STATUSES } from "../../constants/userStatus.js";
 import { useAuth } from "../../hooks/useAuth.js";
-import { getClassSubjectMappingId } from "../../services/classSubjectService.js";
 import { getTeachersForSchool } from "../../services/teacherService.js";
 import {
   getAssignableClassSubjects,
@@ -23,84 +28,6 @@ function sortTeachers(firstTeacher, secondTeacher) {
   return (firstTeacher.name || firstTeacher.email || "").localeCompare(
     secondTeacher.name || secondTeacher.email || "",
   );
-}
-
-function buildAssignmentGroups(assignablePairs) {
-  const groupsByClassId = new Map();
-
-  assignablePairs.forEach((pair) => {
-    if (!groupsByClassId.has(pair.classId)) {
-      groupsByClassId.set(pair.classId, {
-        classRecord: pair.classRecord,
-        subjects: [],
-      });
-    }
-
-    groupsByClassId.get(pair.classId).subjects.push(pair.subject);
-  });
-
-  return [...groupsByClassId.values()].map((group) => ({
-    ...group,
-    subjects: group.subjects.sort((firstSubject, secondSubject) =>
-      firstSubject.name.localeCompare(secondSubject.name),
-    ),
-  }));
-}
-
-function buildSelectionsFromAssignments(assignments, assignablePairIds) {
-  const selections = {};
-
-  assignments.forEach((assignment) => {
-    const pairId = getClassSubjectMappingId(
-      assignment.classId,
-      assignment.subjectId,
-    );
-
-    if (!assignablePairIds.has(pairId)) {
-      return;
-    }
-
-    selections[assignment.classId] = [
-      ...new Set([...(selections[assignment.classId] ?? []), assignment.subjectId]),
-    ].sort();
-  });
-
-  return selections;
-}
-
-function countSelections(selections) {
-  return Object.values(selections).reduce(
-    (total, subjectIds) => total + subjectIds.length,
-    0,
-  );
-}
-
-function getSelectionPairIds(selections) {
-  return new Set(
-    Object.entries(selections).flatMap(([classId, subjectIds]) =>
-      subjectIds.map((subjectId) => getClassSubjectMappingId(classId, subjectId)),
-    ),
-  );
-}
-
-function countDirtySelections(currentSelections, savedSelections) {
-  const currentPairIds = getSelectionPairIds(currentSelections);
-  const savedPairIds = getSelectionPairIds(savedSelections);
-  let dirtyCount = 0;
-
-  currentPairIds.forEach((pairId) => {
-    if (!savedPairIds.has(pairId)) {
-      dirtyCount += 1;
-    }
-  });
-
-  savedPairIds.forEach((pairId) => {
-    if (!currentPairIds.has(pairId)) {
-      dirtyCount += 1;
-    }
-  });
-
-  return dirtyCount;
 }
 
 function TeacherAssignmentsPage() {
@@ -337,12 +264,12 @@ function TeacherAssignmentsPage() {
           action={
             <Link
               className="link-button link-button--primary"
-              to="/school-admin/teachers/invite"
+              to="/school-admin/users"
             >
-              Invite Teacher
+              Review Users
             </Link>
           }
-          description="Create or activate at least one teacher before assigning classes and subjects."
+          description="Approve at least one teacher before assigning classes and subjects."
           title="No active teachers"
         />
       )}
