@@ -15,6 +15,7 @@ function QuestionBankToolbar({
   questionTypeOptions,
   searchTerm,
   subjectOptions,
+  tagOptions,
   topicOptions,
 }) {
   return (
@@ -40,6 +41,7 @@ function QuestionBankToolbar({
         onClear={onClearFilters}
         questionTypeOptions={questionTypeOptions}
         subjectOptions={subjectOptions}
+        tagOptions={tagOptions}
         topicOptions={topicOptions}
       />
     </section>

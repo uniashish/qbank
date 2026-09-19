@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 
 import Spinner from "../../../../components/common/Spinner.jsx";
+import TagInput from "../../../../components/tags/TagInput.jsx";
 import { usesSharedPromptField } from "../../constants/questionTypes.js";
 import AssignedClassField from "./AssignedClassField.jsx";
 import AssignedSubjectField from "./AssignedSubjectField.jsx";
@@ -181,6 +182,13 @@ function QuestionDetailsStep({
         <InstructionsField
           onChange={(value) => onFieldChange("instructions", value)}
           value={designerState.instructions}
+        />
+
+        <TagInput
+          error={validationErrors.tags}
+          id="question-details-tags"
+          onChange={(tags) => onFieldChange("tags", tags)}
+          value={designerState.tags}
         />
       </form>
     </section>

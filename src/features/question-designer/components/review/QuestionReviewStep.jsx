@@ -1,5 +1,6 @@
 import QuestionTypeReview from "../../editors/review/QuestionTypeReview.jsx";
 import { usesSharedPromptField } from "../../constants/questionTypes.js";
+import TagChip from "../../../../components/tags/TagChip.jsx";
 import QuestionImageReview from "./QuestionImageReview.jsx";
 import ReviewEmptyValue from "./ReviewEmptyValue.jsx";
 import ReviewField from "./ReviewField.jsx";
@@ -37,6 +38,16 @@ function QuestionReviewStep({ questionDraft }) {
           />
         </dl>
       </ReviewSection>
+
+      {questionDraft.tags?.length > 0 && (
+        <ReviewSection title="Tags" titleId="question-review-tags-title">
+          <div className="tag-list question-review-tags">
+            {questionDraft.tags.map((tag) => (
+              <TagChip key={tag.toLowerCase()} label={tag} readOnly />
+            ))}
+          </div>
+        </ReviewSection>
+      )}
 
       {usesSharedPromptField(questionDraft.questionType) && (
         <ReviewSection

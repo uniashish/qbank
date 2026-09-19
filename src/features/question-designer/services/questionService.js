@@ -8,6 +8,7 @@ import {
 import { QUESTION_TYPES } from "../constants/questionTypes.js";
 import { createPersistableMatchPairs } from "../utils/matchPairHelpers.js";
 import { cloneRichTextContent } from "../utils/richTextContent.js";
+import { sanitizeTags } from "../../../components/tags/tagUtils.js";
 import { db } from "../../../services/firebase.js";
 
 const SCHOOLS_COLLECTION = "schools";
@@ -92,6 +93,7 @@ export function createQuestionDocument({ draft, image, teacherProfile }) {
     questionType: draft.questionType,
     status: ACTIVE_STATUS,
     subjectId: draft.subjectId,
+    tags: sanitizeTags(draft.tags),
     topicName: trimText(draft.topicName),
     updatedAt: serverTimestamp(),
   };

@@ -14,6 +14,7 @@ import {
   cloneRichTextContent,
   getRichTextPlainText,
 } from "../utils/richTextContent.js";
+import { sanitizeTags } from "../../../components/tags/tagUtils.js";
 
 function trimText(value) {
   return String(value ?? "").trim();
@@ -162,6 +163,7 @@ export function createQuestionDraft(designerState, assignmentState = {}) {
       designerState.subjectId,
       assignmentState,
     ),
+    tags: sanitizeTags(designerState.tags),
     topicName: trimText(designerState.topicName),
   };
 }

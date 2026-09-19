@@ -38,6 +38,7 @@ function TeacherQuestionBankPage() {
     searchTerm,
     setSearchTerm,
     subjectOptions,
+    tagOptions,
     topicOptions,
     totalQuestionCount,
     updateFilter,
@@ -298,6 +299,7 @@ function TeacherQuestionBankPage() {
         questionTypeOptions={questionTypeOptions}
         searchTerm={searchTerm}
         subjectOptions={subjectOptions}
+        tagOptions={tagOptions}
         topicOptions={topicOptions}
       />
 

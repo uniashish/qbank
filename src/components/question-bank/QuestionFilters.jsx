@@ -39,6 +39,7 @@ function QuestionFilters({
   onClear,
   questionTypeOptions = [],
   subjectOptions = [],
+  tagOptions = [],
   topicOptions = [],
 }) {
   return (
@@ -92,6 +93,14 @@ function QuestionFilters({
         options={topicOptions}
         placeholder="All topics"
         value={filters.topicName}
+      />
+      <FilterSelect
+        id="question-bank-tag-filter"
+        label="Tag"
+        onChange={(value) => onChange("tag", value)}
+        options={tagOptions}
+        placeholder="All tags"
+        value={filters.tag}
       />
       <Button
         className="question-bank-filters__clear"

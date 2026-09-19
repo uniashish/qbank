@@ -12,6 +12,7 @@ import {
   filterQuestionBankQuestions,
   hasQuestionBankFilters,
 } from "../utils/questionBankFilters.js";
+import { sanitizeTags } from "../components/tags/tagUtils.js";
 import { useAuth } from "./useAuth.js";
 
 const INITIAL_FILTERS = {
@@ -19,6 +20,7 @@ const INITIAL_FILTERS = {
   difficulty: "",
   questionType: "",
   subjectId: "",
+  tag: "",
   topicName: "",
 };
 
@@ -88,6 +90,22 @@ function createTopicOptions(questions = []) {
     }));
 }
 
+function createTagOptions(questions = []) {
+  return [
+    ...new Map(
+      questions
+        .flatMap((question) => question.tags ?? [])
+        .filter(Boolean)
+        .map((tag) => [tag.toLowerCase(), tag]),
+    ).values(),
+  ]
+    .sort((firstTag, secondTag) => firstTag.localeCompare(secondTag))
+    .map((tag) => ({
+      id: tag,
+      label: tag,
+    }));
+}
+
 function enrichQuestion(question, academicLookups) {
   const classRecord = academicLookups.classById.get(question.classId);
   const subject = academicLookups.subjectById.get(question.subjectId);
@@ -99,6 +117,7 @@ function enrichQuestion(question, academicLookups) {
     difficultyLabel: resolveDifficultyLabel(question.difficulty),
     questionTypeLabel: questionTypeOption?.title ?? "Unknown type",
     subjectName: subject?.name ?? "Unavailable subject",
+    tags: sanitizeTags(question.tags),
   };
 }
 
@@ -216,6 +235,10 @@ export function useQuestionBank({ ownedOnly = false } = {}) {
     () => createTopicOptions(enrichedQuestions),
     [enrichedQuestions],
   );
+  const tagOptions = useMemo(
+    () => createTagOptions(enrichedQuestions),
+    [enrichedQuestions],
+  );
   const classOptions = useMemo(
     () => createClassOptions(enrichedQuestions, academicLookups.classById),
     [academicLookups.classById, enrichedQuestions],
@@ -285,6 +308,7 @@ export function useQuestionBank({ ownedOnly = false } = {}) {
     searchTerm,
     setSearchTerm,
     subjectOptions,
+    tagOptions,
     teacherId,
     topicOptions,
     totalQuestionCount: enrichedQuestions.length,

@@ -1,5 +1,6 @@
 import { DIFFICULTY_LEVELS } from "../constants/difficultyLevels.js";
 import { usesSharedPromptField } from "../constants/questionTypes.js";
+import { validateTags } from "../../../components/tags/tagUtils.js";
 
 const MIN_MARKS = 1;
 const MAX_TOPIC_NAME_LENGTH = 100;
@@ -48,6 +49,12 @@ export function validateQuestionDetails(details) {
 
   if (!VALID_DIFFICULTIES.has(details.difficulty)) {
     errors.difficulty = "Choose a difficulty level.";
+  }
+
+  const tagsError = validateTags(details.tags);
+
+  if (tagsError) {
+    errors.tags = tagsError;
   }
 
   return errors;

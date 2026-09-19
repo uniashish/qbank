@@ -24,6 +24,7 @@ import {
   validateQuestionDetails,
 } from "../validation/questionDetailsValidation.js";
 import { QUESTION_TYPES } from "../constants/questionTypes.js";
+import { sanitizeTags } from "../../../components/tags/tagUtils.js";
 
 const INITIAL_MULTIPLE_CHOICE_OPTIONS = Array.from(
   { length: MIN_MULTIPLE_CHOICE_OPTIONS },
@@ -43,6 +44,7 @@ const INITIAL_DESIGNER_STATE = {
   prompt: "",
   questionType: null,
   subjectId: null,
+  tags: [],
   topicName: "",
 };
 
@@ -231,6 +233,7 @@ function createQuestionDesignerStateFromQuestion(question, mode) {
     questionType: question.questionType ?? null,
     shortAnswer: getShortAnswerState(question),
     subjectId: question.subjectId ?? null,
+    tags: sanitizeTags(question.tags),
     topicName: question.topicName ?? "",
     trueFalse: getTrueFalseState(question),
   });

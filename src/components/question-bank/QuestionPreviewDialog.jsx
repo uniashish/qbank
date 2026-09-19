@@ -5,6 +5,7 @@ import { DIFFICULTY_LEVEL_OPTIONS } from "../../features/question-designer/const
 import { getQuestionTypeOption } from "../../features/question-designer/constants/questionTypes.js";
 import QuestionReviewStep from "../../features/question-designer/components/review/QuestionReviewStep.jsx";
 import SharedQuestionBadge from "../../features/question-sharing/SharedQuestionBadge.jsx";
+import { sanitizeTags } from "../tags/tagUtils.js";
 
 function resolveDifficultyLabel(difficulty) {
   return (
@@ -37,6 +38,7 @@ function createPreviewDraft(question) {
     questionTypeLabel: question.questionTypeLabel ?? questionTypeOption?.title ?? "",
     subjectId: question.subjectId,
     subjectName: question.subjectName,
+    tags: sanitizeTags(question.tags),
     topicName: question.topicName ?? "",
   };
 }

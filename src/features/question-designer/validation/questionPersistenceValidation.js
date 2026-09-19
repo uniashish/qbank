@@ -20,6 +20,7 @@ import {
   hasShortAnswerValidationErrors,
   validateShortAnswer,
 } from "../editors/short-answer/shortAnswerValidation.js";
+import { validateTags } from "../../../components/tags/tagUtils.js";
 
 const MIN_MULTIPLE_CHOICE_OPTIONS = 2;
 const MAX_MULTIPLE_CHOICE_OPTIONS = 8;
@@ -210,6 +211,12 @@ export function validateQuestionPersistenceInput({ draft, teacherProfile }) {
 
   if (!VALID_DIFFICULTIES.has(draft.difficulty)) {
     errors.difficulty = "Choose a difficulty level.";
+  }
+
+  const tagsError = validateTags(draft.tags);
+
+  if (tagsError) {
+    errors.tags = tagsError;
   }
 
   if (draft.questionImage?.error) {

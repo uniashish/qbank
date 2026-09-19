@@ -403,6 +403,33 @@ service cloud.firestore {
         );
     }
 
+    function isValidQuestionTag(tag) {
+      return tag is string
+        && tag.size() > 0
+        && tag.size() <= 50
+        && tag.matches(".*\\S.*");
+    }
+
+    function isValidQuestionTags(tags) {
+      return tags is list
+        && tags.size() <= 10
+        && (tags.size() < 1 || isValidQuestionTag(tags[0]))
+        && (tags.size() < 2 || isValidQuestionTag(tags[1]))
+        && (tags.size() < 3 || isValidQuestionTag(tags[2]))
+        && (tags.size() < 4 || isValidQuestionTag(tags[3]))
+        && (tags.size() < 5 || isValidQuestionTag(tags[4]))
+        && (tags.size() < 6 || isValidQuestionTag(tags[5]))
+        && (tags.size() < 7 || isValidQuestionTag(tags[6]))
+        && (tags.size() < 8 || isValidQuestionTag(tags[7]))
+        && (tags.size() < 9 || isValidQuestionTag(tags[8]))
+        && (tags.size() < 10 || isValidQuestionTag(tags[9]));
+    }
+
+    function hasValidOptionalQuestionTags(data) {
+      return !data.keys().hasAny(["tags"])
+        || isValidQuestionTags(data.tags);
+    }
+
     function isValidQuestionOption(option) {
       return option is map
         && option.keys().hasAll([
@@ -820,6 +847,7 @@ service cloud.firestore {
           "instructions",
           "image",
           "answerData",
+          "tags",
           "createdBy",
           "createdAt",
           "updatedAt",
@@ -836,6 +864,7 @@ service cloud.firestore {
           "instructions",
           "image",
           "answerData",
+          "tags",
           "createdBy",
           "createdAt",
           "updatedAt",
@@ -860,6 +889,7 @@ service cloud.firestore {
           questionId,
           request.resource.data.image
         )
+        && isValidQuestionTags(request.resource.data.tags)
         && isValidQuestionAnswerData(
           request.resource.data.questionType,
           request.resource.data.answerData
@@ -907,6 +937,7 @@ service cloud.firestore {
           "instructions",
           "image",
           "answerData",
+          "tags",
           "createdBy",
           "createdAt",
           "updatedAt",
@@ -931,6 +962,7 @@ service cloud.firestore {
           questionId,
           request.resource.data.image
         )
+        && hasValidOptionalQuestionTags(request.resource.data)
         && isValidQuestionAnswerData(
           request.resource.data.questionType,
           request.resource.data.answerData
@@ -951,6 +983,7 @@ service cloud.firestore {
           "instructions",
           "image",
           "answerData",
+          "tags",
           "updatedAt",
           "status"
         ])

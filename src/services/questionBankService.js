@@ -18,6 +18,7 @@ import {
   uploadQuestionImage,
 } from "../features/question-designer/services/questionImageService.js";
 import { assertQuestionCanBeSaved } from "../features/question-designer/validation/questionPersistenceValidation.js";
+import { sanitizeTags } from "../components/tags/tagUtils.js";
 import { db } from "./firebase.js";
 
 const SCHOOLS_COLLECTION = "schools";
@@ -84,6 +85,7 @@ function normalizeQuestionSnapshot(snapshot) {
   return {
     id: snapshot.id,
     ...snapshot.data(),
+    tags: sanitizeTags(snapshot.data().tags),
   };
 }
 
@@ -227,6 +229,7 @@ function createQuestionUpdatePayload({ draft, image }) {
     questionType: draft.questionType,
     status: ACTIVE_STATUS,
     subjectId: draft.subjectId,
+    tags: sanitizeTags(draft.tags),
     topicName: trimText(draft.topicName),
     updatedAt: serverTimestamp(),
   };

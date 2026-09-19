@@ -66,7 +66,7 @@
 
 .question-bank-filters {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) auto;
   gap: 12px;
   align-items: end;
 }
@@ -240,6 +240,22 @@
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.question-bank-tags {
+  max-width: 360px;
+}
+
+.tag-list--compact .tag-chip {
+  max-width: 116px;
+  min-height: 24px;
+  padding: 3px 7px;
+  font-size: 0.74rem;
+}
+
+.tag-list--compact .tag-chip--more {
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
 }
 
 .question-bank-badge {
