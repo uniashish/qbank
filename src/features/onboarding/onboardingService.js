@@ -76,6 +76,25 @@ function ensureVerifiedOrGoogleUser(firebaseUser) {
   }
 }
 
+function isCompletedSchoolAdminProfile(userData, firebaseUser) {
+  return Boolean(
+    userData?.uid === firebaseUser.uid &&
+      userData?.email === normalizeEmail(firebaseUser.email) &&
+      userData?.role === USER_ROLES.SCHOOL_ADMIN &&
+      userData?.status === ACCOUNT_STATUSES.ACTIVE &&
+      typeof userData?.schoolId === "string" &&
+      userData.schoolId.trim(),
+  );
+}
+
+function isCompletedSchoolAdminSchool(schoolData, firebaseUser) {
+  return Boolean(
+    schoolData?.primaryAdminId === firebaseUser.uid &&
+      Array.isArray(schoolData?.adminIds) &&
+      schoolData.adminIds.includes(firebaseUser.uid),
+  );
+}
+
 function getJoinRequestId(schoolId, uid) {
   return `${schoolId}:${uid}`;
 }
@@ -145,10 +164,24 @@ export async function createSchoolAdminOnboardingProfile({
   const userRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
   const timestamp = serverTimestamp();
 
-  await runTransaction(db, async (transaction) => {
+  return runTransaction(db, async (transaction) => {
     const userSnapshot = await transaction.get(userRef);
 
     if (userSnapshot.exists()) {
+      const userData = userSnapshot.data();
+
+      if (isCompletedSchoolAdminProfile(userData, firebaseUser)) {
+        const existingSchoolRef = doc(db, COLLECTIONS.SCHOOLS, userData.schoolId);
+        const existingSchoolSnapshot = await transaction.get(existingSchoolRef);
+
+        if (
+          existingSchoolSnapshot.exists() &&
+          isCompletedSchoolAdminSchool(existingSchoolSnapshot.data(), firebaseUser)
+        ) {
+          return userData.schoolId;
+        }
+      }
+
       throw createOnboardingError(
         ONBOARDING_ERROR_CODES.ACCOUNT_ALREADY_PROVISIONED,
         "This account already has a QBank user profile.",
@@ -183,9 +216,9 @@ export async function createSchoolAdminOnboardingProfile({
       uid: firebaseUser.uid,
       updatedAt: timestamp,
     });
-  });
 
-  return schoolRef.id;
+    return schoolRef.id;
+  });
 }
 
 export async function createSchoolJoinRequest({

@@ -162,16 +162,26 @@ function CreateSchoolSignupPage() {
 
   const handleSchoolChange = (event) => {
     const { name, value } = event.target;
+    const nextSchoolValues = { ...schoolValues, [name]: value };
 
-    setSchoolValues((currentValues) => ({ ...currentValues, [name]: value }));
+    setSchoolValues(nextSchoolValues);
     setSchoolErrors((currentErrors) => ({ ...currentErrors, [name]: "" }));
+
+    if (firebaseUser) {
+      persistPendingSignup(nextSchoolValues, accountValues);
+    }
   };
 
   const handleAccountChange = (event) => {
     const { name, value } = event.target;
+    const nextAccountValues = { ...accountValues, [name]: value };
 
-    setAccountValues((currentValues) => ({ ...currentValues, [name]: value }));
+    setAccountValues(nextAccountValues);
     setAccountErrors((currentErrors) => ({ ...currentErrors, [name]: "" }));
+
+    if (firebaseUser) {
+      persistPendingSignup(schoolValues, nextAccountValues);
+    }
   };
 
   const completeSchoolCreation = async (credentialUser = firebaseUser) => {
@@ -424,7 +434,10 @@ function CreateSchoolSignupPage() {
         {isWaitingForVerification && (
           <EmailVerificationNotice
             actionDescription="creating your school"
-            checkVerificationLabel="Create school"
+            checkVerificationLabel="Check Verification / Continue"
+            completionDescription={
+              "School creation will finish after verification, then your School Admin profile will be created."
+            }
             cooldownSeconds={resendCooldownSeconds}
             email={firebaseUser.email}
             hasSentVerificationEmail={hasSentVerificationEmail}

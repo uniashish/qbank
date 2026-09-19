@@ -4,6 +4,7 @@ import ResendVerificationButton from "./ResendVerificationButton.jsx";
 function EmailVerificationNotice({
   actionDescription = "accepting this invitation",
   checkVerificationLabel = "I've verified my email",
+  completionDescription = "",
   cooldownSeconds = 0,
   email,
   hasSentVerificationEmail = false,
@@ -34,6 +35,7 @@ function EmailVerificationNotice({
             resend the verification email if you need a fresh link.
           </p>
         )}
+        {completionDescription && <p>{completionDescription}</p>}
       </div>
 
       <div className="email-verification-notice__actions">

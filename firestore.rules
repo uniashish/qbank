@@ -1223,7 +1223,7 @@ service cloud.firestore {
 
     function isValidSelfServiceSchoolCreate(schoolId) {
       return signedIn()
-        && hasVerifiedOrGoogleAuthEmail()
+        && hasVerifiedAuthEmail()
         && !exists(userPath(request.auth.uid))
         && request.resource.data.keys().hasAll([
           "name",
@@ -1669,7 +1669,7 @@ service cloud.firestore {
     function isValidSelfServiceSchoolAdminProfileCreate(userId) {
       return signedIn()
         && request.auth.uid == userId
-        && hasVerifiedOrGoogleAuthEmail()
+        && hasVerifiedAuthEmail()
         && request.resource.data.keys().hasAll([
           "uid",
           "name",
