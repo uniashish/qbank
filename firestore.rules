@@ -1441,6 +1441,19 @@ service cloud.firestore {
         && resource.data.role in ["teacher", "school_admin"];
     }
 
+    function isPendingTeacherProfileInOwnSchool() {
+      return isActiveSchoolAdmin()
+        && resource.data.schoolId == currentUser().schoolId
+        && resource.data.role == "teacher"
+        && resource.data.status == "pending_approval";
+    }
+
+    function canListSchoolUsersInOwnSchool() {
+      return isActiveSchoolAdmin()
+        && resource.data.schoolId == currentUser().schoolId
+        && resource.data.role in ["teacher", "school_admin"];
+    }
+
     function isTeacherPeerInOwnSchool() {
       return isActiveTeacher()
         && resource.data.role == "teacher"
@@ -1928,10 +1941,11 @@ service cloud.firestore {
           request.auth.uid == userId
           || isActivePlatformAdmin()
           || isSchoolUserInOwnSchool()
+          || isPendingTeacherProfileInOwnSchool()
           || isTeacherPeerInOwnSchool()
         );
       allow list: if isActivePlatformAdmin()
-        || isSchoolUserInOwnSchool()
+        || canListSchoolUsersInOwnSchool()
         || isTeacherPeerInOwnSchool();
       allow create: if isValidInviteeProfileCreate(userId)
         || isValidSelfServiceSchoolAdminProfileCreate(userId)

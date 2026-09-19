@@ -270,11 +270,18 @@
 
 .question-details-grid {
   display: grid;
+  align-items: start;
   gap: 16px;
 }
 
 .question-details-grid--two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.question-details-form input.input,
+.question-details-form select.input {
+  height: 48px;
+  min-height: 48px;
 }
 
 .question-details-select {
@@ -284,8 +291,8 @@
     linear-gradient(45deg, transparent 50%, var(--color-text-secondary) 50%),
     linear-gradient(135deg, var(--color-text-secondary) 50%, transparent 50%);
   background-position:
-    calc(100% - 18px) 21px,
-    calc(100% - 13px) 21px;
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
   background-repeat: no-repeat;
   background-size:
     5px 5px,
