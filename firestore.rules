@@ -367,7 +367,10 @@ service cloud.firestore {
           "email"
         ])
         && createdBy.uid == request.auth.uid
-        && createdBy.uid == currentUser().uid
+        && (
+          !currentUser().keys().hasAny(["uid"])
+          || createdBy.uid == currentUser().uid
+        )
         && createdBy.name is string
         && createdBy.name.size() > 0
         && createdBy.name == currentUser().name
