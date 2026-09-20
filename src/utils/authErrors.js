@@ -9,6 +9,8 @@ const AUTH_ERROR_MESSAGES = {
     "Too many login attempts. Please try again later.",
   "auth/network-request-failed":
     "Unable to connect. Check your internet connection and try again.",
+  "auth/unauthorized-continue-uri":
+    "Firebase is not configured to send verification links for this domain. Contact the app administrator.",
   "auth/popup-closed-by-user": "Google sign-in was cancelled.",
   "auth/popup-blocked":
     "Your browser blocked the Google sign-in popup. Please allow popups and try again.",

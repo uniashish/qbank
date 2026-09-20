@@ -1,4 +1,4 @@
-import { getIdToken } from "firebase/auth";
+import { getIdToken, getIdTokenResult, reload } from "firebase/auth";
 import {
   collection,
   doc,
@@ -10,7 +10,7 @@ import {
 import { USER_ROLES } from "../../constants/roles.js";
 import { SCHOOL_STATUSES } from "../../constants/schoolStatus.js";
 import { ACCOUNT_STATUSES } from "../../constants/userStatus.js";
-import { db } from "../../services/firebase.js";
+import { auth, db } from "../../services/firebase.js";
 
 const COLLECTIONS = {
   JOIN_REQUESTS: "joinRequests",
@@ -76,6 +76,59 @@ function ensureVerifiedOrGoogleUser(firebaseUser) {
   }
 }
 
+function ensureSameAuthenticatedUser(firebaseUser) {
+  ensureAuthenticatedUser(firebaseUser);
+
+  if (!auth.currentUser || auth.currentUser.uid !== firebaseUser.uid) {
+    throw createOnboardingError(
+      ONBOARDING_ERROR_CODES.MISSING_AUTH_USER,
+      "Sign in with the account you verified before continuing.",
+    );
+  }
+
+  return auth.currentUser;
+}
+
+function ensureVerifiedEmailClaim(tokenResult) {
+  if (tokenResult?.claims?.email_verified !== true) {
+    throw createOnboardingError(
+      ONBOARDING_ERROR_CODES.EMAIL_NOT_VERIFIED,
+      "Verify your email address before continuing.",
+    );
+  }
+}
+
+function isGoogleTokenResult(tokenResult) {
+  return (
+    tokenResult?.signInProvider === GOOGLE_PROVIDER_ID ||
+    tokenResult?.claims?.firebase?.sign_in_provider === GOOGLE_PROVIDER_ID
+  );
+}
+
+async function requireSchoolCreationUser(firebaseUser) {
+  const currentUser = ensureSameAuthenticatedUser(firebaseUser);
+  const currentTokenResult = await getIdTokenResult(currentUser, true);
+
+  if (isGoogleTokenResult(currentTokenResult)) {
+    return currentUser;
+  }
+
+  await reload(currentUser);
+
+  if (!currentUser.emailVerified) {
+    throw createOnboardingError(
+      ONBOARDING_ERROR_CODES.EMAIL_NOT_VERIFIED,
+      "Verify your email address before continuing.",
+    );
+  }
+
+  const tokenResult = await getIdTokenResult(currentUser, true);
+
+  ensureVerifiedEmailClaim(tokenResult);
+
+  return currentUser;
+}
+
 function isCompletedSchoolAdminProfile(userData, firebaseUser) {
   return Boolean(
     userData?.uid === firebaseUser.uid &&
@@ -108,7 +161,7 @@ export function isGoogleUser(firebaseUser) {
 }
 
 export function isVerifiedOrGoogleUser(firebaseUser) {
-  return Boolean(firebaseUser?.emailVerified || isGoogleUser(firebaseUser));
+  return Boolean(firebaseUser?.emailVerified === true || isGoogleUser(firebaseUser));
 }
 
 export async function findSchoolByExactName(schoolName) {
@@ -157,11 +210,10 @@ export async function createSchoolAdminOnboardingProfile({
   firebaseUser,
   school,
 }) {
-  ensureVerifiedOrGoogleUser(firebaseUser);
-  await getIdToken(firebaseUser, true);
+  const schoolCreationUser = await requireSchoolCreationUser(firebaseUser);
 
   const schoolRef = doc(collection(db, COLLECTIONS.SCHOOLS));
-  const userRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
+  const userRef = doc(db, COLLECTIONS.USERS, schoolCreationUser.uid);
   const timestamp = serverTimestamp();
 
   return runTransaction(db, async (transaction) => {
@@ -170,13 +222,16 @@ export async function createSchoolAdminOnboardingProfile({
     if (userSnapshot.exists()) {
       const userData = userSnapshot.data();
 
-      if (isCompletedSchoolAdminProfile(userData, firebaseUser)) {
+      if (isCompletedSchoolAdminProfile(userData, schoolCreationUser)) {
         const existingSchoolRef = doc(db, COLLECTIONS.SCHOOLS, userData.schoolId);
         const existingSchoolSnapshot = await transaction.get(existingSchoolRef);
 
         if (
           existingSchoolSnapshot.exists() &&
-          isCompletedSchoolAdminSchool(existingSchoolSnapshot.data(), firebaseUser)
+          isCompletedSchoolAdminSchool(
+            existingSchoolSnapshot.data(),
+            schoolCreationUser,
+          )
         ) {
           return userData.schoolId;
         }
@@ -190,30 +245,30 @@ export async function createSchoolAdminOnboardingProfile({
 
     transaction.set(schoolRef, {
       address: school.address,
-      adminIds: [firebaseUser.uid],
+      adminIds: [schoolCreationUser.uid],
       allowJoinRequests: true,
       city: school.city,
       code: school.code,
       country: school.country,
       createdAt: timestamp,
-      createdBy: firebaseUser.uid,
+      createdBy: schoolCreationUser.uid,
       email: school.email,
       name: school.name,
       phone: school.phone,
-      primaryAdminId: firebaseUser.uid,
+      primaryAdminId: schoolCreationUser.uid,
       status: SCHOOL_STATUSES.ACTIVE,
       updatedAt: timestamp,
     });
 
     transaction.set(userRef, {
       createdAt: timestamp,
-      email: normalizeEmail(firebaseUser.email),
-      name: getDisplayName(firebaseUser, adminName),
-      photoURL: firebaseUser.photoURL ?? null,
+      email: normalizeEmail(schoolCreationUser.email),
+      name: getDisplayName(schoolCreationUser, adminName),
+      photoURL: schoolCreationUser.photoURL ?? null,
       role: USER_ROLES.SCHOOL_ADMIN,
       schoolId: schoolRef.id,
       status: ACCOUNT_STATUSES.ACTIVE,
-      uid: firebaseUser.uid,
+      uid: schoolCreationUser.uid,
       updatedAt: timestamp,
     });
 

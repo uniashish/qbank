@@ -14,11 +14,35 @@ const icons = {
       <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
     </>
   ),
+  arrowLeft: (
+    <>
+      <path d="M19 12H5" />
+      <path d="m12 19-7-7 7-7" />
+    </>
+  ),
+  arrowDown: (
+    <>
+      <path d="M12 5v14" />
+      <path d="m19 12-7 7-7-7" />
+    </>
+  ),
+  arrowUp: (
+    <>
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
+    </>
+  ),
   chevronDown: <path d="m6 9 6 6 6-6" />,
   close: (
     <>
       <path d="M18 6 6 18" />
       <path d="m6 6 12 12" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect height="14" rx="2" width="14" x="8" y="8" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
     </>
   ),
   clock: (
@@ -52,6 +76,13 @@ const icons = {
       <ellipse cx="12" cy="5" rx="8" ry="3" />
       <path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5" />
       <path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M12 15V3" />
     </>
   ),
   home: (
@@ -106,6 +137,13 @@ const icons = {
       <path d="M22 10 12 5 2 10l10 5 10-5Z" />
       <path d="M6 12.5V17c0 1.66 2.69 3 6 3s6-1.34 6-3v-4.5" />
       <path d="M22 10v6" />
+    </>
+  ),
+  save: (
+    <>
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+      <path d="M17 21v-8H7v8" />
+      <path d="M7 3v5h8" />
     </>
   ),
   search: (

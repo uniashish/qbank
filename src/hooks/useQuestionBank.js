@@ -294,6 +294,7 @@ export function useQuestionBank({ ownedOnly = false } = {}) {
   }, []);
 
   return {
+    allQuestions: enrichedQuestions,
     classOptions,
     clearFilters,
     difficultyOptions: DIFFICULTY_LEVEL_OPTIONS,

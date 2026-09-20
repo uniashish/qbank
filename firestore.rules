@@ -847,7 +847,6 @@ service cloud.firestore {
           "instructions",
           "image",
           "answerData",
-          "tags",
           "createdBy",
           "createdAt",
           "updatedAt",
@@ -889,7 +888,7 @@ service cloud.firestore {
           questionId,
           request.resource.data.image
         )
-        && isValidQuestionTags(request.resource.data.tags)
+        && hasValidOptionalQuestionTags(request.resource.data)
         && isValidQuestionAnswerData(
           request.resource.data.questionType,
           request.resource.data.answerData
@@ -1164,6 +1163,280 @@ service cloud.firestore {
             || resource.data.sharedWithTeacherId == request.auth.uid
           )
         );
+    }
+
+    function isOptionalPositiveInt(value) {
+      return value == null || (value is int && value > 0);
+    }
+
+    function isValidQuestionPaperSetupPayload(data) {
+      return data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 160
+        && data.classId is string
+        && data.classId.size() > 0
+        && data.subjectId is string
+        && data.subjectId.size() > 0
+        && data.examName is string
+        && data.examName.size() <= 120
+        && data.term is string
+        && data.term.size() <= 80
+        && data.academicYear is string
+        && data.academicYear.size() <= 40
+        && isOptionalPositiveInt(data.durationMinutes)
+        && isOptionalPositiveInt(data.maximumMarks);
+    }
+
+    function isValidQuestionPaperQuestion(question) {
+      return question is map
+        && question.keys().hasAll([
+          "blockId",
+          "questionId",
+          "questionNumber",
+          "marks",
+          "difficulty",
+          "questionType",
+          "snapshot"
+        ])
+        && question.keys().hasOnly([
+          "blockId",
+          "questionId",
+          "questionNumber",
+          "marks",
+          "difficulty",
+          "questionType",
+          "snapshot"
+        ])
+        && question.blockId is string
+        && question.blockId.size() > 0
+        && question.questionId is string
+        && question.questionId.size() > 0
+        && question.questionNumber is string
+        && question.questionNumber.size() > 0
+        && question.marks is int
+        && question.marks > 0
+        && validQuestionDifficulty(question.difficulty)
+        && isValidQuestionType(question.questionType)
+        && question.snapshot is map;
+    }
+
+    function isValidQuestionPaperQuestions(questions) {
+      return questions is list
+        && questions.size() <= 100
+        && (questions.size() < 1 || isValidQuestionPaperQuestion(questions[0]))
+        && (questions.size() < 2 || isValidQuestionPaperQuestion(questions[1]))
+        && (questions.size() < 3 || isValidQuestionPaperQuestion(questions[2]))
+        && (questions.size() < 4 || isValidQuestionPaperQuestion(questions[3]))
+        && (questions.size() < 5 || isValidQuestionPaperQuestion(questions[4]))
+        && (questions.size() < 6 || isValidQuestionPaperQuestion(questions[5]))
+        && (questions.size() < 7 || isValidQuestionPaperQuestion(questions[6]))
+        && (questions.size() < 8 || isValidQuestionPaperQuestion(questions[7]))
+        && (questions.size() < 9 || isValidQuestionPaperQuestion(questions[8]))
+        && (questions.size() < 10 || isValidQuestionPaperQuestion(questions[9]))
+        && (questions.size() < 11 || isValidQuestionPaperQuestion(questions[10]))
+        && (questions.size() < 12 || isValidQuestionPaperQuestion(questions[11]))
+        && (questions.size() < 13 || isValidQuestionPaperQuestion(questions[12]))
+        && (questions.size() < 14 || isValidQuestionPaperQuestion(questions[13]))
+        && (questions.size() < 15 || isValidQuestionPaperQuestion(questions[14]))
+        && (questions.size() < 16 || isValidQuestionPaperQuestion(questions[15]))
+        && (questions.size() < 17 || isValidQuestionPaperQuestion(questions[16]))
+        && (questions.size() < 18 || isValidQuestionPaperQuestion(questions[17]))
+        && (questions.size() < 19 || isValidQuestionPaperQuestion(questions[18]))
+        && (questions.size() < 20 || isValidQuestionPaperQuestion(questions[19]));
+    }
+
+    function isValidQuestionPaperDifficultySummaryItem(item) {
+      return item is map
+        && item.keys().hasAll([
+          "difficulty",
+          "label",
+          "marks"
+        ])
+        && item.keys().hasOnly([
+          "difficulty",
+          "label",
+          "marks"
+        ])
+        && validQuestionDifficulty(item.difficulty)
+        && item.label is string
+        && item.label.size() > 0
+        && item.marks is int
+        && item.marks >= 0;
+    }
+
+    function isValidQuestionPaperDifficultySummary(summary) {
+      return summary is map
+        && summary.keys().hasAll([
+          "averageWeight",
+          "distribution",
+          "overallDifficulty"
+        ])
+        && summary.keys().hasOnly([
+          "averageWeight",
+          "distribution",
+          "overallDifficulty"
+        ])
+        && (
+          summary.averageWeight is int
+          || summary.averageWeight is float
+        )
+        && summary.averageWeight >= 0
+        && summary.distribution is list
+        && summary.distribution.size() == 3
+        && isValidQuestionPaperDifficultySummaryItem(summary.distribution[0])
+        && isValidQuestionPaperDifficultySummaryItem(summary.distribution[1])
+        && isValidQuestionPaperDifficultySummaryItem(summary.distribution[2])
+        && summary.overallDifficulty in [
+          "Not set",
+          "Easy",
+          "Medium",
+          "Hard"
+        ];
+    }
+
+    function isValidQuestionPaperStatusPayload(data) {
+      return (
+          data.status == "draft"
+          && !data.keys().hasAny(["finalizedAt"])
+        )
+        || (
+          data.status == "final"
+          && data.keys().hasAll(["finalizedAt"])
+          && data.finalizedAt is timestamp
+        );
+    }
+
+    function isValidQuestionPaperPayload(data) {
+      return data.keys().hasAll([
+          "title",
+          "classId",
+          "subjectId",
+          "examName",
+          "term",
+          "academicYear",
+          "durationMinutes",
+          "maximumMarks",
+          "documentContent",
+          "questions",
+          "totalQuestions",
+          "totalMarks",
+          "difficultySummary",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ])
+        && data.keys().hasOnly([
+          "title",
+          "classId",
+          "subjectId",
+          "examName",
+          "term",
+          "academicYear",
+          "durationMinutes",
+          "maximumMarks",
+          "documentContent",
+          "questions",
+          "totalQuestions",
+          "totalMarks",
+          "difficultySummary",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "finalizedAt"
+        ])
+        && isValidQuestionPaperSetupPayload(data)
+        && isValidRichTextDocument(data.documentContent)
+        && isValidQuestionPaperQuestions(data.questions)
+        && data.totalQuestions is int
+        && data.totalQuestions == data.questions.size()
+        && data.totalMarks is int
+        && data.totalMarks >= 0
+        && isValidQuestionPaperDifficultySummary(data.difficultySummary)
+        && isValidQuestionPaperStatusPayload(data);
+    }
+
+    function isValidQuestionPaperDraftPayload(data) {
+      return isValidQuestionPaperPayload(data)
+        && data.status == "draft"
+        && !data.keys().hasAny(["finalizedAt"]);
+    }
+
+    function isValidQuestionPaperFinalPayload(data) {
+      return isValidQuestionPaperPayload(data)
+        && data.status == "final"
+        && data.finalizedAt is timestamp
+        && data.totalQuestions > 0
+        && data.totalMarks > 0;
+    }
+
+    function isValidQuestionPaperCreate(schoolId) {
+      return isActiveTeacher()
+        && currentUser().schoolId == schoolId
+        && isValidQuestionPaperDraftPayload(request.resource.data)
+        && isValidQuestionCreator(request.resource.data.createdBy)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function isValidQuestionPaperDraftUpdate(schoolId) {
+      return isActiveTeacher()
+        && currentUser().schoolId == schoolId
+        && resource.data.status == "draft"
+        && resource.data.createdBy.uid == request.auth.uid
+        && isValidQuestionPaperDraftPayload(request.resource.data)
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdBy.uid == request.auth.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.status == "draft"
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "title",
+          "classId",
+          "subjectId",
+          "examName",
+          "term",
+          "academicYear",
+          "durationMinutes",
+          "maximumMarks",
+          "documentContent",
+          "questions",
+          "totalQuestions",
+          "totalMarks",
+          "difficultySummary",
+          "status",
+          "updatedAt"
+        ]);
+    }
+
+    function isValidQuestionPaperFinalization(schoolId) {
+      return isActiveTeacher()
+        && currentUser().schoolId == schoolId
+        && resource.data.status == "draft"
+        && resource.data.createdBy.uid == request.auth.uid
+        && isValidQuestionPaperFinalPayload(request.resource.data)
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdBy.uid == request.auth.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.finalizedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status",
+          "finalizedAt",
+          "updatedAt"
+        ]);
+    }
+
+    function isValidQuestionPaperUpdate(schoolId) {
+      return isValidQuestionPaperDraftUpdate(schoolId)
+        || isValidQuestionPaperFinalization(schoolId);
+    }
+
+    function canReadQuestionPaper(schoolId) {
+      return isActiveTeacher()
+        && currentUser().schoolId == schoolId
+        && resource.data.createdBy.uid == request.auth.uid;
     }
 
     function isValidSchoolPayload(data) {
@@ -2044,6 +2317,13 @@ service cloud.firestore {
       allow get, list: if canReadQuestion(schoolId, questionId);
       allow create: if isValidQuestionCreate(schoolId, questionId);
       allow update: if isValidQuestionUpdate(schoolId, questionId);
+      allow delete: if false;
+    }
+
+    match /schools/{schoolId}/questionPapers/{paperId} {
+      allow get, list: if canReadQuestionPaper(schoolId);
+      allow create: if isValidQuestionPaperCreate(schoolId);
+      allow update: if isValidQuestionPaperUpdate(schoolId);
       allow delete: if false;
     }
 

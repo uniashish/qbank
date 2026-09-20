@@ -11,6 +11,8 @@ import InsertImageDialog from "./dialogs/InsertImageDialog.jsx";
 import InsertTableDialog from "./dialogs/InsertTableDialog.jsx";
 import "./rich-text-editor.css";
 
+const EMPTY_EXTRA_EXTENSIONS = [];
+
 function getContentKey(content) {
   return JSON.stringify(content ?? EMPTY_RICH_TEXT_DOCUMENT);
 }
@@ -44,7 +46,9 @@ function RichTextEditor({
   ariaDescribedBy,
   ariaLabel = "Rich text editor",
   className = "",
+  extensions: extraExtensions = EMPTY_EXTRA_EXTENSIONS,
   onChange,
+  onEditorReady,
   placeholder = "Enter content...",
   readOnly = false,
   value,
@@ -55,8 +59,11 @@ function RichTextEditor({
   const objectUrlsRef = useRef(new Set());
   const lastContentKeyRef = useRef(getContentKey(getInitialContent(value)));
   const extensions = useMemo(
-    () => createEditorExtensions({ placeholder }),
-    [placeholder],
+    () => [
+      ...createEditorExtensions({ placeholder }),
+      ...extraExtensions,
+    ],
+    [extraExtensions, placeholder],
   );
 
   useEffect(() => {
@@ -95,6 +102,14 @@ function RichTextEditor({
     },
     [extensions],
   );
+
+  useEffect(() => {
+    onEditorReady?.(editor);
+
+    return () => {
+      onEditorReady?.(null);
+    };
+  }, [editor, onEditorReady]);
 
   useEffect(() => {
     if (!editor) {

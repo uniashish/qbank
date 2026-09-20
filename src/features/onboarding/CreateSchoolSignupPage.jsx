@@ -28,6 +28,7 @@ import {
 } from "./onboardingFormUtils.js";
 import {
   createSchoolAdminOnboardingProfile,
+  isGoogleUser,
   isVerifiedOrGoogleUser,
 } from "./onboardingService.js";
 
@@ -102,6 +103,7 @@ function CreateSchoolSignupPage() {
   const [accountErrors, setAccountErrors] = useState(initialSignupErrors);
   const [feedback, setFeedback] = useState({ message: "", type: "" });
   const [activeAction, setActiveAction] = useState("idle");
+  const [awaitingVerification, setAwaitingVerification] = useState(false);
   const [hasSentVerificationEmail, setHasSentVerificationEmail] = useState(false);
   const [resendAvailableAt, setResendAvailableAt] = useState(0);
   const [now, setNow] = useState(0);
@@ -135,9 +137,12 @@ function CreateSchoolSignupPage() {
   }
 
   const isProcessing = activeAction !== "idle";
-  const isWaitingForVerification =
+  const needsEmailVerification =
     firebaseUser && !isVerifiedOrGoogleUser(firebaseUser);
-  const canCreateSchool = firebaseUser && isVerifiedOrGoogleUser(firebaseUser);
+  const isWaitingForVerification =
+    Boolean(firebaseUser) && (awaitingVerification || needsEmailVerification);
+  const canCreateSchool =
+    firebaseUser && isVerifiedOrGoogleUser(firebaseUser) && !awaitingVerification;
   const resendCooldownSeconds = Math.max(
     0,
     Math.ceil((resendAvailableAt - now) / 1000),
@@ -184,6 +189,26 @@ function CreateSchoolSignupPage() {
     }
   };
 
+  const getVerifiedSchoolCreationUser = async (credentialUser = firebaseUser) => {
+    if (isGoogleUser(credentialUser)) {
+      return credentialUser;
+    }
+
+    const refreshedUser = await reloadCurrentUser();
+
+    if (credentialUser?.uid && refreshedUser.uid !== credentialUser.uid) {
+      throw new Error("Sign in with the account you verified before continuing.");
+    }
+
+    if (!refreshedUser.emailVerified) {
+      throw new Error(
+        "Email verification is still pending. Open the verification link, then try again.",
+      );
+    }
+
+    return refreshedUser;
+  };
+
   const completeSchoolCreation = async (credentialUser = firebaseUser) => {
     const schoolValidation = validateSchoolForm(schoolValues);
     const adminValidation = validateAdminName(accountValues, credentialUser);
@@ -206,9 +231,12 @@ function CreateSchoolSignupPage() {
     setFeedback({ message: "", type: "" });
 
     try {
+      const verifiedUser = await getVerifiedSchoolCreationUser(credentialUser);
+
+      setAwaitingVerification(false);
       await createSchoolAdminOnboardingProfile({
         adminName: adminValidation.values.name,
-        firebaseUser: credentialUser,
+        firebaseUser: verifiedUser,
         school: schoolValidation.values,
       });
       clearPendingSignup(STORAGE_KEY);
@@ -275,6 +303,8 @@ function CreateSchoolSignupPage() {
           "Verification email sent. Verify your email before creating the school.",
         type: "success",
       });
+      setAwaitingVerification(true);
+      return;
     } catch (error) {
       setFeedback({
         message: getOnboardingErrorMessage(
@@ -355,6 +385,7 @@ function CreateSchoolSignupPage() {
         return;
       }
 
+      setAwaitingVerification(false);
       await completeSchoolCreation(refreshedUser);
     } catch (error) {
       setFeedback({
@@ -397,6 +428,7 @@ function CreateSchoolSignupPage() {
 
   const handleSignOut = async () => {
     setFeedback({ message: "", type: "" });
+    setAwaitingVerification(false);
     await logout();
   };
 
