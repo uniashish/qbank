@@ -10,13 +10,11 @@ import {
 } from "firebase/firestore";
 
 import { getActiveQuestionSharesForRecipient } from "../features/question-sharing/questionSharingService.js";
-import { QUESTION_TYPES } from "../features/question-designer/constants/questionTypes.js";
-import { createPersistableMatchPairs } from "../features/question-designer/utils/matchPairHelpers.js";
-import { cloneRichTextContent } from "../features/question-designer/utils/richTextContent.js";
 import {
   deleteQuestionImage,
   uploadQuestionImage,
 } from "../features/question-designer/services/questionImageService.js";
+import { normalizeQuestionForSave } from "../features/question-designer/persistence/questionPersistenceNormalizer.js";
 import { assertQuestionCanBeSaved } from "../features/question-designer/validation/questionPersistenceValidation.js";
 import { sanitizeTags } from "../components/tags/tagUtils.js";
 import { db } from "./firebase.js";
@@ -53,10 +51,6 @@ function createQuestionBankError(code, message) {
   error.code = code;
 
   return error;
-}
-
-function trimText(value) {
-  return String(value ?? "").trim();
 }
 
 function getQuestionsCollectionRef(schoolId) {
@@ -136,58 +130,6 @@ function withSharedAccess(question, share) {
   };
 }
 
-function createPersistedAnswerData(draft) {
-  switch (draft.questionType) {
-    case QUESTION_TYPES.FILL_BLANKS:
-      return {
-        blanks: draft.answerData.blanks.map((blank) => ({
-          id: blank.id,
-          acceptedAnswers: blank.acceptedAnswers.map((answer) =>
-            trimText(answer),
-          ),
-        })),
-      };
-
-    case QUESTION_TYPES.LONG_ANSWER:
-      return {
-        modelAnswer: cloneRichTextContent(draft.answerData.modelAnswer),
-        questionContent: cloneRichTextContent(draft.answerData.questionContent),
-        suggestedWordCount: draft.answerData.suggestedWordCount ?? null,
-      };
-
-    case QUESTION_TYPES.MULTIPLE_CHOICE:
-      return {
-        correctOptionId: draft.answerData.correctOptionId,
-        options: draft.answerData.options.map((option) => ({
-          id: option.id,
-          text: trimText(option.text),
-        })),
-      };
-
-    case QUESTION_TYPES.MATCH_FOLLOWING:
-      return {
-        pairs: createPersistableMatchPairs(draft.answerData.pairs),
-      };
-
-    case QUESTION_TYPES.SHORT_ANSWER:
-      return {
-        modelAnswer: cloneRichTextContent(draft.answerData.modelAnswer),
-        questionContent: cloneRichTextContent(draft.answerData.questionContent),
-      };
-
-    case QUESTION_TYPES.TRUE_FALSE:
-      return {
-        correctAnswer: draft.answerData.correctAnswer,
-      };
-
-    default:
-      throw createQuestionBankError(
-        QUESTION_BANK_ERROR_CODES.UNSUPPORTED_QUESTION_TYPE,
-        "This question type cannot be edited right now.",
-      );
-  }
-}
-
 async function resolveQuestionImage({ draft, existingQuestion, questionId, schoolId }) {
   const draftImage = draft.questionImage ?? {};
 
@@ -216,23 +158,30 @@ async function resolveQuestionImage({ draft, existingQuestion, questionId, schoo
 
 function createQuestionUpdatePayload({ draft, image }) {
   return {
-    answerData: createPersistedAnswerData(draft),
-    classId: draft.classId,
-    difficulty: draft.difficulty,
-    image: {
-      downloadUrl: image.downloadUrl,
-      storagePath: image.storagePath,
-    },
-    instructions: trimText(draft.instructions),
-    marks: Number(draft.marks),
-    prompt: trimText(draft.prompt),
-    questionType: draft.questionType,
-    status: ACTIVE_STATUS,
-    subjectId: draft.subjectId,
-    tags: sanitizeTags(draft.tags),
-    topicName: trimText(draft.topicName),
+    ...normalizeQuestionForSave({
+      ...draft,
+      image,
+      status: ACTIVE_STATUS,
+    }),
     updatedAt: serverTimestamp(),
   };
+}
+
+function logQuestionSavePayload(questionData) {
+  console.log(
+    "[Question Save Payload]",
+    JSON.stringify(
+      {
+        questionType: questionData.questionType,
+        prompt: questionData.prompt,
+        answerData: questionData.answerData,
+        image: questionData.image,
+        tags: questionData.tags,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 export async function getOwnedTeacherQuestions(schoolId, teacherId) {
@@ -354,6 +303,8 @@ export async function updateQuestion({
       draft,
       image: uploadedImage,
     });
+
+    logQuestionSavePayload(updatePayload);
 
     await updateDoc(getQuestionDocRef(schoolId, targetQuestionId), updatePayload);
 

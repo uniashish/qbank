@@ -42,12 +42,32 @@ service cloud.firestore {
       return /databases/$(database)/documents/schools/$(schoolId)/joinRequests/$(userId);
     }
 
-    function currentUserExists() {
-      return signedIn() && exists(userPath(request.auth.uid));
-    }
-
     function currentUser() {
       return get(userPath(request.auth.uid)).data;
+    }
+
+    function hasActiveRole(user, role) {
+      return user.role == role
+        && user.status == "active";
+    }
+
+    function hasRoleStatusInSchool(user, role, status, schoolId) {
+      return user.role == role
+        && user.status == status
+        && user.schoolId == schoolId;
+    }
+
+    function hasActiveRoleInSchool(user, role, schoolId) {
+      return hasRoleStatusInSchool(user, role, "active", schoolId);
+    }
+
+    function isOwnSchoolForUser(user, schoolId) {
+      return hasActiveRoleInSchool(user, "school_admin", schoolId);
+    }
+
+    function isAcademicSetupReaderProfile(user, schoolId) {
+      return hasActiveRoleInSchool(user, "school_admin", schoolId)
+        || hasActiveRoleInSchool(user, "teacher", schoolId);
     }
 
     function hasAuthEmail() {
@@ -76,26 +96,22 @@ service cloud.firestore {
     }
 
     function isActiveRole(role) {
-      return currentUserExists()
-        && currentUser().role == role
-        && currentUser().status == "active";
+      return signedIn()
+        && hasActiveRole(currentUser(), role);
     }
 
     function isActivePlatformAdmin() {
       return isActiveRole("platform_admin");
     }
 
-    function isActiveSchoolAdmin() {
-      return isActiveRole("school_admin");
-    }
-
-    function isActiveTeacher() {
-      return isActiveRole("teacher");
+    function isActiveTeacherInSchool(schoolId) {
+      return signedIn()
+        && hasActiveRoleInSchool(currentUser(), "teacher", schoolId);
     }
 
     function isAcademicSetupReader(schoolId) {
-      return isOwnSchool(schoolId)
-        || (isActiveTeacher() && currentUser().schoolId == schoolId);
+      return signedIn()
+        && isAcademicSetupReaderProfile(currentUser(), schoolId);
     }
 
     function validSchoolStatus(status) {
@@ -174,13 +190,17 @@ service cloud.firestore {
     }
 
     function isActiveAcademicClass(schoolId, classId) {
-      return exists(academicClassPath(schoolId, classId))
-        && get(academicClassPath(schoolId, classId)).data.status == "active";
+      let academicClass = get(academicClassPath(schoolId, classId)).data;
+
+      return academicClass != null
+        && academicClass.status == "active";
     }
 
     function isActiveAcademicSubject(schoolId, subjectId) {
-      return exists(academicSubjectPath(schoolId, subjectId))
-        && get(academicSubjectPath(schoolId, subjectId)).data.status == "active";
+      let academicSubject = get(academicSubjectPath(schoolId, subjectId)).data;
+
+      return academicSubject != null
+        && academicSubject.status == "active";
     }
 
     function isValidClassSubjectMappingPayload(data) {
@@ -220,34 +240,26 @@ service cloud.firestore {
     }
 
     function isTeacherProfileInSchool(schoolId, teacherId) {
-      return existsAfter(userPath(teacherId))
-        && getAfter(userPath(teacherId)).data.schoolId == schoolId
-        && getAfter(userPath(teacherId)).data.role == "teacher"
-        && getAfter(userPath(teacherId)).data.status == "active";
+      let teacher = get(userPath(teacherId)).data;
+
+      return teacher != null
+        && teacher.schoolId == schoolId
+        && teacher.role == "teacher"
+        && teacher.status == "active";
     }
 
     function isMappedClassSubject(schoolId, classId, subjectId) {
-      return exists(academicClassSubjectPath(
-          schoolId,
-          classSubjectMappingId(classId, subjectId)
-        ))
-        && get(academicClassSubjectPath(
-          schoolId,
-          classSubjectMappingId(classId, subjectId)
-        )).data.classId == classId
-        && get(academicClassSubjectPath(
-          schoolId,
-          classSubjectMappingId(classId, subjectId)
-        )).data.subjectId == subjectId
+      let mapping = get(academicClassSubjectPath(
+        schoolId,
+        classSubjectMappingId(classId, subjectId)
+      )).data;
+
+      return mapping != null
+        && mapping.classId == classId
+        && mapping.subjectId == subjectId
         && (
-          !get(academicClassSubjectPath(
-            schoolId,
-            classSubjectMappingId(classId, subjectId)
-          )).data.keys().hasAny(["status"])
-          || get(academicClassSubjectPath(
-            schoolId,
-            classSubjectMappingId(classId, subjectId)
-          )).data.status == "active"
+          !mapping.keys().hasAny(["status"])
+          || mapping.status == "active"
         );
     }
 
@@ -255,13 +267,17 @@ service cloud.firestore {
       return teacherId + "__" + classId + "__" + subjectId;
     }
 
-    function isTeacherAssignmentReader(schoolId) {
-      return isOwnSchool(schoolId)
+    function isTeacherAssignmentReaderProfile(user, schoolId) {
+      return hasActiveRoleInSchool(user, "school_admin", schoolId)
         || (
-          isActiveTeacher()
-          && currentUser().schoolId == schoolId
+          hasActiveRoleInSchool(user, "teacher", schoolId)
           && resource.data.teacherId == request.auth.uid
         );
+    }
+
+    function isTeacherAssignmentReader(schoolId) {
+      return signedIn()
+        && isTeacherAssignmentReaderProfile(currentUser(), schoolId);
     }
 
     function isValidTeacherAssignmentPayload(data) {
@@ -321,40 +337,36 @@ service cloud.firestore {
       return difficulty in ["easy", "medium", "hard"];
     }
 
-    function isTeacherAssignedToQuestionSubject(schoolId, classId, subjectId) {
-      return exists(teacherAssignmentPath(
-          schoolId,
-          request.auth.uid,
-          classId,
-          subjectId
-        ))
-        && get(teacherAssignmentPath(
-          schoolId,
-          request.auth.uid,
-          classId,
-          subjectId
-        )).data.status == "active"
-        && get(teacherAssignmentPath(
-          schoolId,
-          request.auth.uid,
-          classId,
-          subjectId
-        )).data.teacherId == request.auth.uid
-        && get(teacherAssignmentPath(
-          schoolId,
-          request.auth.uid,
-          classId,
-          subjectId
-        )).data.classId == classId
-        && get(teacherAssignmentPath(
-          schoolId,
-          request.auth.uid,
-          classId,
-          subjectId
-        )).data.subjectId == subjectId;
+    function isTeacherAssignedToQuestionSubjectData(
+      assignmentPath,
+      classId,
+      subjectId
+    ) {
+      let assignment = get(assignmentPath).data;
+
+      return assignment.status == "active"
+        && assignment.teacherId == request.auth.uid
+        && assignment.classId == classId
+        && assignment.subjectId == subjectId;
     }
 
-    function isValidQuestionCreator(createdBy) {
+    function isTeacherAssignedToQuestionSubject(schoolId, classId, subjectId) {
+      let assignmentPath = teacherAssignmentPath(
+        schoolId,
+        request.auth.uid,
+        classId,
+        subjectId
+      );
+
+      return exists(assignmentPath)
+        && isTeacherAssignedToQuestionSubjectData(
+          assignmentPath,
+          classId,
+          subjectId
+        );
+    }
+
+    function isValidQuestionCreatorForUser(createdBy, user) {
       return createdBy is map
         && createdBy.keys().hasAll([
           "uid",
@@ -368,15 +380,15 @@ service cloud.firestore {
         ])
         && createdBy.uid == request.auth.uid
         && (
-          !currentUser().keys().hasAny(["uid"])
-          || createdBy.uid == currentUser().uid
+          !user.keys().hasAny(["uid"])
+          || createdBy.uid == user.uid
         )
         && createdBy.name is string
         && createdBy.name.size() > 0
-        && createdBy.name == currentUser().name
+        && createdBy.name == user.name
         && createdBy.email is string
         && createdBy.email.size() > 0
-        && createdBy.email == currentUser().email;
+        && createdBy.email == user.email;
     }
 
     function isValidQuestionImage(schoolId, questionId, image) {
@@ -572,44 +584,26 @@ service cloud.firestore {
 
     function isMeaningfulRichTextNode(node) {
       return node is map
-        && node.keys().hasAll([
-          "type"
-        ])
         && node.type is string
         && (
           (
             node.type == "text"
-            && node.keys().hasAny([
-              "text"
-            ])
             && node.text is string
             && node.text.size() > 0
           )
           || (
             node.type == "image"
-            && node.keys().hasAny([
-              "attrs"
-            ])
             && node.attrs is map
-            && node.attrs.keys().hasAny([
-              "src"
-            ])
             && node.attrs.src is string
             && node.attrs.src.size() > 0
           )
           || (
             node.type == "table"
-            && node.keys().hasAny([
-              "content"
-            ])
             && node.content is list
             && node.content.size() > 0
           )
           || (
-            node.keys().hasAny([
-              "content"
-            ])
-            && node.content is list
+            node.content is list
             && node.content.size() > 0
           )
         );
@@ -661,14 +655,7 @@ service cloud.firestore {
 
     function isValidRichTextDocument(contentDoc) {
       return contentDoc is map
-        && contentDoc.keys().hasAll([
-          "type",
-          "content"
-        ])
-        && contentDoc.keys().hasOnly([
-          "type",
-          "content"
-        ])
+        && contentDoc.keys().size() == 2
         && contentDoc.type == "doc"
         && contentDoc.content is list
         && contentDoc.content.size() <= 100
@@ -809,6 +796,26 @@ service cloud.firestore {
       ];
     }
 
+    function usesRichQuestionContent(questionType) {
+      return questionType in [
+        "long_answer",
+        "short_answer"
+      ];
+    }
+
+    function isValidQuestionPrompt(questionType, prompt) {
+      return prompt is string
+        && (
+          (
+            usesRichQuestionContent(questionType)
+          )
+          || (
+            !usesRichQuestionContent(questionType)
+            && prompt.size() > 0
+          )
+        );
+    }
+
     function isValidQuestionAnswerData(questionType, answerData) {
       return (
           questionType == "fill_blanks"
@@ -836,9 +843,17 @@ service cloud.firestore {
         );
     }
 
-    function isValidQuestionCreate(schoolId, questionId) {
-      return isActiveTeacher()
-        && currentUser().schoolId == schoolId
+    function isValidQuestionCreateForUser(user, schoolId, questionId) {
+      return hasActiveRoleInSchool(user, "teacher", schoolId)
+        && request.resource.data.classId is string
+        && request.resource.data.classId.size() > 0
+        && request.resource.data.subjectId is string
+        && request.resource.data.subjectId.size() > 0
+        && isTeacherAssignedToQuestionSubject(
+          schoolId,
+          request.resource.data.classId,
+          request.resource.data.subjectId
+        )
         && request.resource.data.keys().hasAll([
           "questionType",
           "classId",
@@ -873,15 +888,13 @@ service cloud.firestore {
           "status"
         ])
         && isValidQuestionType(request.resource.data.questionType)
-        && request.resource.data.classId is string
-        && request.resource.data.classId.size() > 0
-        && request.resource.data.subjectId is string
-        && request.resource.data.subjectId.size() > 0
         && request.resource.data.topicName is string
         && request.resource.data.topicName.size() > 0
         && request.resource.data.topicName.size() <= 100
-        && request.resource.data.prompt is string
-        && request.resource.data.prompt.size() > 0
+        && isValidQuestionPrompt(
+          request.resource.data.questionType,
+          request.resource.data.prompt
+        )
         && request.resource.data.marks is int
         && request.resource.data.marks > 0
         && validQuestionDifficulty(request.resource.data.difficulty)
@@ -896,22 +909,30 @@ service cloud.firestore {
           request.resource.data.questionType,
           request.resource.data.answerData
         )
-        && isValidQuestionCreator(request.resource.data.createdBy)
+        && isValidQuestionCreatorForUser(request.resource.data.createdBy, user)
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
-        && request.resource.data.status == "active"
+        && request.resource.data.status == "active";
+    }
+
+    function isValidQuestionCreate(schoolId, questionId) {
+      return signedIn()
+        && isValidQuestionCreateForUser(currentUser(), schoolId, questionId);
+    }
+
+    function isValidQuestionUpdate(schoolId, questionId) {
+      return isActiveTeacherInSchool(schoolId)
+        && resource.data.status == "active"
+        && resource.data.createdBy.uid == request.auth.uid
+        && request.resource.data.classId is string
+        && request.resource.data.classId.size() > 0
+        && request.resource.data.subjectId is string
+        && request.resource.data.subjectId.size() > 0
         && isTeacherAssignedToQuestionSubject(
           schoolId,
           request.resource.data.classId,
           request.resource.data.subjectId
-        );
-    }
-
-    function isValidQuestionUpdate(schoolId, questionId) {
-      return isActiveTeacher()
-        && currentUser().schoolId == schoolId
-        && resource.data.status == "active"
-        && resource.data.createdBy.uid == request.auth.uid
+        )
         && request.resource.data.keys().hasAll([
           "questionType",
           "classId",
@@ -946,15 +967,13 @@ service cloud.firestore {
           "status"
         ])
         && isValidQuestionType(request.resource.data.questionType)
-        && request.resource.data.classId is string
-        && request.resource.data.classId.size() > 0
-        && request.resource.data.subjectId is string
-        && request.resource.data.subjectId.size() > 0
         && request.resource.data.topicName is string
         && request.resource.data.topicName.size() > 0
         && request.resource.data.topicName.size() <= 100
-        && request.resource.data.prompt is string
-        && request.resource.data.prompt.size() > 0
+        && isValidQuestionPrompt(
+          request.resource.data.questionType,
+          request.resource.data.prompt
+        )
         && request.resource.data.marks is int
         && request.resource.data.marks > 0
         && validQuestionDifficulty(request.resource.data.difficulty)
@@ -988,12 +1007,7 @@ service cloud.firestore {
           "tags",
           "updatedAt",
           "status"
-        ])
-        && isTeacherAssignedToQuestionSubject(
-          schoolId,
-          request.resource.data.classId,
-          request.resource.data.subjectId
-        );
+        ]);
     }
 
     function questionShareId(questionId, teacherId) {
@@ -1001,44 +1015,42 @@ service cloud.firestore {
     }
 
     function isOwnedActiveQuestion(schoolId, questionId, ownerId) {
-      return exists(questionPath(schoolId, questionId))
-        && get(questionPath(schoolId, questionId)).data.status == "active"
-        && get(questionPath(schoolId, questionId)).data.createdBy.uid == ownerId;
+      let question = get(questionPath(schoolId, questionId)).data;
+
+      return question != null
+        && question.status == "active"
+        && question.createdBy.uid == ownerId;
     }
 
     function hasActiveQuestionShare(schoolId, questionId) {
-      return exists(questionSharePath(
-          schoolId,
-          questionShareId(questionId, request.auth.uid)
-        ))
-        && get(questionSharePath(
-          schoolId,
-          questionShareId(questionId, request.auth.uid)
-        )).data.questionId == questionId
-        && get(questionSharePath(
-          schoolId,
-          questionShareId(questionId, request.auth.uid)
-        )).data.sharedWithTeacherId == request.auth.uid
-        && get(questionSharePath(
-          schoolId,
-          questionShareId(questionId, request.auth.uid)
-        )).data.status == "active";
+      let share = get(questionSharePath(
+        schoolId,
+        questionShareId(questionId, request.auth.uid)
+      )).data;
+
+      return share != null
+        && share.questionId == questionId
+        && share.sharedWithTeacherId == request.auth.uid
+        && share.status == "active";
     }
 
-    function canReadQuestion(schoolId, questionId) {
-      return isActivePlatformAdmin()
-        || isOwnSchool(schoolId)
+    function canReadQuestionForUser(user, schoolId, questionId) {
+      return hasActiveRole(user, "platform_admin")
+        || hasActiveRoleInSchool(user, "school_admin", schoolId)
         || (
-          isActiveTeacher()
-          && currentUser().schoolId == schoolId
+          hasActiveRoleInSchool(user, "teacher", schoolId)
           && resource.data.createdBy.uid == request.auth.uid
         )
         || (
-          isActiveTeacher()
-          && currentUser().schoolId == schoolId
+          hasActiveRoleInSchool(user, "teacher", schoolId)
           && resource.data.status == "active"
           && hasActiveQuestionShare(schoolId, questionId)
         );
+    }
+
+    function canReadQuestion(schoolId, questionId) {
+      return signedIn()
+        && canReadQuestionForUser(currentUser(), schoolId, questionId);
     }
 
     function isValidQuestionSharePayload(data, shareId) {
@@ -1076,8 +1088,7 @@ service cloud.firestore {
     }
 
     function isValidQuestionShareCreate(schoolId, shareId) {
-      return isActiveTeacher()
-        && currentUser().schoolId == schoolId
+      return isActiveTeacherInSchool(schoolId)
         && isValidQuestionSharePayload(request.resource.data, shareId)
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.sharedByTeacherId == request.auth.uid
@@ -1113,8 +1124,7 @@ service cloud.firestore {
     }
 
     function isQuestionShareActor(schoolId) {
-      return isActiveTeacher()
-        && currentUser().schoolId == schoolId
+      return isActiveTeacherInSchool(schoolId)
         && (
           resource.data.ownerId == request.auth.uid
           || resource.data.sharedWithTeacherId == request.auth.uid
@@ -1123,22 +1133,21 @@ service cloud.firestore {
 
     function isValidQuestionShareRevoke(schoolId, shareId) {
       return hasStableQuestionShareIdentity(shareId)
-        && isQuestionShareActor(schoolId)
         && resource.data.status == "active"
         && request.resource.data.status == "revoked"
         && request.resource.data.updatedAt == request.time
-        && request.resource.data.revokedAt == request.time;
+        && request.resource.data.revokedAt == request.time
+        && isQuestionShareActor(schoolId);
     }
 
     function isValidQuestionShareReactivate(schoolId, shareId) {
       return hasStableQuestionShareIdentity(shareId)
-        && isActiveTeacher()
-        && currentUser().schoolId == schoolId
-        && resource.data.ownerId == request.auth.uid
         && resource.data.status == "revoked"
         && request.resource.data.status == "active"
         && request.resource.data.updatedAt == request.time
         && request.resource.data.revokedAt == null
+        && isActiveTeacherInSchool(schoolId)
+        && resource.data.ownerId == request.auth.uid
         && isTeacherProfileInSchool(
           schoolId,
           resource.data.sharedWithTeacherId
@@ -1151,16 +1160,18 @@ service cloud.firestore {
     }
 
     function isValidQuestionShareUpdate(schoolId, shareId) {
-      return isValidQuestionShareRevoke(schoolId, shareId)
-        || isValidQuestionShareReactivate(schoolId, shareId);
+      return resource.data != null
+        && (
+          isValidQuestionShareRevoke(schoolId, shareId)
+          || isValidQuestionShareReactivate(schoolId, shareId)
+        );
     }
 
-    function canReadQuestionShare(schoolId) {
-      return isActivePlatformAdmin()
-        || isOwnSchool(schoolId)
+    function canReadQuestionShareForUser(user, schoolId) {
+      return hasActiveRole(user, "platform_admin")
+        || hasActiveRoleInSchool(user, "school_admin", schoolId)
         || (
-          isActiveTeacher()
-          && currentUser().schoolId == schoolId
+          hasActiveRoleInSchool(user, "teacher", schoolId)
           && (
             resource.data.ownerId == request.auth.uid
             || resource.data.sharedWithTeacherId == request.auth.uid
@@ -1168,12 +1179,21 @@ service cloud.firestore {
         );
     }
 
+    function canReadQuestionShare(schoolId) {
+      return signedIn()
+        && canReadQuestionShareForUser(currentUser(), schoolId);
+    }
+
     function isOptionalPositiveInt(value) {
       return value == null || (value is int && value > 0);
     }
 
     function isValidQuestionPaperSetupPayload(data) {
-      return data.title is string
+      return data.keys().hasAll([
+          "durationMinutes",
+          "maximumMarks"
+        ])
+        && data.title is string
         && data.title.size() > 0
         && data.title.size() <= 160
         && data.classId is string
@@ -1192,24 +1212,7 @@ service cloud.firestore {
 
     function isValidQuestionPaperQuestion(question) {
       return question is map
-        && question.keys().hasAll([
-          "blockId",
-          "questionId",
-          "questionNumber",
-          "marks",
-          "difficulty",
-          "questionType",
-          "snapshot"
-        ])
-        && question.keys().hasOnly([
-          "blockId",
-          "questionId",
-          "questionNumber",
-          "marks",
-          "difficulty",
-          "questionType",
-          "snapshot"
-        ])
+        && question.keys().size() == 7
         && question.blockId is string
         && question.blockId.size() > 0
         && question.questionId is string
@@ -1250,16 +1253,7 @@ service cloud.firestore {
 
     function isValidQuestionPaperDifficultySummaryItem(item) {
       return item is map
-        && item.keys().hasAll([
-          "difficulty",
-          "label",
-          "marks"
-        ])
-        && item.keys().hasOnly([
-          "difficulty",
-          "label",
-          "marks"
-        ])
+        && item.keys().size() == 3
         && validQuestionDifficulty(item.difficulty)
         && item.label is string
         && item.label.size() > 0
@@ -1269,16 +1263,7 @@ service cloud.firestore {
 
     function isValidQuestionPaperDifficultySummary(summary) {
       return summary is map
-        && summary.keys().hasAll([
-          "averageWeight",
-          "distribution",
-          "overallDifficulty"
-        ])
-        && summary.keys().hasOnly([
-          "averageWeight",
-          "distribution",
-          "overallDifficulty"
-        ])
+        && summary.keys().size() == 3
         && (
           summary.averageWeight is int
           || summary.averageWeight is float
@@ -1297,95 +1282,49 @@ service cloud.firestore {
         ];
     }
 
-    function isValidQuestionPaperStatusPayload(data) {
-      return (
-          data.status == "draft"
-          && !data.keys().hasAny(["finalizedAt"])
-        )
-        || (
-          data.status == "final"
-          && data.keys().hasAll(["finalizedAt"])
-          && data.finalizedAt is timestamp
-        );
-    }
-
     function isValidQuestionPaperPayload(data) {
-      return data.keys().hasAll([
-          "title",
-          "classId",
-          "subjectId",
-          "examName",
-          "term",
-          "academicYear",
-          "durationMinutes",
-          "maximumMarks",
-          "documentContent",
-          "questions",
-          "totalQuestions",
-          "totalMarks",
-          "difficultySummary",
-          "status",
-          "createdBy",
-          "createdAt",
-          "updatedAt"
-        ])
-        && data.keys().hasOnly([
-          "title",
-          "classId",
-          "subjectId",
-          "examName",
-          "term",
-          "academicYear",
-          "durationMinutes",
-          "maximumMarks",
-          "documentContent",
-          "questions",
-          "totalQuestions",
-          "totalMarks",
-          "difficultySummary",
-          "status",
-          "createdBy",
-          "createdAt",
-          "updatedAt",
-          "finalizedAt"
-        ])
-        && isValidQuestionPaperSetupPayload(data)
+      return isValidQuestionPaperSetupPayload(data)
         && isValidRichTextDocument(data.documentContent)
         && isValidQuestionPaperQuestions(data.questions)
         && data.totalQuestions is int
         && data.totalQuestions == data.questions.size()
         && data.totalMarks is int
         && data.totalMarks >= 0
-        && isValidQuestionPaperDifficultySummary(data.difficultySummary)
-        && isValidQuestionPaperStatusPayload(data);
+        && isValidQuestionPaperDifficultySummary(data.difficultySummary);
     }
 
     function isValidQuestionPaperDraftPayload(data) {
-      return isValidQuestionPaperPayload(data)
+      return data.keys().size() == 17
+        && isValidQuestionPaperPayload(data)
         && data.status == "draft"
         && !data.keys().hasAny(["finalizedAt"]);
     }
 
     function isValidQuestionPaperFinalPayload(data) {
-      return isValidQuestionPaperPayload(data)
+      return data.keys().size() == 18
+        && isValidQuestionPaperPayload(data)
         && data.status == "final"
         && data.finalizedAt is timestamp
         && data.totalQuestions > 0
         && data.totalMarks > 0;
     }
 
-    function isValidQuestionPaperCreate(schoolId) {
-      return isActiveTeacher()
-        && currentUser().schoolId == schoolId
+    function isValidQuestionPaperCreateForUser(user, schoolId) {
+      return hasActiveRoleInSchool(user, "teacher", schoolId)
         && isValidQuestionPaperDraftPayload(request.resource.data)
-        && isValidQuestionCreator(request.resource.data.createdBy)
+        && isValidQuestionCreatorForUser(request.resource.data.createdBy, user)
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
     }
 
+    function isValidQuestionPaperCreate(schoolId) {
+      return signedIn()
+        && isValidQuestionPaperCreateForUser(currentUser(), schoolId);
+    }
+
     function isValidQuestionPaperDraftUpdate(schoolId) {
-      return isActiveTeacher()
-        && currentUser().schoolId == schoolId
+      return request.resource.data.status == "draft"
+        && isActiveTeacherInSchool(schoolId)
         && resource.data.status == "draft"
         && resource.data.createdBy.uid == request.auth.uid
         && isValidQuestionPaperDraftPayload(request.resource.data)
@@ -1393,7 +1332,6 @@ service cloud.firestore {
         && request.resource.data.createdBy.uid == request.auth.uid
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.updatedAt == request.time
-        && request.resource.data.status == "draft"
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           "title",
           "classId",
@@ -1414,8 +1352,7 @@ service cloud.firestore {
     }
 
     function isValidQuestionPaperFinalization(schoolId) {
-      return isActiveTeacher()
-        && currentUser().schoolId == schoolId
+      return isActiveTeacherInSchool(schoolId)
         && resource.data.status == "draft"
         && resource.data.createdBy.uid == request.auth.uid
         && isValidQuestionPaperFinalPayload(request.resource.data)
@@ -1432,13 +1369,15 @@ service cloud.firestore {
     }
 
     function isValidQuestionPaperUpdate(schoolId) {
-      return isValidQuestionPaperDraftUpdate(schoolId)
-        || isValidQuestionPaperFinalization(schoolId);
+      return resource.data != null
+        && (
+          isValidQuestionPaperDraftUpdate(schoolId)
+          || isValidQuestionPaperFinalization(schoolId)
+        );
     }
 
     function canReadQuestionPaper(schoolId) {
-      return isActiveTeacher()
-        && currentUser().schoolId == schoolId
+      return isActiveTeacherInSchool(schoolId)
         && resource.data.createdBy.uid == request.auth.uid;
     }
 
@@ -1505,6 +1444,26 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
+    function isValidSelfServiceSchoolCreateShape() {
+      return signedIn()
+        && hasVerifiedAuthEmail()
+        && request.resource.data.adminIds is list
+        && request.resource.data.adminIds.size() == 1
+        && request.resource.data.adminIds[0] == request.auth.uid
+        && request.resource.data.primaryAdminId == request.auth.uid;
+    }
+
+    function isValidSchoolCreateRequest(schoolId) {
+      return (
+          isValidSelfServiceSchoolCreateShape()
+          && isValidSelfServiceSchoolCreate(schoolId)
+        )
+        || (
+          isActivePlatformAdmin()
+          && isValidSchoolCreate()
+        );
+    }
+
     function isValidSchoolUpdate() {
       return isValidSchoolPayload(request.resource.data)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
@@ -1516,24 +1475,25 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
-    function isSelfServiceSchoolAdminProfileAfter(userId, schoolId) {
-      return existsAfter(userPath(userId))
-        && getAfter(userPath(userId)).data.uid == userId
-        && getAfter(userPath(userId)).data.email == authEmail()
-        && getAfter(userPath(userId)).data.role == "school_admin"
-        && getAfter(userPath(userId)).data.status == "active"
-        && getAfter(userPath(userId)).data.schoolId == schoolId
-        && getAfter(userPath(userId)).data.createdAt == request.time
-        && getAfter(userPath(userId)).data.updatedAt == request.time
-        && getAfter(schoolPath(schoolId)).data.adminIds is list
-        && getAfter(schoolPath(schoolId)).data.adminIds.size() == 1
-        && getAfter(schoolPath(schoolId)).data.adminIds[0] == userId;
+    function isSelfServiceSchoolAdminProfileAfter(userId, schoolId, school) {
+      let user = getAfter(userPath(userId)).data;
+
+      return user != null
+        && user.uid == userId
+        && user.email == authEmail()
+        && user.role == "school_admin"
+        && user.status == "active"
+        && user.schoolId == schoolId
+        && user.createdAt == request.time
+        && user.updatedAt == request.time
+        && school.adminIds is list
+        && school.adminIds.size() == 1
+        && school.adminIds[0] == userId;
     }
 
     function isValidSelfServiceSchoolCreate(schoolId) {
       return signedIn()
         && hasVerifiedAuthEmail()
-        && !exists(userPath(request.auth.uid))
         && request.resource.data.keys().hasAll([
           "name",
           "code",
@@ -1576,40 +1536,48 @@ service cloud.firestore {
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
-        && isSelfServiceSchoolAdminProfileAfter(request.auth.uid, schoolId);
+        && !exists(userPath(request.auth.uid))
+        && isSelfServiceSchoolAdminProfileAfter(
+          request.auth.uid,
+          schoolId,
+          request.resource.data
+        );
     }
 
     function isAcceptingJoinRequestsSchool(schoolId) {
-      return exists(schoolPath(schoolId))
-        && get(schoolPath(schoolId)).data.status == "active"
+      let school = get(schoolPath(schoolId)).data;
+
+      return school != null
+        && school.status == "active"
         && (
-          !get(schoolPath(schoolId)).data.keys().hasAny(["allowJoinRequests"])
-          || get(schoolPath(schoolId)).data.allowJoinRequests == true
+          !school.keys().hasAny(["allowJoinRequests"])
+          || school.allowJoinRequests == true
         );
     }
 
     function isValidPendingTeacherProfileAfter(userId, schoolId) {
-      return existsAfter(userPath(userId))
-        && getAfter(userPath(userId)).data.uid == userId
-        && getAfter(userPath(userId)).data.name is string
-        && getAfter(userPath(userId)).data.name.size() > 0
-        && getAfter(userPath(userId)).data.email == authEmail()
-        && getAfter(userPath(userId)).data.role == "teacher"
-        && getAfter(userPath(userId)).data.status == "pending_approval"
-        && getAfter(userPath(userId)).data.schoolId == schoolId
+      let user = getAfter(userPath(userId)).data;
+
+      return user != null
+        && user.uid == userId
+        && user.name is string
+        && user.name.size() > 0
+        && user.email == authEmail()
+        && user.role == "teacher"
+        && user.status == "pending_approval"
+        && user.schoolId == schoolId
         && (
-          getAfter(userPath(userId)).data.photoURL == null
-          || getAfter(userPath(userId)).data.photoURL is string
+          user.photoURL == null
+          || user.photoURL is string
         )
-        && getAfter(userPath(userId)).data.createdAt == request.time
-        && getAfter(userPath(userId)).data.updatedAt == request.time;
+        && user.createdAt == request.time
+        && user.updatedAt == request.time;
     }
 
     function isValidJoinRequestCreate(schoolId, userId) {
       return signedIn()
         && hasVerifiedOrGoogleAuthEmail()
         && request.auth.uid == userId
-        && !exists(userPath(request.auth.uid))
         && request.resource.data.keys().hasAll([
           "userId",
           "name",
@@ -1642,15 +1610,9 @@ service cloud.firestore {
         && request.resource.data.reviewedBy == null
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
+        && !exists(userPath(request.auth.uid))
         && isAcceptingJoinRequestsSchool(schoolId)
         && isValidPendingTeacherProfileAfter(userId, schoolId);
-    }
-
-    function isPendingTeacherInOwnSchool(schoolId) {
-      return currentUserExists()
-        && currentUser().role == "teacher"
-        && currentUser().status == "pending_approval"
-        && currentUser().schoolId == schoolId;
     }
 
     function isOwnJoinRequest(userId) {
@@ -1658,19 +1620,21 @@ service cloud.firestore {
     }
 
     function isReviewedTeacherProfileAfter(userId, schoolId, reviewStatus) {
-      return existsAfter(userPath(userId))
-        && getAfter(userPath(userId)).data.uid == userId
-        && getAfter(userPath(userId)).data.role == "teacher"
-        && getAfter(userPath(userId)).data.schoolId == schoolId
-        && getAfter(userPath(userId)).data.updatedAt == request.time
+      let user = getAfter(userPath(userId)).data;
+
+      return user != null
+        && user.uid == userId
+        && user.role == "teacher"
+        && user.schoolId == schoolId
+        && user.updatedAt == request.time
         && (
           (
             reviewStatus == "approved"
-            && getAfter(userPath(userId)).data.status == "active"
+            && user.status == "active"
           )
           || (
             reviewStatus == "rejected"
-            && getAfter(userPath(userId)).data.status == "disabled"
+            && user.status == "disabled"
           )
         );
     }
@@ -1698,28 +1662,29 @@ service cloud.firestore {
         );
     }
 
-    function isValidSchoolJoinRequestSettingUpdate(schoolId) {
-      return isOwnSchool(schoolId)
-        && isValidSchoolPayload(request.resource.data)
+    function isValidSchoolJoinRequestSettingUpdateForUser(user, schoolId) {
+      return isValidSchoolPayload(request.resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           "allowJoinRequests",
           "updatedAt"
         ])
         && request.resource.data.allowJoinRequests is bool
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.updatedAt == request.time
+        && isOwnSchoolForUser(user, schoolId);
     }
 
     function isActiveSchoolAdminProfileAfter(userId, schoolId) {
-      return existsAfter(userPath(userId))
-        && getAfter(userPath(userId)).data.uid == userId
-        && getAfter(userPath(userId)).data.schoolId == schoolId
-        && getAfter(userPath(userId)).data.role == "school_admin"
-        && getAfter(userPath(userId)).data.status == "active";
+      let user = getAfter(userPath(userId)).data;
+
+      return user != null
+        && user.uid == userId
+        && user.schoolId == schoolId
+        && user.role == "school_admin"
+        && user.status == "active";
     }
 
-    function isValidSchoolRoleRosterUpdate(schoolId) {
-      return isOwnSchool(schoolId)
-        && isValidSchoolPayload(request.resource.data)
+    function isValidSchoolRoleRosterUpdateForUser(user, schoolId) {
+      return isValidSchoolPayload(request.resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           "adminIds",
           "primaryAdminId",
@@ -1732,42 +1697,79 @@ service cloud.firestore {
         && request.resource.data.adminIds.hasAny([
           request.resource.data.primaryAdminId
         ])
+        && request.resource.data.updatedAt == request.time
+        && isOwnSchoolForUser(user, schoolId)
         && isActiveSchoolAdminProfileAfter(
           request.resource.data.primaryAdminId,
           schoolId
+        );
+    }
+
+    function isValidSchoolExistingUserUpdate(schoolId) {
+      let user = currentUser();
+
+      return (
+          hasActiveRole(user, "platform_admin")
+          && isValidSchoolUpdate()
         )
-        && request.resource.data.updatedAt == request.time;
+        || isValidSchoolJoinRequestSettingUpdateForUser(user, schoolId)
+        || isValidSchoolRoleRosterUpdateForUser(user, schoolId);
+    }
+
+    function isValidSchoolUpdateRequest(schoolId) {
+      return isValidSchoolPrimaryAdminRedemption(schoolId)
+        || (
+          signedIn()
+          && isValidSchoolExistingUserUpdate(schoolId)
+        );
     }
 
     function isOwnSchool(schoolId) {
-      return isActiveSchoolAdmin() && currentUser().schoolId == schoolId;
+      return signedIn()
+        && isOwnSchoolForUser(currentUser(), schoolId);
     }
 
-    function isSchoolUserInOwnSchool() {
-      return isActiveSchoolAdmin()
-        && resource.data.schoolId == currentUser().schoolId
-        && resource.data.status == "active"
-        && resource.data.role in ["teacher", "school_admin"];
+    function canReadUserProfileForUser(user) {
+      return hasActiveRole(user, "platform_admin")
+        || (
+          hasActiveRoleInSchool(user, "school_admin", resource.data.schoolId)
+          && resource.data.status == "active"
+          && resource.data.role in ["teacher", "school_admin"]
+        )
+        || (
+          hasActiveRoleInSchool(user, "school_admin", resource.data.schoolId)
+          && resource.data.role == "teacher"
+          && resource.data.status == "pending_approval"
+        )
+        || (
+          hasActiveRoleInSchool(user, "teacher", resource.data.schoolId)
+          && resource.data.role == "teacher"
+          && resource.data.status == "active"
+        );
     }
 
-    function isPendingTeacherProfileInOwnSchool() {
-      return isActiveSchoolAdmin()
-        && resource.data.schoolId == currentUser().schoolId
-        && resource.data.role == "teacher"
-        && resource.data.status == "pending_approval";
+    function canListUserProfilesForUser(user) {
+      return hasActiveRole(user, "platform_admin")
+        || (
+          hasActiveRoleInSchool(user, "school_admin", resource.data.schoolId)
+          && resource.data.role in ["teacher", "school_admin"]
+        )
+        || (
+          hasActiveRoleInSchool(user, "teacher", resource.data.schoolId)
+          && resource.data.role == "teacher"
+          && resource.data.status == "active"
+        );
     }
 
-    function canListSchoolUsersInOwnSchool() {
-      return isActiveSchoolAdmin()
-        && resource.data.schoolId == currentUser().schoolId
-        && resource.data.role in ["teacher", "school_admin"];
-    }
-
-    function isTeacherPeerInOwnSchool() {
-      return isActiveTeacher()
-        && resource.data.role == "teacher"
-        && resource.data.status == "active"
-        && resource.data.schoolId == currentUser().schoolId;
+    function canReadSchoolForUser(user, schoolId) {
+      return hasActiveRole(user, "platform_admin")
+        || hasActiveRoleInSchool(user, "school_admin", schoolId)
+        || hasRoleStatusInSchool(
+          user,
+          "teacher",
+          "pending_approval",
+          schoolId
+        );
     }
 
     function isValidOwnProfileUpdate(userId) {
@@ -1788,7 +1790,7 @@ service cloud.firestore {
       return role == "school_admin";
     }
 
-    function isValidInvitationBaseCreate(invitationId) {
+    function isValidInvitationBaseCreatePayload(invitationId) {
       return request.resource.data.keys().hasAll([
           "token",
           "email",
@@ -1832,19 +1834,24 @@ service cloud.firestore {
         && request.resource.data.acceptedBy == null
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
-        && request.resource.data.expiresAt > request.time
-        && exists(schoolPath(request.resource.data.schoolId))
-        && get(schoolPath(request.resource.data.schoolId)).data.status == "active";
+        && request.resource.data.expiresAt > request.time;
+    }
+
+    function isValidSchoolAdminInvitationCreateForSchool() {
+      let school = get(schoolPath(request.resource.data.schoolId)).data;
+
+      return school != null
+        && school.status == "active"
+        && school.primaryAdminId == null
+        && school.name == request.resource.data.schoolName;
     }
 
     function isValidSchoolAdminInvitationCreate(invitationId) {
       return isActivePlatformAdmin()
-        && isValidInvitationBaseCreate(invitationId)
+        && isValidInvitationBaseCreatePayload(invitationId)
         && request.resource.data.role == "school_admin"
         && request.resource.data.schoolName is string
-        && get(schoolPath(request.resource.data.schoolId)).data.primaryAdminId == null
-        && get(schoolPath(request.resource.data.schoolId)).data.name
-          == request.resource.data.schoolName;
+        && isValidSchoolAdminInvitationCreateForSchool();
     }
 
     function isValidInvitationCreate(invitationId) {
@@ -1856,72 +1863,62 @@ service cloud.firestore {
     }
 
     function isValidInvitationCancel() {
-      return canCancelInvitation()
-        && resource.data.status == "pending"
+      return resource.data.status == "pending"
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           "status",
           "updatedAt"
         ])
         && request.resource.data.status == "cancelled"
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.updatedAt == request.time
+        && canCancelInvitation();
     }
 
-    function isPendingInvitation(invitationId) {
-      return exists(invitationPath(invitationId))
-        && get(invitationPath(invitationId)).data.token == invitationId
-        && validInvitationRole(get(invitationPath(invitationId)).data.role)
-        && get(invitationPath(invitationId)).data.status == "pending"
-        && get(invitationPath(invitationId)).data.expiresAt > request.time;
+    function isPendingInvitationData(invitation, invitationId) {
+      return invitation != null
+        && invitation.token == invitationId
+        && validInvitationRole(invitation.role)
+        && invitation.status == "pending"
+        && invitation.expiresAt > request.time;
     }
 
-    function authMatchesInvitation(invitationId) {
-      return hasVerifiedAuthEmail()
-        && authEmail() == get(invitationPath(invitationId)).data.email;
+    function authMatchesInvitationData(invitation) {
+      return invitation != null
+        && hasVerifiedAuthEmail()
+        && authEmail() == invitation.email;
     }
 
-    function isPendingInvitationForAuth(invitationId) {
-      return isPendingInvitation(invitationId)
-        && authMatchesInvitation(invitationId);
+    function isPendingInvitationForAuthData(invitation, invitationId) {
+      return isPendingInvitationData(invitation, invitationId)
+        && authMatchesInvitationData(invitation);
     }
 
-    function isActiveInvitationSchool(schoolId, invitationId) {
-      return exists(schoolPath(schoolId))
-        && get(invitationPath(invitationId)).data.schoolId == schoolId
-        && get(schoolPath(schoolId)).data.status == "active";
+    function isActiveInvitationSchoolData(invitation, school, schoolId) {
+      return invitation != null
+        && school != null
+        && invitation.schoolId == schoolId
+        && school.status == "active";
     }
 
-    function isRedeemableSchoolAdminSchool(schoolId, invitationId) {
-      return isActiveInvitationSchool(schoolId, invitationId)
-        && get(schoolPath(schoolId)).data.primaryAdminId == null;
+    function isRedeemableSchoolAdminSchoolData(invitation, school, schoolId) {
+      return isActiveInvitationSchoolData(invitation, school, schoolId)
+        && school.primaryAdminId == null;
     }
 
-    function isAcceptedInvitationAfter(invitationId, userId) {
-      return existsAfter(invitationPath(invitationId))
-        && getAfter(invitationPath(invitationId)).data.status == "accepted"
-        && getAfter(invitationPath(invitationId)).data.acceptedBy == userId
-        && getAfter(invitationPath(invitationId)).data.acceptedAt == request.time
-        && getAfter(invitationPath(invitationId)).data.updatedAt == request.time;
+    function isAcceptedInvitationAfterData(invitation, userId) {
+      return invitation != null
+        && invitation.status == "accepted"
+        && invitation.acceptedBy == userId
+        && invitation.acceptedAt == request.time
+        && invitation.updatedAt == request.time;
     }
 
-    function isPrimaryAdminAfter(schoolId, userId) {
-      return existsAfter(schoolPath(schoolId))
-        && getAfter(schoolPath(schoolId)).data.primaryAdminId == userId
-        && getAfter(schoolPath(schoolId)).data.updatedAt == request.time;
+    function isPrimaryAdminAfterData(school, userId) {
+      return school != null
+        && school.primaryAdminId == userId
+        && school.updatedAt == request.time;
     }
 
-    function isInviteeProfileAfter(userId, schoolId, invitationId, role) {
-      return existsAfter(userPath(userId))
-        && getAfter(userPath(userId)).data.uid == userId
-        && getAfter(userPath(userId)).data.email == authEmail()
-        && getAfter(userPath(userId)).data.email
-          == get(invitationPath(invitationId)).data.email
-        && getAfter(userPath(userId)).data.role == role
-        && getAfter(userPath(userId)).data.status == "active"
-        && getAfter(userPath(userId)).data.schoolId == schoolId
-        && getAfter(userPath(userId)).data.invitationId == invitationId;
-    }
-
-    function isValidInviteeProfileBaseCreate(userId) {
+    function isValidInviteeProfileCreateShape(userId) {
       return signedIn()
         && request.auth.uid == userId
         && request.resource.data.keys().hasAll([
@@ -1948,44 +1945,86 @@ service cloud.firestore {
           "updatedAt",
           "invitationId"
         ])
-        && request.resource.data.invitationId is string
-        && isPendingInvitationForAuth(request.resource.data.invitationId)
+        && request.resource.data.invitationId is string;
+    }
+
+    function isValidInviteeProfileBaseCreateForInvitation(
+      userId,
+      invitationId,
+      invitation,
+      invitationAfter
+    ) {
+      return isValidInviteeProfileCreateShape(userId)
+        && isPendingInvitationForAuthData(invitation, invitationId)
         && request.resource.data.uid == userId
-        && request.resource.data.name
-          == get(invitationPath(request.resource.data.invitationId)).data.name
+        && request.resource.data.name == invitation.name
         && request.resource.data.email == authEmail()
-        && request.resource.data.email
-          == get(invitationPath(request.resource.data.invitationId)).data.email
-        && request.resource.data.role
-          == get(invitationPath(request.resource.data.invitationId)).data.role
+        && request.resource.data.email == invitation.email
+        && request.resource.data.role == invitation.role
         && request.resource.data.status == "active"
-        && request.resource.data.schoolId
-          == get(invitationPath(request.resource.data.invitationId)).data.schoolId
+        && request.resource.data.schoolId == invitation.schoolId
         && (
           request.resource.data.photoURL == null
           || request.resource.data.photoURL is string
         )
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
-        && isActiveInvitationSchool(
-          request.resource.data.schoolId,
-          request.resource.data.invitationId
+        && isAcceptedInvitationAfterData(invitationAfter, userId);
+    }
+
+    function isValidSchoolAdminProfileCreateForInvitation(userId, invitation) {
+      let schoolId = request.resource.data.schoolId;
+      let school = get(schoolPath(schoolId)).data;
+      let schoolAfter = getAfter(schoolPath(schoolId)).data;
+
+      return request.resource.data.role == "school_admin"
+        && isRedeemableSchoolAdminSchoolData(
+          invitation,
+          school,
+          schoolId
         )
-        && isAcceptedInvitationAfter(request.resource.data.invitationId, userId);
+        && isPrimaryAdminAfterData(schoolAfter, userId);
+    }
+
+    function isValidSchoolAdminProfileCreateWithInvitation(userId) {
+      let invitationId = request.resource.data.invitationId;
+      let invitation = get(invitationPath(invitationId)).data;
+      let invitationAfter = getAfter(invitationPath(invitationId)).data;
+
+      return isValidInviteeProfileBaseCreateForInvitation(
+          userId,
+          invitationId,
+          invitation,
+          invitationAfter
+        )
+        && isValidSchoolAdminProfileCreateForInvitation(userId, invitation);
     }
 
     function isValidSchoolAdminProfileCreate(userId) {
-      return isValidInviteeProfileBaseCreate(userId)
+      return isValidInviteeProfileCreateShape(userId)
         && request.resource.data.role == "school_admin"
-        && isRedeemableSchoolAdminSchool(
-          request.resource.data.schoolId,
-          request.resource.data.invitationId
-        )
-        && isPrimaryAdminAfter(request.resource.data.schoolId, userId);
+        && isValidSchoolAdminProfileCreateWithInvitation(userId);
     }
 
     function isValidInviteeProfileCreate(userId) {
       return isValidSchoolAdminProfileCreate(userId);
+    }
+
+    function isValidSelfServiceSchoolAdminProfileCreateAfter(userId) {
+      let school = getAfter(
+        schoolPath(request.resource.data.schoolId)
+      ).data;
+
+      return school != null
+        && school.primaryAdminId == userId
+        && school.adminIds is list
+        && school.adminIds.size() == 1
+        && school.adminIds[0] == userId
+        && school.createdBy == userId
+        && school.createdAt == request.time
+        && school.updatedAt == request.time
+        && school.status == "active"
+        && school.allowJoinRequests == true;
     }
 
     function isValidSelfServiceSchoolAdminProfileCreate(userId) {
@@ -2028,25 +2067,21 @@ service cloud.firestore {
         )
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
-        && existsAfter(schoolPath(request.resource.data.schoolId))
-        && getAfter(schoolPath(request.resource.data.schoolId)).data.primaryAdminId
-          == userId
-        && getAfter(schoolPath(request.resource.data.schoolId)).data.adminIds
-          is list
-        && getAfter(schoolPath(request.resource.data.schoolId)).data.adminIds.size()
-          == 1
-        && getAfter(schoolPath(request.resource.data.schoolId)).data.adminIds[0]
-          == userId
-        && getAfter(schoolPath(request.resource.data.schoolId)).data.createdBy
-          == userId
-        && getAfter(schoolPath(request.resource.data.schoolId)).data.createdAt
-          == request.time
-        && getAfter(schoolPath(request.resource.data.schoolId)).data.updatedAt
-          == request.time
-        && getAfter(schoolPath(request.resource.data.schoolId)).data.status
-          == "active"
-        && getAfter(schoolPath(request.resource.data.schoolId)).data.allowJoinRequests
-          == true;
+        && isValidSelfServiceSchoolAdminProfileCreateAfter(userId);
+    }
+
+    function isValidPendingTeacherProfileCreateAfter(userId) {
+      let joinRequest = getAfter(
+        joinRequestPath(request.resource.data.schoolId, userId)
+      ).data;
+
+      return joinRequest != null
+        && joinRequest.userId == userId
+        && joinRequest.email == authEmail()
+        && joinRequest.requestedRole == "teacher"
+        && joinRequest.status == "pending"
+        && joinRequest.createdAt == request.time
+        && joinRequest.updatedAt == request.time;
     }
 
     function isValidPendingTeacherProfileCreate(userId) {
@@ -2089,27 +2124,34 @@ service cloud.firestore {
         )
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
-        && existsAfter(joinRequestPath(request.resource.data.schoolId, userId))
-        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.userId
-          == userId
-        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.email
-          == authEmail()
-        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.requestedRole
-          == "teacher"
-        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.status
-          == "pending"
-        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.createdAt
-          == request.time
-        && getAfter(joinRequestPath(request.resource.data.schoolId, userId)).data.updatedAt
-          == request.time;
+        && isValidPendingTeacherProfileCreateAfter(userId);
     }
 
-    function isValidTeacherReviewProfileUpdate(userId) {
-      return isActiveSchoolAdmin()
-        && resource.data.uid == userId
+    function isValidTeacherReviewJoinRequestAfter(userId) {
+      let joinRequest = getAfter(
+        joinRequestPath(resource.data.schoolId, userId)
+      ).data;
+
+      return joinRequest != null
+        && (
+          (
+            request.resource.data.status == "active"
+            && joinRequest.status == "approved"
+          )
+          || (
+            request.resource.data.status == "disabled"
+            && joinRequest.status == "rejected"
+          )
+        )
+        && joinRequest.reviewedBy == request.auth.uid
+        && joinRequest.reviewedAt == request.time
+        && joinRequest.updatedAt == request.time;
+    }
+
+    function isValidTeacherReviewProfileUpdateForUser(user, userId) {
+      return resource.data.uid == userId
         && resource.data.role == "teacher"
         && resource.data.status == "pending_approval"
-        && resource.data.schoolId == currentUser().schoolId
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.name == resource.data.name
         && request.resource.data.email == resource.data.email
@@ -2123,31 +2165,34 @@ service cloud.firestore {
           "updatedAt"
         ])
         && request.resource.data.status in ["active", "disabled"]
-        && existsAfter(joinRequestPath(resource.data.schoolId, userId))
-        && (
-          (
-            request.resource.data.status == "active"
-            && getAfter(joinRequestPath(resource.data.schoolId, userId)).data.status
-              == "approved"
-          )
-          || (
-            request.resource.data.status == "disabled"
-            && getAfter(joinRequestPath(resource.data.schoolId, userId)).data.status
-              == "rejected"
-          )
-        )
-        && getAfter(joinRequestPath(resource.data.schoolId, userId)).data.reviewedBy
-          == request.auth.uid
-        && getAfter(joinRequestPath(resource.data.schoolId, userId)).data.reviewedAt
-          == request.time
-        && getAfter(joinRequestPath(resource.data.schoolId, userId)).data.updatedAt
-          == request.time;
+        && isOwnSchoolForUser(user, resource.data.schoolId)
+        && isValidTeacherReviewJoinRequestAfter(userId);
     }
 
-    function isValidSchoolUserRoleChange(userId) {
-      return isActiveSchoolAdmin()
-        && resource.data.uid == userId
-        && resource.data.schoolId == currentUser().schoolId
+    function isValidSchoolUserRoleChangeAfter(userId) {
+      let school = getAfter(schoolPath(resource.data.schoolId)).data;
+
+      return school != null
+        && school.adminIds is list
+        && school.adminIds.size() > 0
+        && (
+          (
+            request.resource.data.role == "school_admin"
+            && school.adminIds.hasAny([
+              userId
+            ])
+          )
+          || (
+            request.resource.data.role == "teacher"
+            && !school.adminIds.hasAny([
+              userId
+            ])
+          )
+        );
+    }
+
+    function isValidSchoolUserRoleChangeForUser(user, userId) {
+      return resource.data.uid == userId
         && resource.data.status == "active"
         && resource.data.role in ["teacher", "school_admin"]
         && request.resource.data.uid == resource.data.uid
@@ -2160,28 +2205,27 @@ service cloud.firestore {
           "role",
           "updatedAt"
         ])
-        && existsAfter(schoolPath(resource.data.schoolId))
-        && getAfter(schoolPath(resource.data.schoolId)).data.adminIds is list
-        && getAfter(schoolPath(resource.data.schoolId)).data.adminIds.size() > 0
-        && (
-          (
-            request.resource.data.role == "school_admin"
-            && getAfter(schoolPath(resource.data.schoolId)).data.adminIds.hasAny([
-              userId
-            ])
-          )
-          || (
-            request.resource.data.role == "teacher"
-            && !getAfter(schoolPath(resource.data.schoolId)).data.adminIds.hasAny([
-              userId
-            ])
-          )
+        && isOwnSchoolForUser(user, resource.data.schoolId)
+        && isValidSchoolUserRoleChangeAfter(userId);
+    }
+
+    function isValidSchoolManagedProfileUpdate(userId) {
+      let user = currentUser();
+
+      return isValidTeacherReviewProfileUpdateForUser(user, userId)
+        || isValidSchoolUserRoleChangeForUser(user, userId);
+    }
+
+    function isValidUserProfileUpdateRequest(userId) {
+      return isValidOwnProfileUpdate(userId)
+        || (
+          signedIn()
+          && isValidSchoolManagedProfileUpdate(userId)
         );
     }
 
-    function isValidSchoolPrimaryAdminRedemption(schoolId) {
-      return signedIn()
-        && request.resource.data.primaryAdminId == request.auth.uid
+    function isSchoolPrimaryAdminRedemptionPayload() {
+      return request.resource.data.primaryAdminId == request.auth.uid
         && request.resource.data.adminIds is list
         && request.resource.data.adminIds.size() == 1
         && request.resource.data.adminIds[0] == request.auth.uid
@@ -2191,92 +2235,124 @@ service cloud.firestore {
           "primaryAdminId",
           "updatedAt"
         ])
-        && existsAfter(userPath(request.auth.uid))
-        && getAfter(userPath(request.auth.uid)).data.role == "school_admin"
-        && isPendingInvitationForAuth(
-          getAfter(userPath(request.auth.uid)).data.invitationId
-        )
-        && isRedeemableSchoolAdminSchool(
-          schoolId,
-          getAfter(userPath(request.auth.uid)).data.invitationId
-        )
-        && isInviteeProfileAfter(
-          request.auth.uid,
-          schoolId,
-          getAfter(userPath(request.auth.uid)).data.invitationId,
-          "school_admin"
-        )
-        && isAcceptedInvitationAfter(
-          getAfter(userPath(request.auth.uid)).data.invitationId,
-          request.auth.uid
-        );
+        && resource.data.status == "active"
+        && resource.data.primaryAdminId == null;
     }
 
-    function isValidInvitationRedemption(invitationId) {
+    function isValidSchoolPrimaryAdminRedemptionForInvitee(schoolId, invitee) {
+      let invitationId = invitee.invitationId;
+      let invitation = get(invitationPath(invitationId)).data;
+      let invitationAfter = getAfter(invitationPath(invitationId)).data;
+
+      return invitation != null
+        && invitationAfter != null
+        && invitation.token == invitationId
+        && validInvitationRole(invitation.role)
+        && invitation.status == "pending"
+        && invitation.expiresAt > request.time
+        && authEmail() == invitation.email
+        && invitation.schoolId == schoolId
+        && invitee.uid == request.auth.uid
+        && invitee.email == authEmail()
+        && invitee.email == invitation.email
+        && invitee.role == "school_admin"
+        && invitee.status == "active"
+        && invitee.schoolId == schoolId
+        && invitee.invitationId == invitationId
+        && invitationAfter.status == "accepted"
+        && invitationAfter.acceptedBy == request.auth.uid
+        && invitationAfter.acceptedAt == request.time
+        && invitationAfter.updatedAt == request.time;
+    }
+
+    function isValidSchoolPrimaryAdminRedemptionForAuth(schoolId) {
+      let invitee = getAfter(userPath(request.auth.uid)).data;
+
+      return invitee != null
+        && isValidSchoolPrimaryAdminRedemptionForInvitee(schoolId, invitee);
+    }
+
+    function isValidSchoolPrimaryAdminRedemption(schoolId) {
       return signedIn()
         && hasVerifiedAuthEmail()
-        && resource.data.token == invitationId
-        && validInvitationRole(resource.data.role)
-        && resource.data.status == "pending"
-        && resource.data.expiresAt > request.time
-        && authEmail() == resource.data.email
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        && isSchoolPrimaryAdminRedemptionPayload()
+        && isValidSchoolPrimaryAdminRedemptionForAuth(schoolId);
+    }
+
+    function isValidInvitationRedemptionPayload(invitationId) {
+      let invitation = resource.data;
+      let invitationAfter = request.resource.data;
+
+      return invitation.token == invitationId
+        && validInvitationRole(invitation.role)
+        && invitation.status == "pending"
+        && invitation.expiresAt > request.time
+        && authEmail() == invitation.email
+        && invitationAfter.diff(invitation).affectedKeys().hasOnly([
           "status",
           "updatedAt",
           "acceptedAt",
           "acceptedBy"
         ])
-        && request.resource.data.status == "accepted"
-        && request.resource.data.updatedAt == request.time
-        && request.resource.data.acceptedAt == request.time
-        && request.resource.data.acceptedBy == request.auth.uid
-        && isPendingInvitationForAuth(invitationId)
-        && isActiveInvitationSchool(resource.data.schoolId, invitationId)
-        && isInviteeProfileAfter(
-          request.auth.uid,
-          resource.data.schoolId,
-          invitationId,
-          resource.data.role
-        )
-        && resource.data.role == "school_admin"
-        && isRedeemableSchoolAdminSchool(resource.data.schoolId, invitationId)
-        && isPrimaryAdminAfter(resource.data.schoolId, request.auth.uid)
-        && isAcceptedInvitationAfter(invitationId, request.auth.uid);
+        && invitationAfter.status == "accepted"
+        && invitationAfter.updatedAt == request.time
+        && invitationAfter.acceptedAt == request.time
+        && invitationAfter.acceptedBy == request.auth.uid;
+    }
+
+    function isValidInvitationRedemptionForAuth(invitationId) {
+      let invitation = resource.data;
+      let school = get(schoolPath(invitation.schoolId)).data;
+      let schoolAfter = getAfter(schoolPath(invitation.schoolId)).data;
+      let invitee = getAfter(userPath(request.auth.uid)).data;
+
+      return school != null
+        && schoolAfter != null
+        && invitee != null
+        && school.status == "active"
+        && invitee.uid == request.auth.uid
+        && invitee.email == authEmail()
+        && invitee.email == invitation.email
+        && invitee.role == invitation.role
+        && invitee.status == "active"
+        && invitee.schoolId == invitation.schoolId
+        && invitee.invitationId == invitationId
+        && invitation.role == "school_admin"
+        && school.primaryAdminId == null
+        && schoolAfter.primaryAdminId == request.auth.uid
+        && schoolAfter.updatedAt == request.time;
+    }
+
+    function isValidInvitationRedemption(invitationId) {
+      return signedIn()
+        && hasVerifiedAuthEmail()
+        && isValidInvitationRedemptionPayload(invitationId)
+        && isValidInvitationRedemptionForAuth(invitationId);
     }
 
     match /users/{userId} {
       allow get: if signedIn()
         && (
           request.auth.uid == userId
-          || isActivePlatformAdmin()
-          || isSchoolUserInOwnSchool()
-          || isPendingTeacherProfileInOwnSchool()
-          || isTeacherPeerInOwnSchool()
+          || canReadUserProfileForUser(currentUser())
         );
-      allow list: if isActivePlatformAdmin()
-        || canListSchoolUsersInOwnSchool()
-        || isTeacherPeerInOwnSchool();
+      allow list: if signedIn()
+        && canListUserProfilesForUser(currentUser());
       allow create: if isValidInviteeProfileCreate(userId)
         || isValidSelfServiceSchoolAdminProfileCreate(userId)
         || isValidPendingTeacherProfileCreate(userId);
-      allow update: if isValidOwnProfileUpdate(userId)
-        || isValidTeacherReviewProfileUpdate(userId)
-        || isValidSchoolUserRoleChange(userId);
+      allow update: if isValidUserProfileUpdateRequest(userId);
       allow delete: if false;
     }
 
     match /schools/{schoolId} {
-      allow get: if isActivePlatformAdmin()
-        || isOwnSchool(schoolId)
-        || isPendingTeacherInOwnSchool(schoolId);
+      allow get: if signedIn()
+        && canReadSchoolForUser(currentUser(), schoolId);
       allow list: if isActivePlatformAdmin();
-      allow create: if (isActivePlatformAdmin() && isValidSchoolCreate())
-        || isValidSelfServiceSchoolCreate(schoolId);
+      allow create: if isValidSchoolCreateRequest(schoolId);
       allow update: if (
-        isActivePlatformAdmin() && isValidSchoolUpdate()
-      ) || isValidSchoolPrimaryAdminRedemption(schoolId)
-        || isValidSchoolJoinRequestSettingUpdate(schoolId)
-        || isValidSchoolRoleRosterUpdate(schoolId);
+        isValidSchoolUpdateRequest(schoolId)
+      );
       allow delete: if false;
     }
 
@@ -2341,8 +2417,8 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isActivePlatformAdmin();
       allow create: if isValidInvitationCreate(invitationId);
-      allow update: if isValidInvitationCancel()
-        || isValidInvitationRedemption(invitationId);
+      allow update: if isValidInvitationRedemption(invitationId)
+        || isValidInvitationCancel();
       allow delete: if false;
     }
 
