@@ -355,6 +355,7 @@ function QuestionPapersPage() {
         </div>
         <QuestionPaperActions
           onCreatePaper={() => navigate("/teacher/exam-papers/new")}
+          onUseTemplate={() => navigate("/teacher/exam-papers/templates")}
         />
       </header>
 

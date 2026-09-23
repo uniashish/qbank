@@ -1484,6 +1484,184 @@ service cloud.firestore {
         && resource.data.status in ["draft", "final"];
     }
 
+    function isValidQuestionPaperTemplateStatus(status) {
+      return status in ["active", "archived"];
+    }
+
+    function isValidQuestionPaperTemplateDefaultSetup(defaultSetup) {
+      return defaultSetup is map
+        && defaultSetup.keys().hasAll([
+          "examName",
+          "term",
+          "academicYear",
+          "durationMinutes",
+          "maximumMarks"
+        ])
+        && defaultSetup.keys().hasOnly([
+          "examName",
+          "term",
+          "academicYear",
+          "durationMinutes",
+          "maximumMarks"
+        ])
+        && defaultSetup.examName is string
+        && defaultSetup.examName.size() <= 120
+        && defaultSetup.term is string
+        && defaultSetup.term.size() <= 80
+        && defaultSetup.academicYear is string
+        && defaultSetup.academicYear.size() <= 40
+        && isOptionalPositiveInt(defaultSetup.durationMinutes)
+        && isOptionalPositiveInt(defaultSetup.maximumMarks);
+    }
+
+    function isValidQuestionPaperTemplateDocumentContent(documentContent) {
+      return documentContent is map
+        && documentContent.keys().hasAll([
+          "type",
+          "content"
+        ])
+        && documentContent.keys().hasOnly([
+          "type",
+          "content"
+        ])
+        && documentContent.type == "doc"
+        && documentContent.content is list
+        && documentContent.content.size() <= 250;
+    }
+
+    function isValidQuestionPaperTemplateSettings(settings) {
+      return settings is map
+        && settings.keys().hasAll([
+          "showSchoolName",
+          "showExamName",
+          "showClass",
+          "showSubject",
+          "showDuration",
+          "showMaximumMarks"
+        ])
+        && settings.keys().hasOnly([
+          "showSchoolName",
+          "showExamName",
+          "showClass",
+          "showSubject",
+          "showDuration",
+          "showMaximumMarks"
+        ])
+        && settings.showSchoolName is bool
+        && settings.showExamName is bool
+        && settings.showClass is bool
+        && settings.showSubject is bool
+        && settings.showDuration is bool
+        && settings.showMaximumMarks is bool;
+    }
+
+    function isValidQuestionPaperTemplatePayload(data) {
+      return data.keys().hasAll([
+          "name",
+          "description",
+          "defaultSetup",
+          "documentContent",
+          "sections",
+          "settings",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ])
+        && data.keys().hasOnly([
+          "name",
+          "description",
+          "defaultSetup",
+          "documentContent",
+          "sections",
+          "settings",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ])
+        && data.name is string
+        && data.name.size() <= 160
+        && data.description is string
+        && data.description.size() <= 500
+        && isValidQuestionPaperTemplateDefaultSetup(data.defaultSetup)
+        && isValidQuestionPaperTemplateDocumentContent(data.documentContent)
+        && data.sections is list
+        && data.sections.size() <= 100
+        && isValidQuestionPaperTemplateSettings(data.settings)
+        && isValidQuestionPaperTemplateStatus(data.status);
+    }
+
+    function isValidQuestionPaperTemplateCreateForUser(user, schoolId) {
+      return hasActiveRoleInSchool(user, "teacher", schoolId)
+        && isValidQuestionPaperTemplatePayload(request.resource.data)
+        && isValidQuestionCreatorForUser(request.resource.data.createdBy, user)
+        && request.resource.data.status == "active"
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function isValidQuestionPaperTemplateCreate(schoolId) {
+      return signedIn()
+        && isValidQuestionPaperTemplateCreateForUser(currentUser(), schoolId);
+    }
+
+    function isQuestionPaperTemplateOwnerUpdateForUser(user, schoolId) {
+      return resource.data != null
+        && hasActiveRoleInSchool(user, "teacher", schoolId)
+        && resource.data.status == "active"
+        && resource.data.createdBy.uid == request.auth.uid
+        && isValidQuestionPaperTemplatePayload(request.resource.data)
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdBy.uid == request.auth.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function isValidQuestionPaperTemplateContentUpdateForUser(user, schoolId) {
+      return isQuestionPaperTemplateOwnerUpdateForUser(user, schoolId)
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "name",
+          "description",
+          "defaultSetup",
+          "documentContent",
+          "sections",
+          "settings",
+          "updatedAt"
+        ]);
+    }
+
+    function isValidQuestionPaperTemplateArchiveForUser(user, schoolId) {
+      return isQuestionPaperTemplateOwnerUpdateForUser(user, schoolId)
+        && request.resource.data.status == "archived"
+        && resource.data.status == "active"
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status",
+          "updatedAt"
+        ]);
+    }
+
+    function isValidQuestionPaperTemplateUpdateForUser(user, schoolId) {
+      return isValidQuestionPaperTemplateContentUpdateForUser(user, schoolId)
+        || isValidQuestionPaperTemplateArchiveForUser(user, schoolId);
+    }
+
+    function isValidQuestionPaperTemplateUpdate(schoolId) {
+      return signedIn()
+        && isValidQuestionPaperTemplateUpdateForUser(currentUser(), schoolId);
+    }
+
+    function canReadQuestionPaperTemplateForUser(user, schoolId) {
+      return hasActiveRoleInSchool(user, "teacher", schoolId)
+        && resource.data.createdBy.uid == request.auth.uid;
+    }
+
+    function canReadQuestionPaperTemplate(schoolId) {
+      return signedIn()
+        && canReadQuestionPaperTemplateForUser(currentUser(), schoolId);
+    }
+
     function isValidSchoolPayload(data) {
       return data.name is string
         && data.name.size() > 0
@@ -2507,6 +2685,13 @@ service cloud.firestore {
       allow create: if isValidQuestionPaperCreate(schoolId);
       allow update: if isValidQuestionPaperUpdate(schoolId);
       allow delete: if canDeleteQuestionPaper(schoolId);
+    }
+
+    match /schools/{schoolId}/questionPaperTemplates/{templateId} {
+      allow get, list: if canReadQuestionPaperTemplate(schoolId);
+      allow create: if isValidQuestionPaperTemplateCreate(schoolId);
+      allow update: if isValidQuestionPaperTemplateUpdate(schoolId);
+      allow delete: if false;
     }
 
     match /schools/{schoolId}/questionShares/{shareId} {

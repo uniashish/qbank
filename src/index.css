@@ -15,3 +15,4 @@
 @import "./features/question-designer/styles/question-designer.css";
 @import "./styles/question-bank.css";
 @import "./features/question-paper/styles/question-paper.css";
+@import "./features/question-paper-template/question-paper-template.css";

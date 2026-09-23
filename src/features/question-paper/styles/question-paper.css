@@ -56,18 +56,6 @@
   padding-inline: 16px;
 }
 
-.question-paper-actions__template {
-  display: grid;
-  gap: 4px;
-  justify-items: end;
-}
-
-.question-paper-actions__template > span {
-  color: var(--color-text-muted);
-  font-size: 0.78rem;
-  font-weight: 760;
-}
-
 .question-papers-panel {
   padding: 18px;
   border: 1px solid var(--color-border);
@@ -1635,15 +1623,9 @@
   }
 
   .question-paper-actions .button,
-  .question-paper-actions__template,
-  .question-paper-actions__template .button,
   .paper-designer-header__actions .button,
   .question-paper-search {
     width: 100%;
-  }
-
-  .question-paper-actions__template {
-    justify-items: start;
   }
 
   .question-paper-grid {
