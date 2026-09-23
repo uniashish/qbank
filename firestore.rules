@@ -588,22 +588,27 @@ service cloud.firestore {
         && (
           (
             node.type == "text"
+            && node.keys().hasAny(["text"])
             && node.text is string
             && node.text.size() > 0
           )
           || (
             node.type == "image"
+            && node.keys().hasAny(["attrs"])
             && node.attrs is map
+            && node.attrs.keys().hasAny(["src"])
             && node.attrs.src is string
             && node.attrs.src.size() > 0
           )
           || (
             node.type == "table"
+            && node.keys().hasAny(["content"])
             && node.content is list
             && node.content.size() > 0
           )
           || (
-            node.content is list
+            node.keys().hasAny(["content"])
+            && node.content is list
             && node.content.size() > 0
           )
         );
@@ -660,6 +665,95 @@ service cloud.firestore {
         && contentDoc.content is list
         && contentDoc.content.size() <= 100
         && hasMeaningfulRichTextTopLevelContent(contentDoc.content);
+    }
+
+    function isMeaningfulQuestionPaperBlockNode(node) {
+      return node is map
+        && node.type == "questionBlock"
+        && node.keys().hasAny(["attrs"])
+        && node.attrs is map
+        && node.attrs.keys().hasAll([
+          "blockId",
+          "difficulty",
+          "marks",
+          "questionId",
+          "questionNumber",
+          "questionType",
+          "snapshot"
+        ])
+        && node.attrs.blockId is string
+        && node.attrs.blockId.size() > 0
+        && validQuestionDifficulty(node.attrs.difficulty)
+        && node.attrs.marks is int
+        && node.attrs.marks > 0
+        && node.attrs.questionId is string
+        && node.attrs.questionId.size() > 0
+        && node.attrs.questionNumber is string
+        && node.attrs.questionNumber.size() > 0
+        && isValidQuestionType(node.attrs.questionType)
+        && node.attrs.snapshot is map;
+    }
+
+    function isMeaningfulQuestionPaperNode(node) {
+      return isMeaningfulQuestionPaperBlockNode(node)
+        || isMeaningfulRichTextNode(node);
+    }
+
+    function hasMeaningfulQuestionPaperTopLevelContent(content) {
+      return content is list
+        && content.size() > 0
+        && (
+          isMeaningfulQuestionPaperNode(content[0])
+          || (
+            content.size() > 1
+            && isMeaningfulQuestionPaperNode(content[1])
+          )
+          || (
+            content.size() > 2
+            && isMeaningfulQuestionPaperNode(content[2])
+          )
+          || (
+            content.size() > 3
+            && isMeaningfulQuestionPaperNode(content[3])
+          )
+          || (
+            content.size() > 4
+            && isMeaningfulQuestionPaperNode(content[4])
+          )
+          || (
+            content.size() > 5
+            && isMeaningfulQuestionPaperNode(content[5])
+          )
+          || (
+            content.size() > 6
+            && isMeaningfulQuestionPaperNode(content[6])
+          )
+          || (
+            content.size() > 7
+            && isMeaningfulQuestionPaperNode(content[7])
+          )
+          || (
+            content.size() > 8
+            && isMeaningfulQuestionPaperNode(content[8])
+          )
+          || (
+            content.size() > 9
+            && isMeaningfulQuestionPaperNode(content[9])
+          )
+        );
+    }
+
+    function isValidQuestionPaperDocumentShape(contentDoc) {
+      return contentDoc is map
+        && contentDoc.keys().size() == 2
+        && contentDoc.type == "doc"
+        && contentDoc.content is list
+        && contentDoc.content.size() <= 250;
+    }
+
+    function isValidQuestionPaperDocument(contentDoc) {
+      return isValidQuestionPaperDocumentShape(contentDoc)
+        && hasMeaningfulQuestionPaperTopLevelContent(contentDoc.content);
     }
 
     function isValidShortAnswerAnswerData(answerData) {
@@ -1284,7 +1378,7 @@ service cloud.firestore {
 
     function isValidQuestionPaperPayload(data) {
       return isValidQuestionPaperSetupPayload(data)
-        && isValidRichTextDocument(data.documentContent)
+        && isValidQuestionPaperDocumentShape(data.documentContent)
         && isValidQuestionPaperQuestions(data.questions)
         && data.totalQuestions is int
         && data.totalQuestions == data.questions.size()
@@ -1303,6 +1397,7 @@ service cloud.firestore {
     function isValidQuestionPaperFinalPayload(data) {
       return data.keys().size() == 18
         && isValidQuestionPaperPayload(data)
+        && isValidQuestionPaperDocument(data.documentContent)
         && data.status == "final"
         && data.finalizedAt is timestamp
         && data.totalQuestions > 0

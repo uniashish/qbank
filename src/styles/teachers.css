@@ -134,7 +134,7 @@
 }
 
 .teacher-status-badge--disabled,
-.teacher-status-badge--invited {
+.teacher-status-badge--unknown {
   color: #475569;
   border-color: var(--color-border-strong);
   background: var(--color-surface-muted);

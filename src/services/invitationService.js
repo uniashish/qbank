@@ -145,7 +145,7 @@ export async function createInvitation({
   schoolName,
 }) {
   if (!INVITATION_ROLES.has(role)) {
-    throw new Error("Choose a supported invitation role.");
+    throw new Error("Only School Admin invitations are supported.");
   }
 
   if (!schoolId) {

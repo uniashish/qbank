@@ -87,7 +87,8 @@ function getInvitationState(invitation) {
 
   if (invitation.role !== USER_ROLES.SCHOOL_ADMIN) {
     return {
-      description: "This invitation type is no longer supported.",
+      description:
+        "Only School Admin invitations can be accepted here. Teachers join from signup and wait for school approval.",
       title: "Invitation unavailable",
     };
   }

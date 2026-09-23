@@ -211,6 +211,25 @@ function richTextDoc(text = "Paper") {
   };
 }
 
+function questionBlockDoc(question = paperQuestion()) {
+  return {
+    type: "doc",
+    content: [
+      {
+        type: "questionBlock",
+        attrs: question,
+      },
+    ],
+  };
+}
+
+function emptyPaperDoc() {
+  return {
+    type: "doc",
+    content: [{ type: "paragraph" }],
+  };
+}
+
 function paperQuestion() {
   return {
     blockId: "block-1",
@@ -232,6 +251,18 @@ function difficultySummary() {
       { difficulty: "hard", label: "Hard", marks: 0 },
     ],
     overallDifficulty: "Easy",
+  };
+}
+
+function emptyDifficultySummary() {
+  return {
+    averageWeight: 0,
+    distribution: [
+      { difficulty: "easy", label: "Easy", marks: 0 },
+      { difficulty: "medium", label: "Medium", marks: 0 },
+      { difficulty: "hard", label: "Hard", marks: 0 },
+    ],
+    overallDifficulty: "Not set",
   };
 }
 
@@ -482,6 +513,40 @@ test("question paper draft create, update, and finalize are allowed for owner", 
   );
 });
 
+test("question paper draft create allows question block document content", async () => {
+  const paperQuestionBlock = paperQuestion();
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-block-content`;
+  await seedTeacherQuestionSetup();
+
+  await assertSucceeds(
+    setDoc(doc(teacherDb(), paperPath), {
+      ...paperData({
+        documentContent: questionBlockDoc(paperQuestionBlock),
+        questions: [paperQuestionBlock],
+      }),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("question paper draft create allows empty editor document content", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-empty-content`;
+  await seedTeacherQuestionSetup();
+
+  await assertSucceeds(
+    setDoc(doc(teacherDb(), paperPath), {
+      ...paperData({
+        difficultySummary: emptyDifficultySummary(),
+        documentContent: emptyPaperDoc(),
+        questions: [],
+      }),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
 test("invitation redemption commits invitation, invitee profile, and school roster", async () => {
   const inviteeId = "invitee-admin";
   const inviteeEmail = "invitee@example.com";
@@ -539,4 +604,59 @@ test("invitation redemption commits invitation, invitee profile, and school rost
   });
 
   await assertSucceeds(batch.commit());
+});
+
+test("teacher invitations cannot be created", async () => {
+  const platformAdminId = "platform-1";
+  const invitationId = "teacher-invitation-1";
+
+  await seed(
+    [
+      `users/${platformAdminId}`,
+      userData(platformAdminId, {
+        name: "Platform Admin",
+        email: "platform@example.com",
+        role: "platform_admin",
+        schoolId: "",
+      }),
+    ],
+    [`users/${ADMIN_ID}`, adminUserData()],
+    [
+      `schools/${SCHOOL_ID}`,
+      schoolData({ adminIds: [], primaryAdminId: null, createdBy: platformAdminId }),
+    ],
+  );
+
+  const invitationPayload = {
+    token: invitationId,
+    email: "newteacher@example.com",
+    name: "New Teacher",
+    role: "teacher",
+    schoolId: SCHOOL_ID,
+    schoolName: "Test School",
+    status: "pending",
+    invitedBy: platformAdminId,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    expiresAt: FUTURE,
+    acceptedAt: null,
+    acceptedBy: null,
+  };
+
+  await assertFails(
+    setDoc(
+      doc(authedDb(platformAdminId, "platform@example.com"), `invitations/${invitationId}`),
+      invitationPayload,
+    ),
+  );
+
+  await assertFails(
+    setDoc(
+      doc(adminDb(), `invitations/${invitationId}`),
+      {
+        ...invitationPayload,
+        invitedBy: ADMIN_ID,
+      },
+    ),
+  );
 });

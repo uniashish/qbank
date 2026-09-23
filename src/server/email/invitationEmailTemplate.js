@@ -20,7 +20,7 @@ function formatExpiration(expiresAt) {
 }
 
 function getRoleLabel(role) {
-  return role === "school_admin" ? "School Admin" : "Teacher";
+  return role === "school_admin" ? "School Admin" : "Unknown Role";
 }
 
 export function createInvitationEmailTemplate({
