@@ -90,9 +90,9 @@ function resolveSubjectName(classId, subjectId, assignmentState = {}) {
 
 export function createQuestionPaperOwner(userProfile) {
   return {
-    email: normalizeText(userProfile?.email),
-    name: normalizeText(userProfile?.name),
-    uid: normalizeText(userProfile?.uid),
+    email: String(userProfile?.email ?? ""),
+    name: String(userProfile?.name ?? ""),
+    uid: String(userProfile?.uid ?? ""),
   };
 }
 
