@@ -8,6 +8,7 @@ import { after, before, beforeEach, test } from "node:test";
 import {
   deleteDoc,
   doc,
+  getDoc,
   serverTimestamp,
   setDoc,
   Timestamp,
@@ -430,6 +431,15 @@ test("question share create, revoke, and reactivate preserve owner and target ch
       },
     ),
   );
+});
+
+test("question share preflight read allows missing target share document", async () => {
+  const questionId = "question-preflight";
+  const path = `schools/${SCHOOL_ID}/questionShares/${shareId(questionId)}`;
+  await seedTeacherQuestionSetup();
+  await seed([`users/${TEACHER_2_ID}`, teacher2UserData()]);
+
+  await assertSucceeds(getDoc(doc(teacherDb(), path)));
 });
 
 test("join request approval requires matching teacher profile update", async () => {

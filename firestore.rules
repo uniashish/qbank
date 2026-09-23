@@ -1278,6 +1278,14 @@ service cloud.firestore {
         && canReadQuestionShareForUser(currentUser(), schoolId);
     }
 
+    function canGetQuestionShare(schoolId) {
+      return (
+          resource == null
+          && isActiveTeacherInSchool(schoolId)
+        )
+        || canReadQuestionShare(schoolId);
+    }
+
     function isOptionalPositiveInt(value) {
       return value == null || (value is int && value > 0);
     }
@@ -2502,7 +2510,8 @@ service cloud.firestore {
     }
 
     match /schools/{schoolId}/questionShares/{shareId} {
-      allow get, list: if canReadQuestionShare(schoolId);
+      allow get: if canGetQuestionShare(schoolId);
+      allow list: if canReadQuestionShare(schoolId);
       allow create: if isValidQuestionShareCreate(schoolId, shareId);
       allow update: if isValidQuestionShareUpdate(schoolId, shareId);
       allow delete: if false;
