@@ -47,24 +47,44 @@ function normalizeDimension(value) {
 
 function getImageDimensionAttributes(block) {
   const width = normalizeDimension(block.width);
+  const align = GOOGLE_DOCS_IMAGE_ALIGNMENTS.has(block.align)
+    ? block.align
+    : "center";
+  const styles = [];
+  const attributes = [];
 
-  if (!width) {
-    return "";
+  if (width) {
+    const displayWidth = Math.min(width, GOOGLE_DOCS_MAX_IMAGE_WIDTH);
+    const height = normalizeDimension(block.height);
+    const displayHeight =
+      height && width ? Math.round(displayWidth * (height / width)) : null;
+
+    attributes.push(`width="${escapeAttribute(displayWidth)}"`);
+
+    if (displayHeight) {
+      attributes.push(`height="${escapeAttribute(displayHeight)}"`);
+    }
+
+    styles.push(
+      `width: ${displayWidth}px`,
+      "height: auto",
+      `max-width: ${GOOGLE_DOCS_MAX_IMAGE_WIDTH}px`,
+    );
   }
 
-  const displayWidth = Math.min(width, GOOGLE_DOCS_MAX_IMAGE_WIDTH);
-  const height = normalizeDimension(block.height);
-  const displayHeight =
-    height && width ? Math.round(displayWidth * (height / width)) : null;
-  const style = `width: ${displayWidth}px; height: auto; max-width: ${GOOGLE_DOCS_MAX_IMAGE_WIDTH}px;`;
+  if (align === "left") {
+    styles.push("float: left", "margin: 4pt 10pt 6pt 0");
+  }
 
-  return [
-    `width="${escapeAttribute(displayWidth)}"`,
-    displayHeight ? `height="${escapeAttribute(displayHeight)}"` : "",
-    `style="${escapeAttribute(style)}"`,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  if (align === "right") {
+    styles.push("float: right", "margin: 4pt 0 6pt 10pt");
+  }
+
+  if (styles.length) {
+    attributes.push(`style="${escapeAttribute(`${styles.join("; ")};`)}"`);
+  }
+
+  return attributes.join(" ");
 }
 
 function renderRuns(runs = []) {

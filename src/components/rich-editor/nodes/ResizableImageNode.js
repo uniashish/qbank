@@ -21,14 +21,14 @@ function getImageAlignmentStyle(value) {
   const alignment = normalizeImageAlignment(value);
 
   if (alignment === "left") {
-    return "display: block; margin-left: 0; margin-right: auto;";
+    return "display: block; float: left; margin: 0.35rem 1rem 0.75rem 0;";
   }
 
   if (alignment === "right") {
-    return "display: block; margin-left: auto; margin-right: 0;";
+    return "display: block; float: right; margin: 0.35rem 0 0.75rem 1rem;";
   }
 
-  return "display: block; margin-left: auto; margin-right: auto;";
+  return "clear: both; display: block; float: none; margin-left: auto; margin-right: auto;";
 }
 
 const ResizableImageNode = Image.extend({
