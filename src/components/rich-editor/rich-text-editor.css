@@ -219,9 +219,39 @@
   line-height: 0;
 }
 
+.rich-text-editor__prose .rich-text-editor-image-node--align-left {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.rich-text-editor__prose .rich-text-editor-image-node--align-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.rich-text-editor__prose .rich-text-editor-image-node--align-right {
+  margin-left: auto;
+  margin-right: 0;
+}
+
 .rich-text-editor__prose .rich-text-editor-image-node__image {
   max-width: 100%;
   margin: 0 auto;
+}
+
+.rich-text-editor__prose .rich-text-editor-image-node--align-left .rich-text-editor-image-node__image {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.rich-text-editor__prose .rich-text-editor-image-node--align-center .rich-text-editor-image-node__image {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.rich-text-editor__prose .rich-text-editor-image-node--align-right .rich-text-editor-image-node__image {
+  margin-left: auto;
+  margin-right: 0;
 }
 
 .rich-text-editor__prose .rich-text-editor-image-node--selected .rich-text-editor-image-node__image {

@@ -1,6 +1,7 @@
 const RICH_TEXT_CONTAINER_TYPES = new Set(["doc", "listItem"]);
 const TABLE_CELL_TYPES = new Set(["tableCell", "tableHeader"]);
 const TABLE_ROW_TYPE = "tableRow";
+const IMAGE_ALIGN_VALUES = new Set(["center", "left", "right"]);
 const TEXT_ALIGN_VALUES = new Set(["center", "justify", "left", "right"]);
 
 function cloneJson(value, fallback = null) {
@@ -53,6 +54,12 @@ function getTextAlign(attrs = {}) {
   return TEXT_ALIGN_VALUES.has(textAlign) ? textAlign : "";
 }
 
+function getImageAlign(attrs = {}) {
+  const align = normalizeText(attrs.align || attrs.textAlign || attrs.textAlignment);
+
+  return IMAGE_ALIGN_VALUES.has(align) ? align : "center";
+}
+
 function getImageSource(image = {}) {
   if (!image) {
     return "";
@@ -71,6 +78,7 @@ export function normalizeRichTextImage(image, fallbackAlt = "Question image") {
   }
 
   return {
+    align: getImageAlign(image),
     alt: normalizeText(image?.alt || image?.name || image?.title, fallbackAlt),
     height: normalizeOptionalPositiveNumber(image?.height),
     src,

@@ -3,6 +3,7 @@ import { NodeViewWrapper } from "@tiptap/react";
 
 const MIN_IMAGE_WIDTH = 80;
 const MIN_IMAGE_HEIGHT = 48;
+const IMAGE_ALIGNMENTS = new Set(["left", "center", "right"]);
 
 function normalizeDimension(value) {
   const numericValue = Number.parseFloat(String(value ?? ""));
@@ -10,6 +11,10 @@ function normalizeDimension(value) {
   return Number.isFinite(numericValue) && numericValue > 0
     ? Math.round(numericValue)
     : null;
+}
+
+function normalizeImageAlignment(value) {
+  return IMAGE_ALIGNMENTS.has(value) ? value : "center";
 }
 
 function getElementContentWidth(element) {
@@ -99,6 +104,7 @@ function ResizableImageNodeView({
   const isEditable = Boolean(editor?.isEditable);
   const width = normalizeDimension(node.attrs.width);
   const height = normalizeDimension(node.attrs.height);
+  const alignment = normalizeImageAlignment(node.attrs.align);
   const displayedWidth = draftSize?.width ?? width;
   const displayedHeight = draftSize?.height ?? height;
   const wrapperStyle = useMemo(
@@ -209,6 +215,7 @@ function ResizableImageNodeView({
         "rich-text-editor-image-node",
         selected ? "rich-text-editor-image-node--selected" : "",
         draftSize ? "rich-text-editor-image-node--resizing" : "",
+        `rich-text-editor-image-node--align-${alignment}`,
         !isEditable ? "rich-text-editor-image-node--readonly" : "",
       ]
         .filter(Boolean)

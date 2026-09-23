@@ -2,6 +2,7 @@ import { QUESTION_TYPES } from "../../../question-designer/constants/questionTyp
 
 const GOOGLE_DOCS_IMAGE_URI_LIMIT = 2000;
 const GOOGLE_DOCS_MAX_IMAGE_WIDTH = 560;
+const GOOGLE_DOCS_IMAGE_ALIGNMENTS = new Set(["center", "left", "right"]);
 
 function normalizeText(value, fallback = "") {
   const text = String(value ?? "").trim();
@@ -108,6 +109,14 @@ function getAlignmentStyle(block) {
   return block.align ? ` style="text-align: ${escapeAttribute(block.align)};"` : "";
 }
 
+function getImageAlignmentStyle(block) {
+  const align = GOOGLE_DOCS_IMAGE_ALIGNMENTS.has(block.align)
+    ? block.align
+    : "center";
+
+  return ` style="text-align: ${escapeAttribute(align)};"`;
+}
+
 function renderImageBlock(block) {
   if (!isPublicImageUri(block.src)) {
     return `<p class="image-fallback">[Image${block.alt ? `: ${escapeHtml(block.alt)}` : ""}]</p>`;
@@ -123,7 +132,7 @@ function renderImageBlock(block) {
     .join(" ");
 
   return [
-    "<p>",
+    `<p${getImageAlignmentStyle(block)}>`,
     `<img ${imageAttributes} />`,
     "</p>",
   ].join("");
@@ -239,6 +248,7 @@ function renderQuestionImage(question) {
   }
 
   return renderImageBlock({
+    align: question.image.align,
     alt: question.image.alt,
     height: question.image.height,
     src: question.image.src,

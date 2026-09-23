@@ -2,6 +2,8 @@ import { useEditorState } from "@tiptap/react";
 
 import ToolbarButton from "./ToolbarButton.jsx";
 
+const IMAGE_ALIGNMENTS = new Set(["left", "center", "right"]);
+
 const DEFAULT_TOOLBAR_STATE = {
   alignment: "left",
   canAddColumn: false,
@@ -15,6 +17,7 @@ const DEFAULT_TOOLBAR_STATE = {
   isBold: false,
   isBulletList: false,
   isItalic: false,
+  isImageActive: false,
   isNumberedList: false,
   isStrike: false,
   isSubscript: false,
@@ -22,6 +25,10 @@ const DEFAULT_TOOLBAR_STATE = {
   isTableActive: false,
   isUnderline: false,
 };
+
+function normalizeImageAlignment(value) {
+  return IMAGE_ALIGNMENTS.has(value) ? value : "center";
+}
 
 function SvgIcon({ children }) {
   return (
@@ -186,18 +193,24 @@ function getToolbarState(editor) {
   const isAlignCenter = editor.isActive({ textAlign: "center" });
   const isAlignRight = editor.isActive({ textAlign: "right" });
   const isAlignJustify = editor.isActive({ textAlign: "justify" });
+  const isImageActive = editor.isActive("image");
+  const imageAlignment = normalizeImageAlignment(
+    editor.getAttributes("image")?.align,
+  );
   const headingLevel = [1, 2, 3].find((level) =>
     editor.isActive("heading", { level }),
   );
 
   return {
-    alignment: isAlignCenter
-      ? "center"
-      : isAlignRight
-        ? "right"
-        : isAlignJustify
-          ? "justify"
-          : "left",
+    alignment: isImageActive
+      ? imageAlignment
+      : isAlignCenter
+        ? "center"
+        : isAlignRight
+          ? "right"
+          : isAlignJustify
+            ? "justify"
+            : "left",
     canAddColumn: editor.can().addColumnAfter(),
     canAddRow: editor.can().addRowAfter(),
     canDeleteColumn: editor.can().deleteColumn(),
@@ -208,6 +221,7 @@ function getToolbarState(editor) {
     heading: headingLevel ? String(headingLevel) : "paragraph",
     isBold: editor.isActive("bold"),
     isBulletList: editor.isActive("bulletList"),
+    isImageActive,
     isItalic: editor.isActive("italic"),
     isNumberedList: editor.isActive("orderedList"),
     isStrike: editor.isActive("strike"),
@@ -238,6 +252,27 @@ function EditorToolbar({
     }
 
     command(editor.chain().focus()).run();
+  };
+
+  const runAlignmentCommand = (alignment) => {
+    if (!editor || readOnly) {
+      return;
+    }
+
+    if (toolbarState.isImageActive) {
+      if (!IMAGE_ALIGNMENTS.has(alignment)) {
+        return;
+      }
+
+      editor
+        .chain()
+        .focus()
+        .updateAttributes("image", { align: alignment })
+        .run();
+      return;
+    }
+
+    editor.chain().focus().setTextAlign(alignment).run();
   };
 
   const handleHeadingChange = (event) => {
@@ -340,34 +375,34 @@ function EditorToolbar({
         />
       </div>
 
-      <div aria-label="Text alignment" className="rich-text-editor-toolbar__group" role="group">
+      <div aria-label="Alignment" className="rich-text-editor-toolbar__group" role="group">
         <ToolbarButton
           active={toolbarState.alignment === "left"}
           disabled={isDisabled}
           icon={icons.alignLeft}
           label="Align left"
-          onClick={() => runCommand((chain) => chain.setTextAlign("left"))}
+          onClick={() => runAlignmentCommand("left")}
         />
         <ToolbarButton
           active={toolbarState.alignment === "center"}
           disabled={isDisabled}
           icon={icons.alignCenter}
           label="Align center"
-          onClick={() => runCommand((chain) => chain.setTextAlign("center"))}
+          onClick={() => runAlignmentCommand("center")}
         />
         <ToolbarButton
           active={toolbarState.alignment === "right"}
           disabled={isDisabled}
           icon={icons.alignRight}
           label="Align right"
-          onClick={() => runCommand((chain) => chain.setTextAlign("right"))}
+          onClick={() => runAlignmentCommand("right")}
         />
         <ToolbarButton
-          active={toolbarState.alignment === "justify"}
-          disabled={isDisabled}
+          active={!toolbarState.isImageActive && toolbarState.alignment === "justify"}
+          disabled={isDisabled || toolbarState.isImageActive}
           icon={icons.alignJustify}
           label="Justify"
-          onClick={() => runCommand((chain) => chain.setTextAlign("justify"))}
+          onClick={() => runAlignmentCommand("justify")}
         />
       </div>
 

@@ -3,12 +3,32 @@ import { ReactNodeViewRenderer } from "@tiptap/react";
 
 import ResizableImageNodeView from "./ResizableImageNodeView.jsx";
 
+const IMAGE_ALIGNMENTS = new Set(["left", "center", "right"]);
+
 function normalizeImageDimension(value) {
   const numericValue = Number.parseFloat(String(value ?? "").replace("px", ""));
 
   return Number.isFinite(numericValue) && numericValue > 0
     ? Math.round(numericValue)
     : null;
+}
+
+function normalizeImageAlignment(value) {
+  return IMAGE_ALIGNMENTS.has(value) ? value : "center";
+}
+
+function getImageAlignmentStyle(value) {
+  const alignment = normalizeImageAlignment(value);
+
+  if (alignment === "left") {
+    return "display: block; margin-left: 0; margin-right: auto;";
+  }
+
+  if (alignment === "right") {
+    return "display: block; margin-left: auto; margin-right: 0;";
+  }
+
+  return "display: block; margin-left: auto; margin-right: auto;";
 }
 
 const ResizableImageNode = Image.extend({
@@ -19,6 +39,23 @@ const ResizableImageNode = Image.extend({
 
     return {
       ...parentAttributes,
+      align: {
+        default: "center",
+        parseHTML: (element) =>
+          normalizeImageAlignment(
+            element.getAttribute("data-align") ||
+              element.getAttribute("align") ||
+              element.style.textAlign,
+          ),
+        renderHTML: (attributes) => {
+          const align = normalizeImageAlignment(attributes.align);
+
+          return {
+            "data-align": align,
+            style: getImageAlignmentStyle(align),
+          };
+        },
+      },
       width: {
         default: null,
         parseHTML: (element) =>

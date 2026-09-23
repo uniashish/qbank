@@ -1,6 +1,11 @@
 import { Image, Text, View } from "@react-pdf/renderer";
 
 const MAX_PDF_IMAGE_WIDTH = 500;
+const IMAGE_ALIGNMENT_STYLE = {
+  center: { alignSelf: "center" },
+  left: { alignSelf: "flex-start" },
+  right: { alignSelf: "flex-end" },
+};
 
 function normalizeDimension(value) {
   const numericValue = Number(value);
@@ -31,6 +36,7 @@ function getImageSizeStyle({ height, width }) {
 }
 
 function ImagePdfRenderer({
+  align = "center",
   alt = "Image",
   height,
   includeImages = true,
@@ -45,7 +51,9 @@ function ImagePdfRenderer({
       <View
         style={[
           styles.richImageFrame,
-          imageSizeStyle ? styles.richImageFrameSized : null,
+          imageSizeStyle
+            ? IMAGE_ALIGNMENT_STYLE[align] ?? IMAGE_ALIGNMENT_STYLE.center
+            : null,
         ].filter(Boolean)}
         wrap={false}
       >

@@ -289,9 +289,6 @@ const styles = StyleSheet.create({
     maxHeight: 230,
     padding: 4,
   },
-  richImageFrameSized: {
-    alignSelf: "center",
-  },
   rowLabel: {
     color: "#111827",
     fontSize: 9.5,
@@ -566,6 +563,7 @@ function Question({ includeImages, question }) {
 
       {question.image && (
         <ImagePdfRenderer
+          align={question.image.align}
           alt={question.image.alt}
           height={question.image.height}
           includeImages={includeImages}

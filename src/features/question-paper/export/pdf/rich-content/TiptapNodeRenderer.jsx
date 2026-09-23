@@ -155,6 +155,7 @@ function TiptapNodeRenderer({
   if (block.type === "image") {
     return (
       <ImagePdfRenderer
+        align={block.align}
         alt={block.alt}
         height={block.height}
         includeImages={includeImages}
