@@ -1265,6 +1265,56 @@
   padding-inline: 16px;
 }
 
+.delete-paper-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.delete-paper-dialog__header > span {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+
+.delete-paper-dialog__header h2,
+.delete-paper-dialog__header p,
+.delete-paper-dialog__paper-title {
+  margin: 0;
+}
+
+.delete-paper-dialog__header p {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.delete-paper-dialog__paper-title {
+  padding: 12px;
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  background: var(--color-danger-bg);
+  font-size: 0.95rem;
+  font-weight: 850;
+}
+
+.delete-paper-dialog__confirm {
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+}
+
+.delete-paper-dialog__confirm:hover:not(:disabled) {
+  background: var(--color-danger-active, var(--color-danger));
+}
+
 .question-picker-layer {
   position: fixed;
   inset: 0;

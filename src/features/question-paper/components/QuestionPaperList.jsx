@@ -13,6 +13,7 @@ const EMPTY_COPY = {
 };
 
 function QuestionPaperGroup({
+  onDeletePaper,
   onExportPaper,
   onExportGoogleDocs,
   onOpenAnswerKey,
@@ -35,6 +36,7 @@ function QuestionPaperGroup({
           {papers.map((paper) => (
             <QuestionPaperCard
               key={paper.id}
+              onDeletePaper={onDeletePaper}
               onExportGoogleDocs={onExportGoogleDocs}
               onExportPaper={onExportPaper}
               onOpenAnswerKey={onOpenAnswerKey}
@@ -56,6 +58,7 @@ function QuestionPaperGroup({
 function QuestionPaperList({
   draftPapers,
   finalizedPapers,
+  onDeletePaper,
   onExportGoogleDocs,
   onExportPaper,
   onOpenAnswerKey,
@@ -64,6 +67,7 @@ function QuestionPaperList({
   return (
     <div className="question-paper-list">
       <QuestionPaperGroup
+        onDeletePaper={onDeletePaper}
         onExportGoogleDocs={onExportGoogleDocs}
         onExportPaper={onExportPaper}
         onOpenAnswerKey={onOpenAnswerKey}
@@ -73,6 +77,7 @@ function QuestionPaperList({
         title="Drafts"
       />
       <QuestionPaperGroup
+        onDeletePaper={onDeletePaper}
         onExportGoogleDocs={onExportGoogleDocs}
         onExportPaper={onExportPaper}
         onOpenAnswerKey={onOpenAnswerKey}

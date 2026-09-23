@@ -15,10 +15,14 @@ import {
 import QuestionPaperActions from "../components/QuestionPaperActions.jsx";
 import QuestionPaperList from "../components/QuestionPaperList.jsx";
 import QuestionPaperSearch from "../components/QuestionPaperSearch.jsx";
+import DeleteQuestionPaperDialog from "../delete/DeleteQuestionPaperDialog.jsx";
 import ExportPaperDialog from "../export/ExportPaperDialog.jsx";
 import GoogleDocsExportDialog from "../export/google-docs/GoogleDocsExportDialog.jsx";
 import { exportQuestionPaperGoogleDocs } from "../export/google-docs/googleDocsExportService.js";
-import { getCurrentTeacherQuestionPapers } from "../services/questionPaperService.js";
+import {
+  deleteQuestionPaper,
+  getCurrentTeacherQuestionPapers,
+} from "../services/questionPaperService.js";
 
 function matchesSearchTerm(paper, searchTerm) {
   if (!searchTerm) {
@@ -61,6 +65,11 @@ function QuestionPapersPage() {
     DEFAULT_ANSWER_KEY_OPTIONS,
   );
   const [answerKeyPaper, setAnswerKeyPaper] = useState(null);
+  const [deleteState, setDeleteState] = useState({
+    error: "",
+    isDeleting: false,
+    paper: null,
+  });
   const [exportPaper, setExportPaper] = useState(null);
   const [exportState, setExportState] = useState({
     error: "",
@@ -142,6 +151,68 @@ function QuestionPapersPage() {
   const handleCloseAnswerKey = useCallback(() => {
     setAnswerKeyPaper(null);
   }, []);
+  const handleOpenDeletePaper = useCallback((paper) => {
+    setDeleteState({
+      error: "",
+      isDeleting: false,
+      paper,
+    });
+  }, []);
+  const handleCloseDeleteDialog = useCallback(() => {
+    setDeleteState((currentState) => {
+      if (currentState.isDeleting) {
+        return currentState;
+      }
+
+      return {
+        error: "",
+        isDeleting: false,
+        paper: null,
+      };
+    });
+  }, []);
+  const handleDeletePaper = useCallback(async () => {
+    const paper = deleteState.paper;
+
+    if (!paper) {
+      return;
+    }
+
+    setDeleteState((currentState) => ({
+      ...currentState,
+      error: "",
+      isDeleting: true,
+    }));
+
+    try {
+      await deleteQuestionPaper({
+        paperId: paper.id,
+        userProfile,
+      });
+
+      setPaperState((currentState) => ({
+        ...currentState,
+        papers: currentState.papers.filter(
+          (currentPaper) => currentPaper.id !== paper.id,
+        ),
+      }));
+      setDeleteState({
+        error: "",
+        isDeleting: false,
+        paper: null,
+      });
+    } catch (error) {
+      console.error("[Question paper] Failed to delete paper.", {
+        error,
+        paperId: paper.id,
+      });
+      setDeleteState((currentState) => ({
+        ...currentState,
+        error: error?.message || "Question paper could not be deleted.",
+        isDeleting: false,
+      }));
+    }
+  }, [deleteState.paper, userProfile]);
   const handleOpenExportPaper = useCallback((paper) => {
     setExportPaper(paper);
     setExportState({
@@ -311,6 +382,7 @@ function QuestionPapersPage() {
           <QuestionPaperList
             draftPapers={draftPapers}
             finalizedPapers={finalizedPapers}
+            onDeletePaper={handleOpenDeletePaper}
             onExportGoogleDocs={handleOpenGoogleDocsExport}
             onExportPaper={handleOpenExportPaper}
             onOpenAnswerKey={handleOpenAnswerKey}
@@ -325,6 +397,14 @@ function QuestionPapersPage() {
         onClose={handleCloseAnswerKey}
         onOptionsChange={setAnswerKeyOptions}
         options={answerKeyOptions}
+      />
+      <DeleteQuestionPaperDialog
+        error={deleteState.error}
+        isDeleting={deleteState.isDeleting}
+        isOpen={Boolean(deleteState.paper)}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleDeletePaper}
+        paper={deleteState.paper}
       />
       {exportPaper && (
         <ExportPaperDialog

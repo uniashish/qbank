@@ -1397,7 +1397,6 @@ service cloud.firestore {
     function isValidQuestionPaperFinalPayload(data) {
       return data.keys().size() == 18
         && isValidQuestionPaperPayload(data)
-        && isValidQuestionPaperDocument(data.documentContent)
         && data.status == "final"
         && data.finalizedAt is timestamp
         && data.totalQuestions > 0
@@ -1469,6 +1468,12 @@ service cloud.firestore {
     function canReadQuestionPaper(schoolId) {
       return isActiveTeacherInSchool(schoolId)
         && resource.data.createdBy.uid == request.auth.uid;
+    }
+
+    function canDeleteQuestionPaper(schoolId) {
+      return isActiveTeacherInSchool(schoolId)
+        && resource.data.createdBy.uid == request.auth.uid
+        && resource.data.status in ["draft", "final"];
     }
 
     function isValidSchoolPayload(data) {
@@ -2493,7 +2498,7 @@ service cloud.firestore {
       allow get, list: if canReadQuestionPaper(schoolId);
       allow create: if isValidQuestionPaperCreate(schoolId);
       allow update: if isValidQuestionPaperUpdate(schoolId);
-      allow delete: if false;
+      allow delete: if canDeleteQuestionPaper(schoolId);
     }
 
     match /schools/{schoolId}/questionShares/{shareId} {

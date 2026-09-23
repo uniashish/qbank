@@ -55,7 +55,8 @@ function getPaperActions(paper) {
     },
     {
       danger: true,
-      enabled: false,
+      ariaLabel: "Delete paper",
+      enabled: true,
       icon: "trash",
       key: "delete",
       label: "Delete",
@@ -74,6 +75,7 @@ function getUpdatedAtLabel(updatedAt) {
 }
 
 function QuestionPaperCard({
+  onDeletePaper,
   onExportPaper,
   onExportGoogleDocs,
   onOpenAnswerKey,
@@ -95,6 +97,10 @@ function QuestionPaperCard({
 
     if (action.key === "google-docs") {
       return () => onExportGoogleDocs?.(paper);
+    }
+
+    if (action.key === "delete") {
+      return () => onDeletePaper?.(paper);
     }
 
     return null;

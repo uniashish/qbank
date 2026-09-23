@@ -6,6 +6,7 @@ import {
 import { readFile } from "node:fs/promises";
 import { after, before, beforeEach, test } from "node:test";
 import {
+  deleteDoc,
   doc,
   serverTimestamp,
   setDoc,
@@ -215,6 +216,28 @@ function questionBlockDoc(question = paperQuestion()) {
   return {
     type: "doc",
     content: [
+      {
+        type: "questionBlock",
+        attrs: question,
+      },
+    ],
+  };
+}
+
+function delayedQuestionBlockDoc(question = paperQuestion()) {
+  return {
+    type: "doc",
+    content: [
+      { type: "paragraph" },
+      { type: "paragraph" },
+      { type: "paragraph" },
+      { type: "paragraph" },
+      { type: "paragraph" },
+      { type: "paragraph" },
+      { type: "paragraph" },
+      { type: "paragraph" },
+      { type: "paragraph" },
+      { type: "paragraph" },
       {
         type: "questionBlock",
         attrs: question,
@@ -567,6 +590,64 @@ test("question paper finalization allows replacing legacy draft with normalized 
       updatedAt: serverTimestamp(),
     }),
   );
+});
+
+test("question paper finalization allows valid questions after leading blank editor nodes", async () => {
+  const paperQuestionBlock = paperQuestion();
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-delayed-question`;
+  await seedTeacherQuestionSetup();
+  await seed([
+    paperPath,
+    paperData({
+      documentContent: delayedQuestionBlockDoc(paperQuestionBlock),
+      questions: [paperQuestionBlock],
+    }),
+  ]);
+
+  await assertSucceeds(
+    setDoc(doc(teacherDb(), paperPath), {
+      ...paperData({
+        documentContent: delayedQuestionBlockDoc(paperQuestionBlock),
+        questions: [paperQuestionBlock],
+        status: "final",
+      }),
+      finalizedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("question paper delete allows owner and denies another teacher", async () => {
+  const ownerPaperPath = `schools/${SCHOOL_ID}/questionPapers/paper-delete-owner`;
+  const otherTeacherPaperPath = `schools/${SCHOOL_ID}/questionPapers/paper-delete-other`;
+  await seedTeacherQuestionSetup();
+  await seed(
+    [`users/${TEACHER_2_ID}`, teacher2UserData()],
+    [
+      `schools/${SCHOOL_ID}/teacherAssignments/${assignmentId(TEACHER_2_ID)}`,
+      assignmentData(TEACHER_2_ID),
+    ],
+    [
+      ownerPaperPath,
+      paperData({
+        finalizedAt: NOW,
+        status: "final",
+      }),
+    ],
+    [
+      otherTeacherPaperPath,
+      paperData({
+        finalizedAt: NOW,
+        status: "final",
+      }),
+    ],
+  );
+
+  await assertFails(
+    deleteDoc(doc(teacherDb(TEACHER_2_ID, TEACHER_2_EMAIL), otherTeacherPaperPath)),
+  );
+
+  await assertSucceeds(deleteDoc(doc(teacherDb(), ownerPaperPath)));
 });
 
 test("invitation redemption commits invitation, invitee profile, and school roster", async () => {

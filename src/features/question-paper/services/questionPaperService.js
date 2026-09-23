@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -275,6 +276,12 @@ export async function finalizeQuestionPaperDraft({ paperId, userProfile }) {
     id: paperId,
     updatedAt: new Date(),
   };
+}
+
+export async function deleteQuestionPaper({ paperId, userProfile }) {
+  assertTeacherProfile(userProfile);
+
+  await deleteDoc(getQuestionPaperDocRef(userProfile.schoolId, paperId));
 }
 
 export async function getCurrentTeacherQuestionPapers(userProfile) {
