@@ -33,6 +33,14 @@ function normalizePositiveNumber(value, fallback = 0) {
     : fallback;
 }
 
+function normalizeOptionalPositiveNumber(value) {
+  const numericValue = Number(value);
+
+  return Number.isFinite(numericValue) && numericValue > 0
+    ? Math.round(numericValue)
+    : null;
+}
+
 function hasMark(node, markType) {
   return Array.isArray(node?.marks)
     ? node.marks.some((mark) => mark?.type === markType)
@@ -64,7 +72,9 @@ export function normalizeRichTextImage(image, fallbackAlt = "Question image") {
 
   return {
     alt: normalizeText(image?.alt || image?.name || image?.title, fallbackAlt),
+    height: normalizeOptionalPositiveNumber(image?.height),
     src,
+    width: normalizeOptionalPositiveNumber(image?.width),
   };
 }
 

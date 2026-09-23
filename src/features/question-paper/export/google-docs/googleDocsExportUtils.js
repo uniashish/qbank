@@ -1,6 +1,7 @@
 import { QUESTION_TYPES } from "../../../question-designer/constants/questionTypes.js";
 
 const GOOGLE_DOCS_IMAGE_URI_LIMIT = 2000;
+const GOOGLE_DOCS_MAX_IMAGE_WIDTH = 560;
 
 function normalizeText(value, fallback = "") {
   const text = String(value ?? "").trim();
@@ -33,6 +34,36 @@ function isPublicImageUri(uri) {
   } catch {
     return false;
   }
+}
+
+function normalizeDimension(value) {
+  const numericValue = Number(value);
+
+  return Number.isFinite(numericValue) && numericValue > 0
+    ? Math.round(numericValue)
+    : null;
+}
+
+function getImageDimensionAttributes(block) {
+  const width = normalizeDimension(block.width);
+
+  if (!width) {
+    return "";
+  }
+
+  const displayWidth = Math.min(width, GOOGLE_DOCS_MAX_IMAGE_WIDTH);
+  const height = normalizeDimension(block.height);
+  const displayHeight =
+    height && width ? Math.round(displayWidth * (height / width)) : null;
+  const style = `width: ${displayWidth}px; height: auto; max-width: ${GOOGLE_DOCS_MAX_IMAGE_WIDTH}px;`;
+
+  return [
+    `width="${escapeAttribute(displayWidth)}"`,
+    displayHeight ? `height="${escapeAttribute(displayHeight)}"` : "",
+    `style="${escapeAttribute(style)}"`,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function renderRuns(runs = []) {
@@ -82,9 +113,18 @@ function renderImageBlock(block) {
     return `<p class="image-fallback">[Image${block.alt ? `: ${escapeHtml(block.alt)}` : ""}]</p>`;
   }
 
+  const dimensionAttributes = getImageDimensionAttributes(block);
+  const imageAttributes = [
+    `src="${escapeAttribute(block.src)}"`,
+    `alt="${escapeAttribute(block.alt || "Image")}"`,
+    dimensionAttributes,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return [
     "<p>",
-    `<img src="${escapeAttribute(block.src)}" alt="${escapeAttribute(block.alt || "Image")}" />`,
+    `<img ${imageAttributes} />`,
     "</p>",
   ].join("");
 }
@@ -200,8 +240,10 @@ function renderQuestionImage(question) {
 
   return renderImageBlock({
     alt: question.image.alt,
+    height: question.image.height,
     src: question.image.src,
     type: "image",
+    width: question.image.width,
   });
 }
 

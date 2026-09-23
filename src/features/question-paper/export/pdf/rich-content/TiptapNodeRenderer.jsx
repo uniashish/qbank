@@ -156,9 +156,11 @@ function TiptapNodeRenderer({
     return (
       <ImagePdfRenderer
         alt={block.alt}
+        height={block.height}
         includeImages={includeImages}
         src={block.src}
         styles={styles}
+        width={block.width}
       />
     );
   }

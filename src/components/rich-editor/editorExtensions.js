@@ -1,4 +1,3 @@
-import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
@@ -9,6 +8,8 @@ import TableRow from "@tiptap/extension-table-row";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import StarterKit from "@tiptap/starter-kit";
+
+import ResizableImageNode from "./nodes/ResizableImageNode.js";
 
 export const EMPTY_RICH_TEXT_DOCUMENT = {
   type: "doc",
@@ -57,7 +58,7 @@ export function createEditorExtensions({ placeholder = "Enter content..." } = {}
     }),
     Superscript,
     Subscript,
-    Image.configure({
+    ResizableImageNode.configure({
       allowBase64: false,
       inline: false,
       HTMLAttributes: {
