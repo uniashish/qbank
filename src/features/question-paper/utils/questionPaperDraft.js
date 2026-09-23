@@ -146,6 +146,13 @@ export function createQuestionPaperDraftFields(designerState) {
   };
 }
 
+export function createQuestionPaperFinalFields(designerState) {
+  return {
+    ...createQuestionPaperDraftFields(designerState),
+    status: "final",
+  };
+}
+
 export function createQuestionPaperDraftDocument({
   designerState,
   userProfile,

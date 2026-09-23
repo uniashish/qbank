@@ -547,6 +547,28 @@ test("question paper draft create allows empty editor document content", async (
   );
 });
 
+test("question paper finalization allows replacing legacy draft with normalized final payload", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-legacy-finalize`;
+  await seedTeacherQuestionSetup();
+  await seed([
+    paperPath,
+    {
+      ...paperData(),
+      legacyField: "remove me during finalization",
+    },
+  ]);
+
+  await assertSucceeds(
+    setDoc(doc(teacherDb(), paperPath), {
+      ...paperData({
+        status: "final",
+      }),
+      finalizedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
 test("invitation redemption commits invitation, invitee profile, and school roster", async () => {
   const inviteeId = "invitee-admin";
   const inviteeEmail = "invitee@example.com";

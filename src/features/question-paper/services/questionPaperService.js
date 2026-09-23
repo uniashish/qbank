@@ -14,6 +14,7 @@ import { db } from "../../../services/firebase.js";
 import {
   createQuestionPaperDraftDocument,
   createQuestionPaperDraftFields,
+  createQuestionPaperFinalFields,
 } from "../utils/questionPaperDraft.js";
 
 const SCHOOLS_COLLECTION = "schools";
@@ -237,16 +238,41 @@ export async function getQuestionPaperDraft({ paperId, userProfile }) {
 export async function finalizeQuestionPaperDraft({ paperId, userProfile }) {
   assertTeacherProfile(userProfile);
 
-  await updateDoc(getQuestionPaperDocRef(userProfile.schoolId, paperId), {
-    finalizedAt: serverTimestamp(),
-    status: FINAL_STATUS,
-    updatedAt: serverTimestamp(),
+  const paperRef = getQuestionPaperDocRef(userProfile.schoolId, paperId);
+  const paperSnapshot = await getDoc(paperRef);
+
+  if (!paperSnapshot.exists()) {
+    throw createQuestionPaperError(
+      QUESTION_PAPER_ERROR_CODES.MISSING_PAPER,
+      "Choose a question paper before finalizing.",
+    );
+  }
+
+  const paper = normalizeQuestionPaperSnapshot(paperSnapshot);
+
+  assertDraftPaperAccess(paper, userProfile);
+
+  const finalFields = createQuestionPaperFinalFields({
+    documentContent: paper.documentContent,
+    setup: paper,
+    status: DRAFT_STATUS,
+  });
+  const timestamp = serverTimestamp();
+
+  await setDoc(paperRef, {
+    ...finalFields,
+    createdAt: paper.createdAt,
+    createdBy: paper.createdBy,
+    finalizedAt: timestamp,
+    updatedAt: timestamp,
   });
 
   return {
+    ...finalFields,
+    createdAt: paper.createdAt,
+    createdBy: paper.createdBy,
     finalizedAt: new Date(),
     id: paperId,
-    status: FINAL_STATUS,
     updatedAt: new Date(),
   };
 }
