@@ -96,6 +96,10 @@
   margin-bottom: 14px;
 }
 
+.rich-text-editor-equation-dialog {
+  width: min(100%, 560px);
+}
+
 .rich-text-editor-equation-field {
   display: block;
   width: 100%;
@@ -121,6 +125,87 @@
   border-color: var(--color-primary);
   outline: 3px solid rgba(37, 99, 235, 0.18);
   outline-offset: 2px;
+}
+
+.rich-text-editor-equation-palette {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.rich-text-editor-equation-palette__section {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.rich-text-editor-equation-palette__section h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.rich-text-editor-equation-palette__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.rich-text-editor-equation-palette__button,
+.rich-text-editor-equation-palette__toggle {
+  min-height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.rich-text-editor-equation-palette__button {
+  flex: 0 0 auto;
+  min-width: 36px;
+  padding: 0 9px;
+  white-space: nowrap;
+}
+
+.rich-text-editor-equation-palette__button:hover,
+.rich-text-editor-equation-palette__toggle:hover {
+  border-color: var(--color-border-strong);
+  background: color-mix(in srgb, var(--color-surface) 82%, var(--color-primary-soft));
+}
+
+.rich-text-editor-equation-palette__button:focus-visible,
+.rich-text-editor-equation-palette__toggle:focus-visible {
+  border-color: var(--color-primary);
+  outline: 3px solid rgba(37, 99, 235, 0.18);
+  outline-offset: 2px;
+}
+
+.rich-text-editor-equation-palette__toggle {
+  justify-self: start;
+  min-height: 30px;
+  padding: 0 10px;
+  color: var(--color-text-secondary);
+}
+
+.rich-text-editor-equation-palette__groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(142px, 1fr));
+  gap: 12px 14px;
+  min-width: 0;
+  padding-top: 2px;
 }
 
 .rich-text-editor-equation-preview {
@@ -181,5 +266,20 @@
 @media print {
   .rich-text-editor__prose .rich-text-editor-math-node--selected {
     outline: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .rich-text-editor-equation-palette {
+    padding: 9px;
+  }
+
+  .rich-text-editor-equation-palette__row {
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+
+  .rich-text-editor-equation-palette__groups {
+    grid-template-columns: 1fr;
   }
 }

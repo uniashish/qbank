@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 
-function EquationEditorField({
-  ariaDescribedBy,
-  autoFocus = false,
-  id,
-  onChange,
-  value,
-}) {
+const EquationEditorField = forwardRef(function EquationEditorField(
+  { ariaDescribedBy, autoFocus = false, id, onChange, value },
+  ref,
+) {
   const fieldRef = useRef(null);
   const [isMathLiveReady, setIsMathLiveReady] = useState(false);
 
@@ -79,6 +82,39 @@ function EquationEditorField({
     };
   }, [autoFocus, isMathLiveReady]);
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus() {
+        fieldRef.current?.focus?.();
+      },
+      insertLatex(latex, options = {}) {
+        const field = fieldRef.current;
+
+        if (!field || !isMathLiveReady || typeof field.insert !== "function") {
+          return false;
+        }
+
+        const didInsert = field.insert(latex, {
+          focus: true,
+          format: "latex",
+          insertionMode: "replaceSelection",
+          selectionMode: "placeholder",
+          ...options,
+        });
+
+        field.focus?.();
+
+        if (didInsert) {
+          onChange?.(field.value ?? "");
+        }
+
+        return didInsert;
+      },
+    }),
+    [isMathLiveReady, onChange],
+  );
+
   if (!isMathLiveReady) {
     return (
       <div
@@ -102,6 +138,6 @@ function EquationEditorField({
       virtual-keyboard-mode="auto"
     />
   );
-}
+});
 
 export default EquationEditorField;

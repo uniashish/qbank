@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import EquationEditorField from "./EquationEditorField.jsx";
+import EquationSymbolPalette from "./EquationSymbolPalette.jsx";
 import {
   EQUATION_TYPES,
   createEquationNodeContent,
@@ -15,6 +16,7 @@ function EquationDialog({ isOpen, onClose, onInsert }) {
     getInitialEquationDialogState,
   );
   const dialogRef = useRef(null);
+  const equationFieldRef = useRef(null);
   const previewState = useMemo(
     () => getEquationPreviewState(dialogState),
     [dialogState],
@@ -62,6 +64,22 @@ function EquationDialog({ isOpen, onClose, onInsert }) {
       ...currentState,
       error: "",
       latex,
+    }));
+  }, []);
+
+  const handlePaletteInsert = useCallback((item) => {
+    const didInsert = equationFieldRef.current?.insertLatex?.(item.latex, {
+      selectionMode: item.selectionMode || "placeholder",
+    });
+
+    if (!didInsert) {
+      equationFieldRef.current?.focus?.();
+      return;
+    }
+
+    setDialogState((currentState) => ({
+      ...currentState,
+      error: "",
     }));
   }, []);
 
@@ -171,9 +189,12 @@ function EquationDialog({ isOpen, onClose, onInsert }) {
             autoFocus
             id="insert-equation-latex"
             onChange={handleLatexChange}
+            ref={equationFieldRef}
             value={dialogState.latex}
           />
         </label>
+
+        <EquationSymbolPalette onInsert={handlePaletteInsert} />
 
         <section
           aria-label="Live Preview"
