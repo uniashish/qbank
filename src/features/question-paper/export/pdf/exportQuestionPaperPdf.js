@@ -41,8 +41,7 @@ const PDF_SAFE_CAPTURE_CSS = `
   }
 
   .question-block-node,
-  .question-block-static,
-  .question-block-node__meta span {
+  .question-block-static {
     background-color: #ffffff !important;
   }
 
@@ -53,7 +52,7 @@ const PDF_SAFE_CAPTURE_CSS = `
 
   .question-block-node__match-heading,
   .question-block-node__match-item > span,
-  .question-block-node__meta span,
+  .question-block-node__instructions,
   .question-paper-print-answer-key__header p:not(.question-papers-header__eyebrow) {
     color: #64748b !important;
   }

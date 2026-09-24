@@ -171,14 +171,9 @@
 
 .question-paper-print-host--pdf .question-block-node__match-heading,
 .question-paper-print-host--pdf .question-block-node__match-item > span,
-.question-paper-print-host--pdf .question-block-node__meta span,
+.question-paper-print-host--pdf .question-block-node__instructions,
 .question-paper-print-host--pdf .question-paper-print-answer-key__header p:not(.question-papers-header__eyebrow) {
   color: var(--question-paper-export-muted);
-}
-
-.question-paper-print-host--pdf .question-block-node__meta span {
-  border-color: var(--question-paper-export-border);
-  background: #ffffff;
 }
 
 .question-paper-print-host--pdf .rich-text-editor__prose .rich-text-editor-math-node__fallback {

@@ -1,7 +1,7 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 
-import QuestionBlockView from "./QuestionBlockView.jsx";
+import QuestionBlockDesigner from "../question-block/QuestionBlockDesigner.jsx";
 import {
   DEFAULT_QUESTION_BLOCK_ATTRS,
   QUESTION_BLOCK_NODE_NAME,
@@ -21,7 +21,9 @@ function readNumberAttribute(element, name, fallback) {
   return value;
 }
 
-export function createQuestionBlockExtension(NodeViewComponent = QuestionBlockView) {
+export function createQuestionBlockExtension(
+  NodeViewComponent = QuestionBlockDesigner,
+) {
   return Node.create({
     name: QUESTION_BLOCK_NODE_NAME,
 

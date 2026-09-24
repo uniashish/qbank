@@ -720,6 +720,7 @@
 }
 
 .question-block-node__prompt,
+.question-block-node__instructions,
 .question-block-static__prompt,
 .question-block-static__marks {
   margin: 0;
@@ -812,6 +813,12 @@
 .question-block-node__match-item > span {
   color: var(--color-text-secondary);
   font-weight: 850;
+}
+
+.question-block-node__instructions {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .question-block-node__marks {
