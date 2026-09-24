@@ -140,6 +140,11 @@ const icons = {
     </SvgIcon>
   ),
   italic: <span className="rich-text-editor-toolbar__text-icon rich-text-editor-toolbar__text-icon--italic">I</span>,
+  equation: (
+    <span className="rich-text-editor-toolbar__text-icon rich-text-editor-toolbar__text-icon--equation">
+      Σ
+    </span>
+  ),
   numberedList: (
     <SvgIcon>
       <path d="M10 6h10" />
@@ -234,6 +239,7 @@ function getToolbarState(editor) {
 
 function EditorToolbar({
   editor,
+  onOpenEquationDialog,
   onOpenImageDialog,
   onOpenTableDialog,
   readOnly = false,
@@ -424,6 +430,12 @@ function EditorToolbar({
       </div>
 
       <div aria-label="Insert" className="rich-text-editor-toolbar__group" role="group">
+        <ToolbarButton
+          disabled={isDisabled}
+          icon={icons.equation}
+          label="Insert Equation"
+          onClick={onOpenEquationDialog}
+        />
         <ToolbarButton
           disabled={isDisabled}
           icon={icons.image}

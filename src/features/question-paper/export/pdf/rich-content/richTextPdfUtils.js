@@ -1,3 +1,9 @@
+import {
+  MATH_BLOCK_NODE_NAME,
+  MATH_INLINE_NODE_NAME,
+  getMathPlainText,
+} from "../../../../../components/rich-editor/math/mathUtils.js";
+
 const RICH_TEXT_CONTAINER_TYPES = new Set(["doc", "listItem"]);
 const TABLE_CELL_TYPES = new Set(["tableCell", "tableHeader"]);
 const TABLE_ROW_TYPE = "tableRow";
@@ -118,6 +124,14 @@ function normalizeInlineRuns(content = []) {
       return;
     }
 
+    if (node.type === MATH_INLINE_NODE_NAME) {
+      runs.push({
+        math: true,
+        text: getMathPlainText(node.attrs),
+      });
+      return;
+    }
+
     if (node.type === "image") {
       const alt = normalizeText(node.attrs?.alt, "Image");
       runs.push({ italic: true, text: `[${alt}]` });
@@ -147,6 +161,10 @@ export function getRichTextNodeText(node) {
 
   if (node.type === "image") {
     return normalizeText(node.attrs?.alt, "Image");
+  }
+
+  if (node.type === MATH_INLINE_NODE_NAME || node.type === MATH_BLOCK_NODE_NAME) {
+    return getMathPlainText(node.attrs);
   }
 
   if (node.type === "questionBlock") {
@@ -243,6 +261,10 @@ function hasBlockContent(block) {
     return true;
   }
 
+  if (block.type === "math") {
+    return Boolean(String(block.latex ?? "").trim());
+  }
+
   return Boolean(block.src);
 }
 
@@ -324,6 +346,14 @@ export function normalizeRichTextBlocks(content) {
     if (node.type === "horizontalRule") {
       blocks.push({
         type: "divider",
+      });
+      return;
+    }
+
+    if (node.type === MATH_BLOCK_NODE_NAME) {
+      blocks.push({
+        latex: getMathPlainText(node.attrs),
+        type: "math",
       });
       return;
     }

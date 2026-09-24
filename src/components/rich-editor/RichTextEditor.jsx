@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Selection } from "@tiptap/pm/state";
 import { useEditor } from "@tiptap/react";
 
 import EditorContentArea from "./EditorContentArea.jsx";
@@ -9,6 +10,7 @@ import {
 } from "./editorExtensions.js";
 import InsertImageDialog from "./dialogs/InsertImageDialog.jsx";
 import InsertTableDialog from "./dialogs/InsertTableDialog.jsx";
+import EquationDialog from "./math/EquationDialog.jsx";
 import "./rich-text-editor.css";
 
 const EMPTY_EXTRA_EXTENSIONS = [];
@@ -26,6 +28,30 @@ function createEditorAttributes({ ariaDescribedBy, ariaLabel }) {
     ...(ariaDescribedBy ? { "aria-describedby": ariaDescribedBy } : {}),
     "aria-label": ariaLabel,
     class: "rich-text-editor__prose",
+  };
+}
+
+function getEditorSelectionJson(editor) {
+  try {
+    return editor?.state?.selection?.toJSON?.() ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function restoreEditorSelection(selectionJson) {
+  return ({ tr }) => {
+    if (!selectionJson) {
+      return true;
+    }
+
+    try {
+      tr.setSelection(Selection.fromJSON(tr.doc, selectionJson));
+    } catch {
+      return true;
+    }
+
+    return true;
   };
 }
 
@@ -53,10 +79,12 @@ function RichTextEditor({
   readOnly = false,
   value,
 }) {
+  const [isEquationDialogOpen, setIsEquationDialogOpen] = useState(false);
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
   const [isTableDialogOpen, setIsTableDialogOpen] = useState(false);
   const onChangeRef = useRef(onChange);
   const objectUrlsRef = useRef(new Set());
+  const savedSelectionRef = useRef(null);
   const lastContentKeyRef = useRef(getContentKey(getInitialContent(value)));
   const extensions = useMemo(
     () => [
@@ -177,6 +205,38 @@ function RichTextEditor({
     [editor, readOnly],
   );
 
+  const handleOpenEquationDialog = useCallback(() => {
+    if (!editor || readOnly) {
+      return;
+    }
+
+    savedSelectionRef.current = getEditorSelectionJson(editor);
+    setIsEquationDialogOpen(true);
+  }, [editor, readOnly]);
+
+  const handleCloseEquationDialog = useCallback(() => {
+    savedSelectionRef.current = null;
+    setIsEquationDialogOpen(false);
+  }, []);
+
+  const handleInsertEquation = useCallback(
+    (content) => {
+      if (!editor || readOnly) {
+        return;
+      }
+
+      editor
+        .chain()
+        .focus()
+        .command(restoreEditorSelection(savedSelectionRef.current))
+        .insertContent(content)
+        .run();
+
+      savedSelectionRef.current = null;
+    },
+    [editor, readOnly],
+  );
+
   const handleInsertTable = useCallback(
     ({ columns, rows }) => {
       if (!editor || readOnly) {
@@ -205,6 +265,7 @@ function RichTextEditor({
       {!readOnly && (
         <EditorToolbar
           editor={editor}
+          onOpenEquationDialog={handleOpenEquationDialog}
           onOpenImageDialog={() => setIsImageDialogOpen(true)}
           onOpenTableDialog={() => setIsTableDialogOpen(true)}
           readOnly={readOnly}
@@ -222,6 +283,11 @@ function RichTextEditor({
         isOpen={isTableDialogOpen}
         onClose={() => setIsTableDialogOpen(false)}
         onInsert={handleInsertTable}
+      />
+      <EquationDialog
+        isOpen={isEquationDialogOpen}
+        onClose={handleCloseEquationDialog}
+        onInsert={handleInsertEquation}
       />
     </div>
   );

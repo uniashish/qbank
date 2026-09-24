@@ -9,6 +9,9 @@ import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import StarterKit from "@tiptap/starter-kit";
 
+import MathBlockNode from "./math/MathBlockNode.js";
+import MathInlineNode from "./math/MathInlineNode.js";
+import "./math/math.css";
 import ResizableImageNode from "./nodes/ResizableImageNode.js";
 
 export const EMPTY_RICH_TEXT_DOCUMENT = {
@@ -58,6 +61,8 @@ export function createEditorExtensions({ placeholder = "Enter content..." } = {}
     }),
     Superscript,
     Subscript,
+    MathInlineNode,
+    MathBlockNode,
     ResizableImageNode.configure({
       allowBase64: false,
       inline: false,

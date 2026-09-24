@@ -1,0 +1,185 @@
+@import "katex/dist/katex.min.css";
+
+.rich-text-editor__prose .rich-text-editor-math-node {
+  color: inherit;
+}
+
+.rich-text-editor-toolbar__text-icon--equation {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.rich-text-editor__prose .rich-text-editor-math-node--inline {
+  display: inline-flex;
+  align-items: baseline;
+  max-width: 100%;
+  margin: 0 0.12em;
+  vertical-align: baseline;
+}
+
+.rich-text-editor__prose .rich-text-editor-math-node--block {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  margin: 1rem 0;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.rich-text-editor__prose .rich-text-editor-math-node__rendered {
+  max-width: 100%;
+}
+
+.rich-text-editor__prose .rich-text-editor-math-node--block .katex-display {
+  width: 100%;
+  margin: 0;
+}
+
+.rich-text-editor__prose .rich-text-editor-math-node__fallback {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.06rem 0.22rem;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+  border-radius: var(--radius-sm);
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+  white-space: pre-wrap;
+}
+
+.rich-text-editor__prose .rich-text-editor-math-node--block .rich-text-editor-math-node__fallback {
+  text-align: left;
+}
+
+.rich-text-editor__prose .rich-text-editor-math-node--selected {
+  outline: 3px solid rgba(37, 99, 235, 0.34);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.rich-text-editor-equation-dialog__type {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: center;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+.rich-text-editor-equation-dialog__type legend {
+  width: 100%;
+  margin-bottom: 2px;
+  color: var(--color-text);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.rich-text-editor-equation-dialog__type label {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--color-text);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.rich-text-editor-equation-dialog__type input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+}
+
+.rich-text-editor-equation-dialog__field {
+  margin-bottom: 14px;
+}
+
+.rich-text-editor-equation-field {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 9px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-size: 1.05rem;
+}
+
+.rich-text-editor-equation-field--loading {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+}
+
+.rich-text-editor-equation-field:focus,
+.rich-text-editor-equation-field:focus-visible,
+.rich-text-editor-equation-dialog__type input:focus-visible {
+  border-color: var(--color-primary);
+  outline: 3px solid rgba(37, 99, 235, 0.18);
+  outline-offset: 2px;
+}
+
+.rich-text-editor-equation-preview {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 14px;
+}
+
+.rich-text-editor-equation-preview h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.92rem;
+}
+
+.rich-text-editor-equation-preview__body {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.rich-text-editor-equation-preview--block .rich-text-editor-equation-preview__body {
+  justify-content: center;
+  min-height: 72px;
+}
+
+.rich-text-editor-equation-preview__rendered {
+  max-width: 100%;
+}
+
+.rich-text-editor-equation-preview--block .katex-display {
+  width: 100%;
+  margin: 0;
+}
+
+.rich-text-editor-equation-preview__empty {
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+}
+
+.rich-text-editor-equation-preview__fallback {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.08rem 0.24rem;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+  border-radius: var(--radius-sm);
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+  white-space: pre-wrap;
+}
+
+@media print {
+  .rich-text-editor__prose .rich-text-editor-math-node--selected {
+    outline: 0;
+  }
+}

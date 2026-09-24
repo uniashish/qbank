@@ -96,6 +96,10 @@ function renderRuns(runs = []) {
         return "";
       }
 
+      if (run.math) {
+        html = `<span class="math-inline">${html}</span>`;
+      }
+
       if (run.superscript) {
         html = `<sup>${html}</sup>`;
       }
@@ -232,6 +236,10 @@ export function renderRichBlocks(blocks = []) {
 
       if (block.type === "image") {
         return renderImageBlock(block);
+      }
+
+      if (block.type === "math") {
+        return `<p class="math-block">${escapeHtml(block.latex)}</p>`;
       }
 
       if (block.type === "divider") {
@@ -492,6 +500,9 @@ function getDocumentCss() {
     .question { margin: 12pt 0; }
     .question-heading { display: flex; justify-content: space-between; }
     .question-type, .question-note, .image-fallback { color: #4b5563; font-size: 10pt; }
+    .math-inline, .math-block { font-family: "Courier New", monospace; }
+    .math-inline { white-space: nowrap; }
+    .math-block { text-align: center; white-space: pre-wrap; }
     .choice-list { list-style-type: upper-alpha; }
     .match-table th, .match-table td { width: 50%; }
     .answer-entry { margin: 10pt 0; }
