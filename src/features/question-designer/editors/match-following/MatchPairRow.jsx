@@ -1,5 +1,6 @@
 import Button from "../../../../components/common/Button.jsx";
 import Icon from "../../../../components/common/Icon.jsx";
+import RichQuestionContentField from "../../shared/RichQuestionContentField.jsx";
 
 function MatchPairRow({
   canRemove = false,
@@ -22,26 +23,17 @@ function MatchPairRow({
       </span>
 
       <div className="match-pair-row__field">
-        <label className="sr-only" htmlFor={leftInputId}>
-          Column A text for pair {rowNumber}
-        </label>
-        <input
-          aria-describedby={leftErrorId}
-          aria-invalid={Boolean(errors.left)}
-          className="input"
-          id={leftInputId}
-          onChange={(event) =>
-            onTextChange(pair.id, "left", event.target.value)
+        <RichQuestionContentField
+          ariaLabel={`Column A editor for pair ${rowNumber}`}
+          className="match-pair-row__rich-field"
+          error={errors.left}
+          errorId={leftErrorId}
+          onChange={(content) =>
+            onTextChange(pair.id, "leftContent", content)
           }
           placeholder="Column A"
-          type="text"
-          value={pair.left}
+          value={pair.leftContent}
         />
-        {errors.left && (
-          <p className="form-field__error" id={leftErrorId}>
-            {errors.left}
-          </p>
-        )}
       </div>
 
       <span className="match-pair-row__link" aria-hidden="true">
@@ -49,26 +41,17 @@ function MatchPairRow({
       </span>
 
       <div className="match-pair-row__field">
-        <label className="sr-only" htmlFor={rightInputId}>
-          Column B text for pair {rowNumber}
-        </label>
-        <input
-          aria-describedby={rightErrorId}
-          aria-invalid={Boolean(errors.right)}
-          className="input"
-          id={rightInputId}
-          onChange={(event) =>
-            onTextChange(pair.id, "right", event.target.value)
+        <RichQuestionContentField
+          ariaLabel={`Column B editor for pair ${rowNumber}`}
+          className="match-pair-row__rich-field"
+          error={errors.right}
+          errorId={rightErrorId}
+          onChange={(content) =>
+            onTextChange(pair.id, "rightContent", content)
           }
           placeholder="Column B"
-          type="text"
-          value={pair.right}
+          value={pair.rightContent}
         />
-        {errors.right && (
-          <p className="form-field__error" id={rightErrorId}>
-            {errors.right}
-          </p>
-        )}
       </div>
 
       {canRemove && (

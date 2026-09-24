@@ -4,6 +4,7 @@ import { createMatchDisplayModel } from "../../question-designer/utils/matchPair
 import {
   cloneRichTextContent,
   hasMeaningfulRichTextContent,
+  normalizeRichTextContent,
 } from "../../question-designer/utils/richTextContent.js";
 import { extractQuestionBlocksFromDocument } from "../nodes/questionBlockUtils.js";
 
@@ -76,6 +77,9 @@ export function normalizeMultipleChoiceAnswer(answerData = {}) {
 
   return {
     kind: QUESTION_TYPES.MULTIPLE_CHOICE,
+    optionContent: correctOption
+      ? normalizeRichTextContent(correctOption.content, correctOption.text)
+      : null,
     optionLabel:
       correctOptionIndex >= 0 ? getOptionLabel(correctOptionIndex) : "",
     optionText: normalizeText(correctOption?.text),

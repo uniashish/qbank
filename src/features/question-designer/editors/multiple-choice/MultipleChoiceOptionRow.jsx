@@ -1,5 +1,6 @@
 import Button from "../../../../components/common/Button.jsx";
 import Icon from "../../../../components/common/Icon.jsx";
+import RichQuestionContentField from "../../shared/RichQuestionContentField.jsx";
 
 function MultipleChoiceOptionRow({
   canRemove = false,
@@ -25,29 +26,20 @@ function MultipleChoiceOptionRow({
         type="radio"
       />
 
-      <label
-        className="multiple-choice-option-row__label"
-        htmlFor={inputId}
-      >
+      <span className="multiple-choice-option-row__label">
         Option {label}
-      </label>
+      </span>
 
       <div className="multiple-choice-option-row__field">
-        <input
-          aria-describedby={errorId}
-          aria-invalid={Boolean(error)}
-          className="input"
-          id={inputId}
-          onChange={(event) => onTextChange(option.id, event.target.value)}
+        <RichQuestionContentField
+          ariaLabel={`Option ${label} editor`}
+          className="multiple-choice-option-row__rich-field"
+          error={error}
+          errorId={errorId}
+          onChange={(content) => onTextChange(option.id, content)}
           placeholder={`Option ${label}`}
-          type="text"
-          value={option.text}
+          value={option.content}
         />
-        {error && (
-          <p className="form-field__error" id={errorId}>
-            {error}
-          </p>
-        )}
       </div>
 
       {canRemove && (

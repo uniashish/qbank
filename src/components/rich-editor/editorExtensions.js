@@ -47,7 +47,10 @@ export function validateRichTextImageFile(file) {
   return "";
 }
 
-export function createEditorExtensions({ placeholder = "Enter content..." } = {}) {
+export function createEditorExtensions({
+  onEditEquation = null,
+  placeholder = "Enter content...",
+} = {}) {
   return [
     StarterKit.configure({
       heading: {
@@ -61,8 +64,12 @@ export function createEditorExtensions({ placeholder = "Enter content..." } = {}
     }),
     Superscript,
     Subscript,
-    MathInlineNode,
-    MathBlockNode,
+    MathInlineNode.configure({
+      onEditEquation,
+    }),
+    MathBlockNode.configure({
+      onEditEquation,
+    }),
     ResizableImageNode.configure({
       allowBase64: false,
       inline: false,

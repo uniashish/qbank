@@ -4,7 +4,10 @@ import {
   QUESTION_TYPES,
 } from "../../../question-designer/constants/questionTypes.js";
 import { createMatchDisplayModel } from "../../../question-designer/utils/matchPairHelpers.js";
-import { hasMeaningfulRichTextContent } from "../../../question-designer/utils/richTextContent.js";
+import {
+  hasMeaningfulRichTextContent,
+  normalizeRichTextContent,
+} from "../../../question-designer/utils/richTextContent.js";
 import {
   generateAnswerKeyModel,
   normalizeAnswerKeyOptions,
@@ -111,6 +114,34 @@ function getMarksLabel(marks) {
   return `${normalizedMarks} mark${normalizedMarks === 1 ? "" : "s"}`;
 }
 
+function replaceTextInRichTextContent(content, replacer) {
+  const normalizedContent = normalizeRichTextContent(content);
+
+  function visitNode(node) {
+    if (!node || typeof node !== "object") {
+      return node;
+    }
+
+    if (node.type === "text") {
+      return {
+        ...node,
+        text: replacer(String(node.text ?? "")),
+      };
+    }
+
+    if (!Array.isArray(node.content)) {
+      return node;
+    }
+
+    return {
+      ...node,
+      content: node.content.map(visitNode),
+    };
+  }
+
+  return visitNode(normalizedContent);
+}
+
 function getRichQuestionBlocks(snapshot, fallbackPrompt) {
   const questionContent = snapshot?.answerData?.questionContent;
 
@@ -118,7 +149,25 @@ function getRichQuestionBlocks(snapshot, fallbackPrompt) {
     return normalizeRichTextBlocks(questionContent);
   }
 
+  if (hasMeaningfulRichTextContent(snapshot?.promptContent)) {
+    return normalizeRichTextBlocks(snapshot.promptContent);
+  }
+
   return createPlainTextBlocks(fallbackPrompt);
+}
+
+function getFillBlankQuestionBlocks(snapshot, fallbackPrompt) {
+  if (hasMeaningfulRichTextContent(snapshot?.promptContent)) {
+    return normalizeRichTextBlocks(
+      replaceTextInRichTextContent(snapshot.promptContent, (text) =>
+        text.replace(BLANK_MARKER_PATTERN, "________"),
+      ),
+    );
+  }
+
+  return createPlainTextBlocks(
+    fallbackPrompt.replace(BLANK_MARKER_PATTERN, "________"),
+  );
 }
 
 function normalizeMultipleChoiceOptions(answerData = {}) {
@@ -127,6 +176,9 @@ function normalizeMultipleChoiceOptions(answerData = {}) {
   return options
     .map((option, index) => ({
       id: normalizeText(option?.id) || createId("option", index),
+      blocks: normalizeRichTextBlocks(
+        normalizeRichTextContent(option?.content, option?.text),
+      ),
       originalIndex: index,
       order: Number.isSafeInteger(option?.order) ? option.order : index,
       text: normalizeText(option?.text, "Option unavailable"),
@@ -140,6 +192,9 @@ function normalizeMultipleChoiceOptions(answerData = {}) {
     })
     .map((option, index) => ({
       id: option.id,
+      blocks: option.blocks.length
+        ? option.blocks
+        : createPlainTextBlocks(option.text),
       label: getOptionLabel(index),
       text: option.text,
     }));
@@ -156,11 +211,17 @@ function normalizeMatchColumns(answerData = {}) {
     columnA: displayModel.leftPairs.map((pair, index) => ({
       id: pair.id || createId("left", index),
       label: String(index + 1),
+      blocks: normalizeRichTextBlocks(
+        normalizeRichTextContent(pair.leftContent, pair.left),
+      ),
       text: normalizeText(pair.left, "Item unavailable"),
     })),
     columnB: displayModel.rightPairs.map((pair, index) => ({
       id: pair.id || createId("right", index),
       label: getOptionLabel(index),
+      blocks: normalizeRichTextBlocks(
+        normalizeRichTextContent(pair.rightContent, pair.right),
+      ),
       text: normalizeText(pair.right, "Item unavailable"),
     })),
   };
@@ -267,9 +328,7 @@ function normalizeQuestionBlock(questionBlock, index) {
     case QUESTION_TYPES.FILL_BLANKS:
       normalizedQuestion = {
         ...baseQuestion,
-        promptBlocks: createPlainTextBlocks(
-          prompt.replace(BLANK_MARKER_PATTERN, "________"),
-        ),
+        promptBlocks: getFillBlankQuestionBlocks(snapshot, prompt),
       };
       break;
 
@@ -287,6 +346,7 @@ function normalizeQuestionBlock(questionBlock, index) {
     case QUESTION_TYPES.MATCH_FOLLOWING:
       normalizedQuestion = {
         ...baseQuestion,
+        promptBlocks: getRichQuestionBlocks(snapshot, prompt),
         matchColumns: normalizeMatchColumns(answerData),
       };
       break;
@@ -294,6 +354,7 @@ function normalizeQuestionBlock(questionBlock, index) {
     case QUESTION_TYPES.MULTIPLE_CHOICE:
       normalizedQuestion = {
         ...baseQuestion,
+        promptBlocks: getRichQuestionBlocks(snapshot, prompt),
         options: normalizeMultipleChoiceOptions(answerData),
       };
       break;
@@ -306,6 +367,12 @@ function normalizeQuestionBlock(questionBlock, index) {
       break;
 
     case QUESTION_TYPES.TRUE_FALSE:
+      normalizedQuestion = {
+        ...baseQuestion,
+        promptBlocks: getRichQuestionBlocks(snapshot, prompt),
+      };
+      break;
+
     default:
       normalizedQuestion = baseQuestion;
   }
@@ -447,6 +514,7 @@ function normalizeAnswerEntry(entry) {
         ...entry,
         answer: {
           kind: answer.kind,
+          optionBlocks: normalizeRichTextBlocks(answer.optionContent),
           optionLabel: normalizeText(answer.optionLabel),
           optionText: normalizeText(answer.optionText),
         },

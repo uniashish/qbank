@@ -1,9 +1,9 @@
 import { NodeViewWrapper } from "@tiptap/react";
 
+import QuestionBlockSnapshotContent from "./QuestionBlockSnapshotContent.jsx";
 import QuestionBlockToolbar from "./QuestionBlockToolbar.jsx";
 import {
   canMoveQuestionBlock,
-  getQuestionBlockPrompt,
   moveQuestionBlock,
   normalizePositiveWholeNumber,
 } from "./questionBlockUtils.js";
@@ -17,7 +17,6 @@ function QuestionBlockView({
   updateAttributes,
 }) {
   const attrs = node.attrs;
-  const prompt = getQuestionBlockPrompt(attrs.snapshot);
   const questionNumber = attrs.questionNumber || "";
   const marks = normalizePositiveWholeNumber(attrs.marks);
   const isReadOnly = !editor?.isEditable;
@@ -56,9 +55,10 @@ function QuestionBlockView({
     >
       <div className="question-block-node__body">
         <div className="question-block-node__content">
-          <p className="question-block-node__prompt">
-            <strong>Q{questionNumber || "?"}.</strong> {prompt}
-          </p>
+          <QuestionBlockSnapshotContent
+            questionNumber={questionNumber}
+            snapshot={attrs.snapshot}
+          />
           <div className="question-block-node__meta">
             {attrs.questionType && <span>{attrs.questionType}</span>}
             {attrs.difficulty && <span>{attrs.difficulty}</span>}

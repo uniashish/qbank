@@ -1,13 +1,10 @@
 import { NodeViewWrapper } from "@tiptap/react";
 
-import {
-  getQuestionBlockPrompt,
-  normalizePositiveWholeNumber,
-} from "../nodes/questionBlockUtils.js";
+import QuestionBlockSnapshotContent from "../nodes/QuestionBlockSnapshotContent.jsx";
+import { normalizePositiveWholeNumber } from "../nodes/questionBlockUtils.js";
 
 function PrintQuestionBlock({ node }) {
   const attrs = node.attrs;
-  const prompt = getQuestionBlockPrompt(attrs.snapshot);
   const questionNumber = attrs.questionNumber || "";
   const marks = normalizePositiveWholeNumber(attrs.marks);
 
@@ -20,9 +17,11 @@ function PrintQuestionBlock({ node }) {
     >
       <div className="question-block-node__body">
         <div className="question-block-node__content">
-          <p className="question-block-node__prompt">
-            <strong>Q{questionNumber || "?"}.</strong> {prompt}
-          </p>
+          <QuestionBlockSnapshotContent
+            mode="print"
+            questionNumber={questionNumber}
+            snapshot={attrs.snapshot}
+          />
           <div className="question-block-node__meta">
             {attrs.questionType && <span>{attrs.questionType}</span>}
             {attrs.difficulty && <span>{attrs.difficulty}</span>}

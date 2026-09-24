@@ -1,3 +1,8 @@
+import {
+  hasMeaningfulRichTextContent,
+  normalizeRichTextContent,
+} from "../../question-designer/utils/richTextContent.js";
+
 export const QUESTION_BLOCK_NODE_NAME = "questionBlock";
 
 export const DEFAULT_QUESTION_BLOCK_ATTRS = {
@@ -69,6 +74,7 @@ export function createQuestionSnapshot(question = {}) {
     image: question.image ?? question.questionImage ?? null,
     instructions: question.instructions ?? "",
     prompt: question.prompt ?? "",
+    promptContent: question.promptContent ?? null,
     questionType: question.questionType ?? "",
     tags: question.tags ?? [],
     topicName: question.topicName ?? "",
@@ -101,6 +107,20 @@ export function getQuestionBlockPrompt(snapshot) {
   }
 
   return "Question prompt unavailable.";
+}
+
+export function getQuestionBlockPromptContent(snapshot) {
+  const answerQuestionContent = snapshot?.answerData?.questionContent;
+
+  if (hasMeaningfulRichTextContent(answerQuestionContent)) {
+    return normalizeRichTextContent(answerQuestionContent);
+  }
+
+  if (hasMeaningfulRichTextContent(snapshot?.promptContent)) {
+    return normalizeRichTextContent(snapshot.promptContent);
+  }
+
+  return normalizeRichTextContent(getQuestionBlockPrompt(snapshot));
 }
 
 export function extractQuestionBlocks(documentContent) {

@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 
 import Button from "../common/Button.jsx";
 import Icon from "../common/Icon.jsx";
+import RichDocumentRenderer from "../rich-editor/RichDocumentRenderer.jsx";
+import { normalizeRichTextContent } from "../../features/question-designer/utils/richTextContent.js";
 
 function DeleteQuestionDialog({
   error = "",
@@ -67,7 +69,14 @@ function DeleteQuestionDialog({
           </div>
         </header>
 
-        <p className="delete-question-dialog__prompt">{question.prompt}</p>
+        <RichDocumentRenderer
+          ariaLabel="Question prompt preview"
+          className="delete-question-dialog__prompt"
+          content={normalizeRichTextContent(
+            question.promptContent,
+            question.prompt,
+          )}
+        />
 
         {error && (
           <div className="teacher-question-bank-feedback teacher-question-bank-feedback--error" role="alert">

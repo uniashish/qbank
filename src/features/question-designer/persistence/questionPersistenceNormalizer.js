@@ -1,7 +1,14 @@
 import { sanitizeTags } from "../../../components/tags/tagUtils.js";
-import { QUESTION_TYPES } from "../constants/questionTypes.js";
+import {
+  QUESTION_TYPES,
+  usesSharedPromptField,
+} from "../constants/questionTypes.js";
 import { createPersistableMatchPairs } from "../utils/matchPairHelpers.js";
-import { cloneRichTextContent } from "../utils/richTextContent.js";
+import {
+  cloneRichTextContent,
+  getRichTextPlainText,
+  normalizeRichTextContent,
+} from "../utils/richTextContent.js";
 
 function trimText(value) {
   return String(value ?? "").trim();
@@ -30,8 +37,9 @@ export function normalizeAnswerDataForSave(questionType, answerData = {}) {
       return {
         correctOptionId: trimText(answerData.correctOptionId),
         options: (answerData.options ?? []).map((option) => ({
+          content: normalizeRichTextContent(option.content, option.text ?? ""),
           id: trimText(option.id),
-          text: trimText(option.text),
+          text: trimText(option.text || getRichTextPlainText(option.content)),
         })),
       };
 
@@ -57,7 +65,7 @@ export function normalizeAnswerDataForSave(questionType, answerData = {}) {
 }
 
 export function normalizeQuestionForSave(question) {
-  return {
+  const normalizedQuestion = {
     answerData: normalizeAnswerDataForSave(
       question.questionType,
       question.answerData,
@@ -77,4 +85,13 @@ export function normalizeQuestionForSave(question) {
     tags: sanitizeTags(question.tags),
     topicName: trimText(question.topicName),
   };
+
+  if (usesSharedPromptField(question.questionType)) {
+    normalizedQuestion.promptContent = normalizeRichTextContent(
+      question.promptContent,
+      question.prompt,
+    );
+  }
+
+  return normalizedQuestion;
 }

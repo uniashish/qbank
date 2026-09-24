@@ -1,8 +1,14 @@
+import { getRichTextPlainText } from "../../utils/richTextContent.js";
+
 export const MIN_MULTIPLE_CHOICE_OPTIONS = 2;
 export const MAX_MULTIPLE_CHOICE_OPTIONS = 8;
 
-function normalizeOptionText(text) {
-  return String(text ?? "").trim().toLowerCase();
+function getOptionText(option) {
+  return option?.text || getRichTextPlainText(option?.content);
+}
+
+function normalizeOptionText(option) {
+  return String(getOptionText(option) ?? "").trim().toLowerCase();
 }
 
 export function validateMultipleChoice(multipleChoice = {}, questionImage = {}) {
@@ -21,7 +27,7 @@ export function validateMultipleChoice(multipleChoice = {}, questionImage = {}) 
   const normalizedOptionCounts = new Map();
 
   options.forEach((option) => {
-    const normalizedText = normalizeOptionText(option.text);
+    const normalizedText = normalizeOptionText(option);
 
     if (!normalizedText) {
       errors.optionTexts[option.id] = "Enter option text.";
@@ -35,7 +41,7 @@ export function validateMultipleChoice(multipleChoice = {}, questionImage = {}) 
   });
 
   options.forEach((option) => {
-    const normalizedText = normalizeOptionText(option.text);
+    const normalizedText = normalizeOptionText(option);
 
     if (
       normalizedText &&

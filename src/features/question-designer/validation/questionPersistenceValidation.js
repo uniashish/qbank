@@ -21,6 +21,10 @@ import {
   validateShortAnswer,
 } from "../editors/short-answer/shortAnswerValidation.js";
 import { validateTags } from "../../../components/tags/tagUtils.js";
+import {
+  getRichTextPlainText,
+  hasMeaningfulRichTextContent,
+} from "../utils/richTextContent.js";
 
 const MIN_MULTIPLE_CHOICE_OPTIONS = 2;
 const MAX_MULTIPLE_CHOICE_OPTIONS = 8;
@@ -41,6 +45,10 @@ export const QUESTION_PERSISTENCE_ERROR_CODES = {
 
 function hasText(value) {
   return String(value ?? "").trim().length > 0;
+}
+
+function getVisibleText(value, richContent) {
+  return String(value || getRichTextPlainText(richContent) || "");
 }
 
 function isPositiveWholeNumber(value) {
@@ -93,7 +101,7 @@ function validateMultipleChoiceAnswerData(answerData, errors) {
   }
 
   options.forEach((option) => {
-    if (!option?.id || !hasText(option.text)) {
+    if (!option?.id || !hasText(getVisibleText(option.text, option.content))) {
       errors.answerData = "Every answer option must have text.";
       return;
     }
@@ -201,7 +209,11 @@ export function validateQuestionPersistenceInput({ draft, teacherProfile }) {
     errors.topicName = "Enter a topic name.";
   }
 
-  if (usesSharedPromptField(draft.questionType) && !hasText(draft.prompt)) {
+  if (
+    usesSharedPromptField(draft.questionType) &&
+    !hasText(draft.prompt) &&
+    !hasMeaningfulRichTextContent(draft.promptContent)
+  ) {
     errors.prompt = "Enter the question text or prompt.";
   }
 

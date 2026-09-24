@@ -726,10 +726,92 @@
 }
 
 .question-block-node__prompt {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+  align-items: start;
   color: var(--color-text);
   font-size: 1rem;
   line-height: 1.55;
   overflow-wrap: anywhere;
+}
+
+.question-block-node__prompt-content .rich-text-editor__document,
+.question-block-node__option-content .rich-text-editor__document,
+.question-block-node__match-content .rich-text-editor__document {
+  border: 0;
+  background: transparent;
+}
+
+.question-block-node__prompt-content .rich-text-editor__prose,
+.question-block-node__option-content .rich-text-editor__prose,
+.question-block-node__match-content .rich-text-editor__prose {
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border-inline: 0;
+  background: transparent;
+  font: inherit;
+  line-height: inherit;
+}
+
+.question-block-node__prompt-content .rich-text-editor__prose p,
+.question-block-node__option-content .rich-text-editor__prose p,
+.question-block-node__match-content .rich-text-editor__prose p {
+  margin: 0;
+}
+
+.question-block-node__options {
+  display: grid;
+  gap: 7px;
+  margin: 4px 0 0;
+  padding-left: 28px;
+}
+
+.question-block-node__option {
+  min-width: 0;
+  padding-left: 4px;
+}
+
+.question-block-node__match-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.question-block-node__match-column {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.question-block-node__match-heading {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.question-block-node__match-list {
+  display: grid;
+  gap: 7px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.question-block-node__match-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.question-block-node__match-item > span {
+  color: var(--color-text-secondary);
+  font-weight: 850;
 }
 
 .question-block-node__marks {
@@ -1836,6 +1918,10 @@
 
   .question-block-node__body {
     flex-direction: column;
+  }
+
+  .question-block-node__match-columns {
+    grid-template-columns: 1fr;
   }
 
   .question-block-toolbar,

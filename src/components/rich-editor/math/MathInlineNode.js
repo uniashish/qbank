@@ -16,6 +16,12 @@ const MathInlineNode = Node.create({
   inline: true,
   selectable: true,
 
+  addOptions() {
+    return {
+      onEditEquation: null,
+    };
+  },
+
   addAttributes() {
     return {
       latex: {

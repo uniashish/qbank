@@ -11,6 +11,14 @@ import {
 import InsertImageDialog from "./dialogs/InsertImageDialog.jsx";
 import InsertTableDialog from "./dialogs/InsertTableDialog.jsx";
 import EquationDialog from "./math/EquationDialog.jsx";
+import {
+  EQUATION_DIALOG_MODES,
+  createInsertEquationRequest,
+} from "./math/equationDialogUtils.js";
+import {
+  deleteMathNodeAtPosition,
+  updateMathNodeAtPosition,
+} from "./math/equationEditingUtils.js";
 import "./rich-text-editor.css";
 
 const EMPTY_EXTRA_EXTENSIONS = [];
@@ -79,19 +87,25 @@ function RichTextEditor({
   readOnly = false,
   value,
 }) {
-  const [isEquationDialogOpen, setIsEquationDialogOpen] = useState(false);
+  const [equationDialogRequest, setEquationDialogRequest] = useState(null);
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
   const [isTableDialogOpen, setIsTableDialogOpen] = useState(false);
   const onChangeRef = useRef(onChange);
   const objectUrlsRef = useRef(new Set());
   const savedSelectionRef = useRef(null);
   const lastContentKeyRef = useRef(getContentKey(getInitialContent(value)));
+  const handleOpenEquationEdit = useCallback((request) => {
+    setEquationDialogRequest(request);
+  }, []);
   const extensions = useMemo(
     () => [
-      ...createEditorExtensions({ placeholder }),
+      ...createEditorExtensions({
+        onEditEquation: handleOpenEquationEdit,
+        placeholder,
+      }),
       ...extraExtensions,
     ],
-    [extraExtensions, placeholder],
+    [extraExtensions, handleOpenEquationEdit, placeholder],
   );
 
   useEffect(() => {
@@ -211,18 +225,30 @@ function RichTextEditor({
     }
 
     savedSelectionRef.current = getEditorSelectionJson(editor);
-    setIsEquationDialogOpen(true);
+    setEquationDialogRequest(createInsertEquationRequest());
   }, [editor, readOnly]);
 
   const handleCloseEquationDialog = useCallback(() => {
     savedSelectionRef.current = null;
-    setIsEquationDialogOpen(false);
+    setEquationDialogRequest(null);
   }, []);
 
-  const handleInsertEquation = useCallback(
-    (content) => {
+  const handleSaveEquation = useCallback(
+    ({ content, latex, request, type }) => {
       if (!editor || readOnly) {
-        return;
+        return {
+          error: "The editor is read-only.",
+          ok: false,
+        };
+      }
+
+      if (request?.mode === EQUATION_DIALOG_MODES.EDIT) {
+        return updateMathNodeAtPosition({
+          editor,
+          latex,
+          request,
+          type,
+        });
       }
 
       editor
@@ -233,6 +259,33 @@ function RichTextEditor({
         .run();
 
       savedSelectionRef.current = null;
+      return {
+        error: "",
+        ok: true,
+      };
+    },
+    [editor, readOnly],
+  );
+
+  const handleDeleteEquation = useCallback(
+    (request) => {
+      if (!editor || readOnly) {
+        return {
+          error: "The editor is read-only.",
+          ok: false,
+        };
+      }
+
+      const result = deleteMathNodeAtPosition({
+        editor,
+        request,
+      });
+
+      if (result.ok) {
+        savedSelectionRef.current = null;
+      }
+
+      return result;
     },
     [editor, readOnly],
   );
@@ -285,9 +338,11 @@ function RichTextEditor({
         onInsert={handleInsertTable}
       />
       <EquationDialog
-        isOpen={isEquationDialogOpen}
+        isOpen={Boolean(equationDialogRequest)}
         onClose={handleCloseEquationDialog}
-        onInsert={handleInsertEquation}
+        onDelete={handleDeleteEquation}
+        onSave={handleSaveEquation}
+        request={equationDialogRequest}
       />
     </div>
   );

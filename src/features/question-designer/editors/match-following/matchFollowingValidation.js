@@ -1,5 +1,14 @@
+import { getRichTextPlainText } from "../../utils/richTextContent.js";
+
 export const MIN_MATCH_FOLLOWING_PAIRS = 2;
 export const MAX_MATCH_FOLLOWING_PAIRS = 12;
+
+function getPairValue(pair, fieldName) {
+  const contentFieldName =
+    fieldName === "left" ? "leftContent" : "rightContent";
+
+  return pair?.[fieldName] || getRichTextPlainText(pair?.[contentFieldName]);
+}
 
 function normalizePairValue(value) {
   return String(value ?? "").trim().toLowerCase();
@@ -7,7 +16,7 @@ function normalizePairValue(value) {
 
 function createDuplicateCounts(pairs, fieldName) {
   return pairs.reduce((counts, pair) => {
-    const normalizedValue = normalizePairValue(pair?.[fieldName]);
+    const normalizedValue = normalizePairValue(getPairValue(pair, fieldName));
 
     if (!normalizedValue) {
       return counts;
@@ -38,8 +47,8 @@ export function validateMatchFollowing(matchFollowing = {}) {
 
   pairs.forEach((pair) => {
     const pairId = pair?.id;
-    const leftValue = normalizePairValue(pair?.left);
-    const rightValue = normalizePairValue(pair?.right);
+    const leftValue = normalizePairValue(getPairValue(pair, "left"));
+    const rightValue = normalizePairValue(getPairValue(pair, "right"));
 
     if (!pairId) {
       errors.pairs = "Every matching pair must have a stable ID.";

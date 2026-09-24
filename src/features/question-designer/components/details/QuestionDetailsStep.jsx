@@ -161,8 +161,8 @@ function QuestionDetailsStep({
         {usesSharedPromptField(designerState.questionType) && (
           <QuestionPromptField
             error={validationErrors.prompt}
-            onChange={(value) => onFieldChange("prompt", value)}
-            value={designerState.prompt}
+            onChange={(value) => onFieldChange("promptContent", value)}
+            value={designerState.promptContent}
           />
         )}
 

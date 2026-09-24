@@ -297,7 +297,13 @@ function renderMultipleChoiceOptions(question) {
   return [
     "<ol class=\"choice-list\" type=\"A\">",
     question.options
-      .map((option) => `<li>${escapeHtml(option.text)}</li>`)
+      .map((option) => {
+        const content = option.blocks?.length
+          ? renderRichBlocks(option.blocks)
+          : escapeHtml(option.text);
+
+        return `<li>${content}</li>`;
+      })
       .join(""),
     "</ol>",
   ].join("");
@@ -321,8 +327,8 @@ function renderMatchFollowing(question) {
     rows.push(
       [
         "<tr>",
-        `<td>${leftItem ? `${escapeHtml(leftItem.label)}. ${escapeHtml(leftItem.text)}` : ""}</td>`,
-        `<td>${rightItem ? `${escapeHtml(rightItem.label)}. ${escapeHtml(rightItem.text)}` : ""}</td>`,
+        `<td>${leftItem ? `<strong>${escapeHtml(leftItem.label)}.</strong> ${leftItem.blocks?.length ? renderRichBlocks(leftItem.blocks) : escapeHtml(leftItem.text)}` : ""}</td>`,
+        `<td>${rightItem ? `<strong>${escapeHtml(rightItem.label)}.</strong> ${rightItem.blocks?.length ? renderRichBlocks(rightItem.blocks) : escapeHtml(rightItem.text)}` : ""}</td>`,
         "</tr>",
       ].join(""),
     );
@@ -385,11 +391,15 @@ function renderAnswerKeyEntry(entry) {
   const answer = entry.answer ?? {};
 
   if (answer.kind === QUESTION_TYPES.MULTIPLE_CHOICE) {
-    const answerText = answer.optionLabel
-      ? `${answer.optionLabel}${answer.optionText ? `. ${answer.optionText}` : ""}`
-      : "No correct option selected";
+    if (!answer.optionLabel) {
+      return "<p>No correct option selected</p>";
+    }
 
-    return `<p>${escapeHtml(answerText)}</p>`;
+    const answerContent = answer.optionBlocks?.length
+      ? renderRichBlocks(answer.optionBlocks)
+      : escapeHtml(answer.optionText);
+
+    return `<div><p><strong>${escapeHtml(answer.optionLabel)}.</strong></p>${answerContent}</div>`;
   }
 
   if (answer.kind === QUESTION_TYPES.TRUE_FALSE) {

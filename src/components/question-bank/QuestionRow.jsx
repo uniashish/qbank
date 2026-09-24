@@ -1,6 +1,8 @@
 import { formatDate } from "../../utils/formatDate.js";
+import RichDocumentRenderer from "../rich-editor/RichDocumentRenderer.jsx";
 import QuestionSelectionCheckbox from "../../features/question-sharing/QuestionSelectionCheckbox.jsx";
 import SharedQuestionBadge from "../../features/question-sharing/SharedQuestionBadge.jsx";
+import { normalizeRichTextContent } from "../../features/question-designer/utils/richTextContent.js";
 import TagChip from "../tags/TagChip.jsx";
 import DifficultyBadge from "./DifficultyBadge.jsx";
 import QuestionActionsMenu from "./QuestionActionsMenu.jsx";
@@ -36,7 +38,14 @@ function QuestionTags({ tags = [] }) {
 function QuestionPrompt({ question }) {
   return (
     <div className="question-bank-question">
-      <p className="question-bank-prompt">{question.prompt}</p>
+      <RichDocumentRenderer
+        ariaLabel="Question prompt preview"
+        className="question-bank-prompt"
+        content={normalizeRichTextContent(
+          question.promptContent,
+          question.prompt,
+        )}
+      />
       {question.access?.type === "shared" && (
         <SharedQuestionBadge ownerName={question.shareInfo?.ownerName} />
       )}

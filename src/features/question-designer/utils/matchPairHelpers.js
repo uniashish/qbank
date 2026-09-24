@@ -1,3 +1,8 @@
+import {
+  getRichTextPlainText,
+  normalizeRichTextContent,
+} from "./richTextContent.js";
+
 const DEFAULT_PAIR_ID_PREFIX = "pair";
 
 function trimText(value) {
@@ -14,7 +19,9 @@ export function createMatchPair(pairNumber, prefix = DEFAULT_PAIR_ID_PREFIX) {
   return {
     id: `${prefix}-${pairNumber}`,
     left: "",
+    leftContent: normalizeRichTextContent(""),
     right: "",
+    rightContent: normalizeRichTextContent(""),
   };
 }
 
@@ -22,8 +29,10 @@ export function normalizeMatchPairs(pairs = [], { minPairs = 0 } = {}) {
   const normalizedPairs = Array.isArray(pairs)
     ? pairs.map((pair, index) => ({
         id: pair?.id || `${DEFAULT_PAIR_ID_PREFIX}-${index + 1}`,
-        left: pair?.left ?? "",
-        right: pair?.right ?? "",
+        left: pair?.left ?? getRichTextPlainText(pair?.leftContent),
+        leftContent: normalizeRichTextContent(pair?.leftContent, pair?.left ?? ""),
+        right: pair?.right ?? getRichTextPlainText(pair?.rightContent),
+        rightContent: normalizeRichTextContent(pair?.rightContent, pair?.right ?? ""),
       }))
     : [];
 
@@ -50,7 +59,9 @@ export function createPersistableMatchPairs(pairs = []) {
   return normalizeMatchPairs(pairs).map((pair) => ({
     id: pair.id,
     left: trimText(pair.left),
+    leftContent: normalizeRichTextContent(pair.leftContent, pair.left),
     right: trimText(pair.right),
+    rightContent: normalizeRichTextContent(pair.rightContent, pair.right),
   }));
 }
 

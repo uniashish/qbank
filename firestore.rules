@@ -453,12 +453,17 @@ service cloud.firestore {
         ])
         && option.keys().hasOnly([
           "id",
-          "text"
+          "text",
+          "content"
         ])
         && option.id is string
         && option.id.size() > 0
         && option.text is string
-        && option.text.size() > 0;
+        && option.text.size() > 0
+        && (
+          !option.keys().hasAny(["content"])
+          || isValidRichTextDocumentShape(option.content)
+        );
     }
 
     function isValidQuestionOptions(options) {
@@ -541,16 +546,26 @@ service cloud.firestore {
         && pair.keys().hasOnly([
           "id",
           "left",
-          "right"
+          "leftContent",
+          "right",
+          "rightContent"
         ])
         && pair.id is string
         && pair.id.size() > 0
         && pair.left is string
         && pair.left.size() > 0
         && pair.left.matches(".*\\S.*")
+        && (
+          !pair.keys().hasAny(["leftContent"])
+          || isValidRichTextDocumentShape(pair.leftContent)
+        )
         && pair.right is string
         && pair.right.size() > 0
-        && pair.right.matches(".*\\S.*");
+        && pair.right.matches(".*\\S.*")
+        && (
+          !pair.keys().hasAny(["rightContent"])
+          || isValidRichTextDocumentShape(pair.rightContent)
+        );
     }
 
     function isValidMatchFollowingPairs(pairs) {
@@ -582,89 +597,16 @@ service cloud.firestore {
         && isValidMatchFollowingPairs(answerData.pairs);
     }
 
-    function isMeaningfulRichTextNode(node) {
-      return node is map
-        && node.type is string
-        && (
-          (
-            node.type == "text"
-            && node.keys().hasAny(["text"])
-            && node.text is string
-            && node.text.size() > 0
-          )
-          || (
-            node.type == "image"
-            && node.keys().hasAny(["attrs"])
-            && node.attrs is map
-            && node.attrs.keys().hasAny(["src"])
-            && node.attrs.src is string
-            && node.attrs.src.size() > 0
-          )
-          || (
-            node.type == "table"
-            && node.keys().hasAny(["content"])
-            && node.content is list
-            && node.content.size() > 0
-          )
-          || (
-            node.keys().hasAny(["content"])
-            && node.content is list
-            && node.content.size() > 0
-          )
-        );
-    }
-
-    function hasMeaningfulRichTextTopLevelContent(content) {
-      return content is list
-        && content.size() > 0
-        && (
-          isMeaningfulRichTextNode(content[0])
-          || (
-            content.size() > 1
-            && isMeaningfulRichTextNode(content[1])
-          )
-          || (
-            content.size() > 2
-            && isMeaningfulRichTextNode(content[2])
-          )
-          || (
-            content.size() > 3
-            && isMeaningfulRichTextNode(content[3])
-          )
-          || (
-            content.size() > 4
-            && isMeaningfulRichTextNode(content[4])
-          )
-          || (
-            content.size() > 5
-            && isMeaningfulRichTextNode(content[5])
-          )
-          || (
-            content.size() > 6
-            && isMeaningfulRichTextNode(content[6])
-          )
-          || (
-            content.size() > 7
-            && isMeaningfulRichTextNode(content[7])
-          )
-          || (
-            content.size() > 8
-            && isMeaningfulRichTextNode(content[8])
-          )
-          || (
-            content.size() > 9
-            && isMeaningfulRichTextNode(content[9])
-          )
-        );
+    function isValidRichTextDocumentShape(contentDoc) {
+      return contentDoc is map
+        && contentDoc.type == "doc"
+        && contentDoc.content is list
+        && contentDoc.content.size() <= 100;
     }
 
     function isValidRichTextDocument(contentDoc) {
-      return contentDoc is map
-        && contentDoc.keys().size() == 2
-        && contentDoc.type == "doc"
-        && contentDoc.content is list
-        && contentDoc.content.size() <= 100
-        && hasMeaningfulRichTextTopLevelContent(contentDoc.content);
+      return isValidRichTextDocumentShape(contentDoc)
+        && contentDoc.content.size() > 0;
     }
 
     function isValidQuestionPaperDocumentShape(contentDoc) {
@@ -816,15 +758,23 @@ service cloud.firestore {
       ];
     }
 
-    function isValidQuestionPrompt(questionType, prompt) {
-      return prompt is string
+    function hasValidOptionalPromptContent(data) {
+      return !data.keys().hasAny(["promptContent"])
+        || isValidRichTextDocumentShape(data.promptContent);
+    }
+
+    function isValidQuestionPrompt(questionType, data) {
+      return data.prompt is string
         && (
           (
             usesRichQuestionContent(questionType)
+            && data.prompt.size() > 0
+            && !data.keys().hasAny(["promptContent"])
           )
           || (
             !usesRichQuestionContent(questionType)
-            && prompt.size() > 0
+            && data.prompt.size() > 0
+            && hasValidOptionalPromptContent(data)
           )
         );
     }
@@ -889,6 +839,7 @@ service cloud.firestore {
           "subjectId",
           "topicName",
           "prompt",
+          "promptContent",
           "marks",
           "difficulty",
           "instructions",
@@ -906,7 +857,7 @@ service cloud.firestore {
         && request.resource.data.topicName.size() <= 100
         && isValidQuestionPrompt(
           request.resource.data.questionType,
-          request.resource.data.prompt
+          request.resource.data
         )
         && request.resource.data.marks is int
         && request.resource.data.marks > 0
@@ -968,6 +919,7 @@ service cloud.firestore {
           "subjectId",
           "topicName",
           "prompt",
+          "promptContent",
           "marks",
           "difficulty",
           "instructions",
@@ -985,7 +937,7 @@ service cloud.firestore {
         && request.resource.data.topicName.size() <= 100
         && isValidQuestionPrompt(
           request.resource.data.questionType,
-          request.resource.data.prompt
+          request.resource.data
         )
         && request.resource.data.marks is int
         && request.resource.data.marks > 0
@@ -1012,6 +964,7 @@ service cloud.firestore {
           "subjectId",
           "topicName",
           "prompt",
+          "promptContent",
           "marks",
           "difficulty",
           "instructions",

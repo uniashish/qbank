@@ -13,6 +13,7 @@ import { createPersistableMatchPairs } from "../utils/matchPairHelpers.js";
 import {
   cloneRichTextContent,
   getRichTextPlainText,
+  normalizeRichTextContent,
 } from "../utils/richTextContent.js";
 import { sanitizeTags } from "../../../components/tags/tagUtils.js";
 
@@ -55,9 +56,10 @@ function createMultipleChoiceAnswerData(multipleChoice = {}) {
   return {
     correctOptionId: multipleChoice.correctOptionId ?? null,
     options: (multipleChoice.options ?? []).map((option, index) => ({
+      content: normalizeRichTextContent(option.content, option.text ?? ""),
       id: option.id,
       order: index,
-      text: trimText(option.text),
+      text: trimText(option.text || getRichTextPlainText(option.content)),
     })),
   };
 }
@@ -142,6 +144,17 @@ function createQuestionPrompt(designerState) {
   return getRichTextPlainText(designerState.shortAnswer?.questionContent);
 }
 
+function createQuestionPromptContent(designerState) {
+  if (!usesRichQuestionContent(designerState.questionType)) {
+    return normalizeRichTextContent(
+      designerState.promptContent,
+      designerState.prompt,
+    );
+  }
+
+  return null;
+}
+
 export function createQuestionDraft(designerState, assignmentState = {}) {
   const questionTypeOption = getQuestionTypeOption(designerState.questionType);
 
@@ -154,6 +167,7 @@ export function createQuestionDraft(designerState, assignmentState = {}) {
     instructions: trimText(designerState.instructions),
     marks: Number(designerState.marks),
     prompt: createQuestionPrompt(designerState),
+    promptContent: createQuestionPromptContent(designerState),
     questionImage: designerState.questionImage,
     questionType: designerState.questionType,
     questionTypeLabel: questionTypeOption?.title ?? "",

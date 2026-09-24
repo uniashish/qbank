@@ -20,6 +20,10 @@ import {
   normalizeMatchPairs,
 } from "../utils/matchPairHelpers.js";
 import {
+  getRichTextPlainText,
+  normalizeRichTextContent,
+} from "../utils/richTextContent.js";
+import {
   isQuestionDetailsValid,
   validateQuestionDetails,
 } from "../validation/questionDetailsValidation.js";
@@ -29,6 +33,7 @@ import { sanitizeTags } from "../../../components/tags/tagUtils.js";
 const INITIAL_MULTIPLE_CHOICE_OPTIONS = Array.from(
   { length: MIN_MULTIPLE_CHOICE_OPTIONS },
   (_, index) => ({
+    content: normalizeRichTextContent(""),
     id: `opt-${index + 1}`,
     text: "",
   }),
@@ -42,6 +47,7 @@ const INITIAL_DESIGNER_STATE = {
   marks: 1,
   mode: "create",
   prompt: "",
+  promptContent: normalizeRichTextContent(""),
   questionType: null,
   subjectId: null,
   tags: [],
@@ -129,7 +135,7 @@ function getFillBlanksState(question = {}) {
             : [""],
       })),
     },
-    question.prompt ?? "",
+    question.prompt ?? getRichTextPlainText(question.promptContent),
   );
 }
 
@@ -153,8 +159,9 @@ function getMultipleChoiceState(question = {}) {
   return {
     correctOptionId: question.answerData?.correctOptionId ?? null,
     options: options.map((option, index) => ({
+      content: normalizeRichTextContent(option.content, option.text ?? ""),
       id: option.id || `opt-${index + 1}`,
-      text: option.text ?? "",
+      text: option.text ?? getRichTextPlainText(option.content),
     })),
   };
 }
@@ -229,6 +236,10 @@ function createQuestionDesignerStateFromQuestion(question, mode) {
     mode,
     multipleChoice: getMultipleChoiceState(question),
     prompt: question.prompt ?? "",
+    promptContent: normalizeRichTextContent(
+      question.promptContent,
+      question.prompt ?? "",
+    ),
     questionImage: getQuestionImageState(question),
     questionType: question.questionType ?? null,
     shortAnswer: getShortAnswerState(question),
@@ -309,16 +320,24 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
 
   const updateQuestionDetail = useCallback((fieldName, value) => {
     setDesignerState((currentState) => {
+      const isPromptContentUpdate = fieldName === "promptContent";
+      const derivedPrompt = isPromptContentUpdate
+        ? getRichTextPlainText(value)
+        : value;
       const nextState = {
         ...currentState,
         [fieldName]: value,
+        ...(isPromptContentUpdate ? { prompt: derivedPrompt } : {}),
       };
 
       if (
-        fieldName === "prompt" &&
+        (fieldName === "prompt" || isPromptContentUpdate) &&
         currentState.questionType === QUESTION_TYPES.FILL_BLANKS
       ) {
-        nextState.fillBlanks = syncBlankAnswers(currentState.fillBlanks, value);
+        nextState.fillBlanks = syncBlankAnswers(
+          currentState.fillBlanks,
+          derivedPrompt,
+        );
       }
 
       return nextState;
@@ -371,6 +390,7 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
     optionIdCounterRef.current += 1;
 
     const nextOption = {
+      content: normalizeRichTextContent(""),
       id: `opt-${optionIdCounterRef.current}`,
       text: "",
     };
@@ -393,13 +413,19 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
     });
   }, []);
 
-  const updateMultipleChoiceOption = useCallback((optionId, text) => {
+  const updateMultipleChoiceOption = useCallback((optionId, content) => {
     setDesignerState((currentState) => ({
       ...currentState,
       multipleChoice: {
         ...currentState.multipleChoice,
         options: currentState.multipleChoice.options.map((option) =>
-          option.id === optionId ? { ...option, text } : option,
+          option.id === optionId
+            ? {
+                ...option,
+                content,
+                text: getRichTextPlainText(content),
+              }
+            : option,
         ),
       },
     }));
@@ -467,7 +493,12 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
   }, []);
 
   const updateMatchFollowingPair = useCallback((pairId, fieldName, value) => {
-    if (fieldName !== "left" && fieldName !== "right") {
+    if (
+      fieldName !== "left" &&
+      fieldName !== "right" &&
+      fieldName !== "leftContent" &&
+      fieldName !== "rightContent"
+    ) {
       return;
     }
 
@@ -475,9 +506,29 @@ export function useQuestionDesigner({ initialQuestion = null, mode = "create" } 
       ...currentState,
       matchFollowing: {
         ...currentState.matchFollowing,
-        pairs: currentState.matchFollowing.pairs.map((pair) =>
-          pair.id === pairId ? { ...pair, [fieldName]: value } : pair,
-        ),
+        pairs: currentState.matchFollowing.pairs.map((pair) => {
+          if (pair.id !== pairId) {
+            return pair;
+          }
+
+          if (fieldName === "leftContent") {
+            return {
+              ...pair,
+              left: getRichTextPlainText(value),
+              leftContent: value,
+            };
+          }
+
+          if (fieldName === "rightContent") {
+            return {
+              ...pair,
+              right: getRichTextPlainText(value),
+              rightContent: value,
+            };
+          }
+
+          return { ...pair, [fieldName]: value };
+        }),
       },
     }));
   }, []);

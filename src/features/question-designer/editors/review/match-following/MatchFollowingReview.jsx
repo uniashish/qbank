@@ -1,7 +1,9 @@
+import RichDocumentRenderer from "../../../../../components/rich-editor/RichDocumentRenderer.jsx";
 import { getOptionLabel } from "../../../constants/optionLabels.js";
 import ReviewEmptyValue from "../../../components/review/ReviewEmptyValue.jsx";
 import ReviewSection from "../../../components/review/ReviewSection.jsx";
 import { createMatchDisplayModel } from "../../../utils/matchPairHelpers.js";
+import { normalizeRichTextContent } from "../../../utils/richTextContent.js";
 
 function MatchFollowingReview({ answerData = {} }) {
   const pairs = Array.isArray(answerData.pairs) ? answerData.pairs : [];
@@ -25,9 +27,14 @@ function MatchFollowingReview({ answerData = {} }) {
                     <span className="match-following-review__label">
                       {index + 1}.
                     </span>
-                    <span className="match-following-review__text">
-                      {pair.left}
-                    </span>
+                    <RichDocumentRenderer
+                      ariaLabel={`Column A item ${index + 1} preview`}
+                      className="match-following-review__text"
+                      content={normalizeRichTextContent(
+                        pair.leftContent,
+                        pair.left,
+                      )}
+                    />
                   </li>
                 ))}
               </ol>
@@ -41,9 +48,14 @@ function MatchFollowingReview({ answerData = {} }) {
                     <span className="match-following-review__label">
                       {getOptionLabel(index)}.
                     </span>
-                    <span className="match-following-review__text">
-                      {pair.right}
-                    </span>
+                    <RichDocumentRenderer
+                      ariaLabel={`Column B item ${getOptionLabel(index)} preview`}
+                      className="match-following-review__text"
+                      content={normalizeRichTextContent(
+                        pair.rightContent,
+                        pair.right,
+                      )}
+                    />
                   </li>
                 ))}
               </ol>

@@ -213,6 +213,13 @@ function richTextDoc(text = "Paper") {
   };
 }
 
+function mathDoc(latex = "x^2 + 2x + 1") {
+  return {
+    type: "doc",
+    content: [{ type: "mathBlock", attrs: { latex } }],
+  };
+}
+
 function questionBlockDoc(question = paperQuestion()) {
   return {
     type: "doc",
@@ -349,6 +356,120 @@ test("teacher question create allows assigned active teacher and denies missing 
           name: "Teacher Two",
           email: TEACHER_2_EMAIL,
         }),
+      }),
+    ),
+  );
+});
+
+test("teacher question create allows math-rich visible content fields", async () => {
+  await seedTeacherQuestionSetup();
+
+  await assertSucceeds(
+    setDoc(
+      doc(teacherDb(), `schools/${SCHOOL_ID}/questions/question-mcq-math`),
+      questionCreateData({
+        answerData: {
+          correctOptionId: "opt-1",
+          options: [
+            {
+              content: mathDoc("(x + 1)^2"),
+              id: "opt-1",
+              text: "(x + 1)^2",
+            },
+            {
+              content: richTextDoc("(x - 1)^2"),
+              id: "opt-2",
+              text: "(x - 1)^2",
+            },
+          ],
+        },
+        prompt: "x^2 + 2x + 1",
+        promptContent: mathDoc("x^2 + 2x + 1"),
+        questionType: "multiple_choice",
+      }),
+    ),
+  );
+
+  await assertSucceeds(
+    setDoc(
+      doc(teacherDb(), `schools/${SCHOOL_ID}/questions/question-fill-math`),
+      questionCreateData({
+        answerData: {
+          blanks: [{ acceptedAnswers: ["2"], id: "blank-1" }],
+        },
+        prompt: "Solve x + [blank] = 4",
+        promptContent: richTextDoc("Solve x + [blank] = 4"),
+        questionType: "fill_blanks",
+      }),
+    ),
+  );
+
+  await assertSucceeds(
+    setDoc(
+      doc(teacherDb(), `schools/${SCHOOL_ID}/questions/question-match-math`),
+      questionCreateData({
+        answerData: {
+          pairs: [
+            {
+              id: "pair-1",
+              left: "x^2",
+              leftContent: mathDoc("x^2"),
+              right: "quadratic",
+              rightContent: richTextDoc("quadratic"),
+            },
+            {
+              id: "pair-2",
+              left: "x^3",
+              leftContent: mathDoc("x^3"),
+              right: "cubic",
+              rightContent: richTextDoc("cubic"),
+            },
+          ],
+        },
+        prompt: "Match each expression",
+        promptContent: richTextDoc("Match each expression"),
+        questionType: "match_following",
+      }),
+    ),
+  );
+
+  await assertSucceeds(
+    setDoc(
+      doc(teacherDb(), `schools/${SCHOOL_ID}/questions/question-true-false-math`),
+      questionCreateData({
+        answerData: { correctAnswer: true },
+        prompt: "x^2 >= 0",
+        promptContent: mathDoc("x^2 \\ge 0"),
+        questionType: "true_false",
+      }),
+    ),
+  );
+
+  await assertSucceeds(
+    setDoc(
+      doc(teacherDb(), `schools/${SCHOOL_ID}/questions/question-short-math`),
+      questionCreateData({
+        answerData: {
+          modelAnswer: mathDoc("4"),
+          questionContent: mathDoc("2 + 2"),
+        },
+        prompt: "2 + 2",
+        questionType: "short_answer",
+      }),
+    ),
+  );
+
+  await assertSucceeds(
+    setDoc(
+      doc(teacherDb(), `schools/${SCHOOL_ID}/questions/question-long-math`),
+      questionCreateData({
+        answerData: {
+          modelAnswer: mathDoc("x = 2"),
+          questionContent: mathDoc("2x = 4"),
+          suggestedWordCount: 120,
+        },
+        prompt: "2x = 4",
+        questionType: "long_answer",
       }),
     ),
   );

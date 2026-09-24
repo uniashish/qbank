@@ -544,6 +544,18 @@
   background: var(--color-surface);
 }
 
+.rich-text-editor-dialog__button--danger {
+  margin-right: auto;
+  border-color: color-mix(in srgb, var(--color-danger) 36%, var(--color-border));
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 7%, var(--color-surface));
+}
+
+.rich-text-editor-dialog__button--danger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-danger) 58%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
+}
+
 .rich-text-editor-dialog__button:disabled {
   opacity: 0.5;
 }

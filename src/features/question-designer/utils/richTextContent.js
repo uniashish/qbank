@@ -20,9 +20,63 @@ export function cloneRichTextContent(content) {
   return JSON.parse(JSON.stringify(content));
 }
 
+function createParagraphFromText(text) {
+  if (!text) {
+    return { type: "paragraph" };
+  }
+
+  return {
+    content: [{ text, type: "text" }],
+    type: "paragraph",
+  };
+}
+
+export function createRichTextDocumentFromText(value) {
+  const text = String(value ?? "");
+  const lines = text.split(/\r?\n/);
+  const content = lines.length
+    ? lines.map((line) => createParagraphFromText(line))
+    : [{ type: "paragraph" }];
+
+  return {
+    content,
+    type: "doc",
+  };
+}
+
+export function isRichTextDocument(content) {
+  return (
+    content !== null &&
+    typeof content === "object" &&
+    !Array.isArray(content) &&
+    content.type === "doc" &&
+    Array.isArray(content.content)
+  );
+}
+
+export function normalizeRichTextContent(content, fallbackText = "") {
+  if (isRichTextDocument(content)) {
+    return cloneRichTextContent(content);
+  }
+
+  if (typeof content === "string") {
+    return createRichTextDocumentFromText(content);
+  }
+
+  if (fallbackText !== null && fallbackText !== undefined) {
+    return createRichTextDocumentFromText(fallbackText);
+  }
+
+  return cloneRichTextContent(EMPTY_RICH_TEXT_DOCUMENT);
+}
+
 export function hasMeaningfulRichTextContent(content) {
   if (!content) {
     return false;
+  }
+
+  if (typeof content === "string") {
+    return content.trim().length > 0;
   }
 
   if (content.type === "text") {
@@ -49,6 +103,10 @@ export function hasMeaningfulRichTextContent(content) {
 export function getRichTextPlainText(content) {
   if (!content) {
     return "";
+  }
+
+  if (typeof content === "string") {
+    return content;
   }
 
   if (content.type === "text") {

@@ -1,8 +1,10 @@
 import DifficultyBadge from "../../../components/question-bank/DifficultyBadge.jsx";
+import RichDocumentRenderer from "../../../components/rich-editor/RichDocumentRenderer.jsx";
 import QuestionSelectionCheckbox from "../../question-sharing/QuestionSelectionCheckbox.jsx";
 import QuestionTypeBadge from "../../../components/question-bank/QuestionTypeBadge.jsx";
 import SharedQuestionBadge from "../../question-sharing/SharedQuestionBadge.jsx";
 import TagChip from "../../../components/tags/TagChip.jsx";
+import { normalizeRichTextContent } from "../../question-designer/utils/richTextContent.js";
 
 const VISIBLE_TAG_COUNT = 3;
 
@@ -34,7 +36,14 @@ function QuestionPickerTags({ tags = [] }) {
 export function QuestionPickerPrompt({ question }) {
   return (
     <div className="question-bank-question">
-      <p className="question-bank-prompt">{question.prompt}</p>
+      <RichDocumentRenderer
+        ariaLabel="Question prompt preview"
+        className="question-bank-prompt"
+        content={normalizeRichTextContent(
+          question.promptContent,
+          question.prompt,
+        )}
+      />
       {question.access?.type === "shared" && (
         <SharedQuestionBadge ownerName={question.shareInfo?.ownerName} />
       )}

@@ -4,6 +4,7 @@ import Icon from "../common/Icon.jsx";
 import { DIFFICULTY_LEVEL_OPTIONS } from "../../features/question-designer/constants/difficultyLevels.js";
 import { getQuestionTypeOption } from "../../features/question-designer/constants/questionTypes.js";
 import QuestionReviewStep from "../../features/question-designer/components/review/QuestionReviewStep.jsx";
+import { normalizeRichTextContent } from "../../features/question-designer/utils/richTextContent.js";
 import SharedQuestionBadge from "../../features/question-sharing/SharedQuestionBadge.jsx";
 import { sanitizeTags } from "../tags/tagUtils.js";
 
@@ -26,6 +27,10 @@ function createPreviewDraft(question) {
     instructions: question.instructions ?? "",
     marks: Number(question.marks),
     prompt: question.prompt ?? "",
+    promptContent: normalizeRichTextContent(
+      question.promptContent,
+      question.prompt ?? "",
+    ),
     questionImage: {
       downloadUrl: question.image?.downloadUrl ?? null,
       error: "",
