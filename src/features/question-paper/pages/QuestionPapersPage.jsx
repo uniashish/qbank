@@ -74,6 +74,7 @@ function QuestionPapersPage() {
   const [exportState, setExportState] = useState({
     error: "",
     isExporting: false,
+    successMessage: "",
   });
   const [googleDocsPaper, setGoogleDocsPaper] = useState(null);
   const [googleDocsExportState, setGoogleDocsExportState] = useState({
@@ -218,6 +219,7 @@ function QuestionPapersPage() {
     setExportState({
       error: "",
       isExporting: false,
+      successMessage: "",
     });
   }, []);
   const handleCloseExportDialog = useCallback(() => {
@@ -225,6 +227,7 @@ function QuestionPapersPage() {
     setExportState({
       error: "",
       isExporting: false,
+      successMessage: "",
     });
   }, []);
   const handleOpenGoogleDocsExport = useCallback((paper) => {
@@ -252,6 +255,7 @@ function QuestionPapersPage() {
       setExportState({
         error: "",
         isExporting: true,
+        successMessage: "",
       });
 
       try {
@@ -264,16 +268,17 @@ function QuestionPapersPage() {
           pageSize,
           paper: exportPaper,
         });
-        setExportPaper(null);
         setExportState({
           error: "",
           isExporting: false,
+          successMessage: "PDF downloaded",
         });
       } catch (error) {
         console.error("[Question paper] PDF export failed.", { error });
         setExportState({
           error: error?.message || "Question paper could not be exported.",
           isExporting: false,
+          successMessage: "",
         });
       }
     },
@@ -414,6 +419,7 @@ function QuestionPapersPage() {
           onClose={handleCloseExportDialog}
           onExport={handleExportPaper}
           paper={exportPaper}
+          successMessage={exportState.successMessage}
         />
       )}
       {googleDocsPaper && (

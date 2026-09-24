@@ -1274,6 +1274,11 @@ service cloud.firestore {
         && !data.keys().hasAny(["finalizedAt"]);
     }
 
+    function isValidQuestionPaperDraftUpdatePayload(data) {
+      return isValidQuestionPaperPayload(data)
+        && data.status == "draft";
+    }
+
     function isValidQuestionPaperFinalPayload(data) {
       return data.keys().size() == 18
         && isValidQuestionPaperPayload(data)
@@ -1301,7 +1306,7 @@ service cloud.firestore {
         && isActiveTeacherInSchool(schoolId)
         && resource.data.status == "draft"
         && resource.data.createdBy.uid == request.auth.uid
-        && isValidQuestionPaperDraftPayload(request.resource.data)
+        && isValidQuestionPaperDraftUpdatePayload(request.resource.data)
         && request.resource.data.createdBy == resource.data.createdBy
         && request.resource.data.createdBy.uid == request.auth.uid
         && request.resource.data.createdAt == resource.data.createdAt

@@ -26,6 +26,7 @@
     "@tiptap/starter-kit": "^3.31.3",
     "firebase": "^12.19.0",
     "firebase-admin": "^14.4.0",
+    "html2pdf.js": "^0.14.0",
     "katex": "^0.18.9",
     "mathlive": "^0.110.0",
     "react": "^19.2.8",

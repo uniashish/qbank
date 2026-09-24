@@ -28,6 +28,7 @@ function ExportPaperDialog({
   onClose,
   onExport,
   paper,
+  successMessage = "",
 }) {
   const dialogRef = useRef(null);
   const [answerKeyMode, setAnswerKeyMode] = useState(ANSWER_KEY_MODES.NONE);
@@ -138,6 +139,12 @@ function ExportPaperDialog({
           </div>
         )}
 
+        {successMessage && !error && (
+          <section className="export-paper-dialog__success" role="status">
+            <h3>{successMessage}</h3>
+          </section>
+        )}
+
         <div className="export-paper-dialog__actions">
           <Button
             disabled={isExporting}
@@ -145,10 +152,10 @@ function ExportPaperDialog({
             type="button"
             variant="secondary"
           >
-            Cancel
+            {successMessage ? "Close" : "Cancel"}
           </Button>
           <Button isLoading={isExporting} type="submit">
-            Export PDF
+            {isExporting ? "Generating PDF..." : "Export PDF"}
           </Button>
         </div>
       </form>
