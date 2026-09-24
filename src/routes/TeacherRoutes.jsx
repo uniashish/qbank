@@ -10,9 +10,6 @@ import TeacherQuestionBankPage from "../pages/teacher/TeacherQuestionBankPage.js
 import CreateQuestionPaperPage from "../features/question-paper/pages/CreateQuestionPaperPage.jsx";
 import QuestionPaperDesignerPage from "../features/question-paper/pages/QuestionPaperDesignerPage.jsx";
 import QuestionPapersPage from "../features/question-paper/pages/QuestionPapersPage.jsx";
-import CreateQuestionPaperTemplatePage from "../features/question-paper-template/pages/CreateQuestionPaperTemplatePage.jsx";
-import QuestionPaperTemplatesPage from "../features/question-paper-template/pages/QuestionPaperTemplatesPage.jsx";
-import TemplateDesignerPage from "../features/question-paper-template/pages/TemplateDesignerPage.jsx";
 import ShareQuestionsPage from "../features/question-sharing/ShareQuestionsPage.jsx";
 
 export function getTeacherRoutes() {
@@ -49,38 +46,6 @@ export function getTeacherRoutes() {
         element={
           <ActiveTeacherRoute>
             <CreateQuestionPaperPage />
-          </ActiveTeacherRoute>
-        }
-      />
-      <Route
-        path="exam-papers/templates"
-        element={
-          <ActiveTeacherRoute>
-            <QuestionPaperTemplatesPage />
-          </ActiveTeacherRoute>
-        }
-      />
-      <Route
-        path="exam-papers/templates/new"
-        element={
-          <ActiveTeacherRoute>
-            <CreateQuestionPaperTemplatePage />
-          </ActiveTeacherRoute>
-        }
-      />
-      <Route
-        path="exam-papers/templates/new/design"
-        element={
-          <ActiveTeacherRoute>
-            <TemplateDesignerPage />
-          </ActiveTeacherRoute>
-        }
-      />
-      <Route
-        path="exam-papers/templates/:templateId/edit"
-        element={
-          <ActiveTeacherRoute>
-            <TemplateDesignerPage />
           </ActiveTeacherRoute>
         }
       />

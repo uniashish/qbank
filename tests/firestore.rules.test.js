@@ -3,27 +3,21 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { after, before, beforeEach, test } from "node:test";
 import {
-  collection,
   deleteDoc,
   doc,
   getDoc,
-  getDocs,
-  query,
   serverTimestamp,
   setDoc,
   Timestamp,
   updateDoc,
-  where,
   writeBatch,
 } from "firebase/firestore";
 
 const PROJECT_ID = "qbank-bb945";
 const SCHOOL_ID = "school-1";
-const OTHER_SCHOOL_ID = "school-2";
 const CLASS_ID = "class-1";
 const SUBJECT_ID = "subject-1";
 const ADMIN_ID = "admin-1";
@@ -320,55 +314,6 @@ function paperData(overrides = {}) {
   };
 }
 
-function templateDefaultSetup(overrides = {}) {
-  return {
-    examName: "Exam",
-    term: "Term 1",
-    academicYear: "2026",
-    durationMinutes: 60,
-    maximumMarks: 100,
-    ...overrides,
-  };
-}
-
-function templateSettings(overrides = {}) {
-  return {
-    showSchoolName: true,
-    showExamName: true,
-    showClass: true,
-    showSubject: true,
-    showDuration: true,
-    showMaximumMarks: true,
-    ...overrides,
-  };
-}
-
-function templateData(overrides = {}) {
-  const { defaultSetup, settings, ...rest } = overrides;
-
-  return {
-    name: "Balanced Midterm Paper",
-    description: "Reusable paper structure.",
-    defaultSetup: templateDefaultSetup(defaultSetup),
-    documentContent: { type: "doc", content: [] },
-    sections: [],
-    settings: templateSettings(settings),
-    status: "active",
-    createdBy: creatorData(),
-    createdAt: NOW,
-    updatedAt: NOW,
-    ...rest,
-  };
-}
-
-function templateCreateData(overrides = {}) {
-  return templateData({
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    ...overrides,
-  });
-}
-
 async function seedTeacherQuestionSetup() {
   await seed(
     [`schools/${SCHOOL_ID}`, schoolData()],
@@ -377,13 +322,6 @@ async function seedTeacherQuestionSetup() {
       `schools/${SCHOOL_ID}/teacherAssignments/${assignmentId()}`,
       assignmentData(),
     ],
-  );
-}
-
-async function seedTeacherTemplateSetup() {
-  await seed(
-    [`schools/${SCHOOL_ID}`, schoolData()],
-    [`users/${TEACHER_ID}`, teacherUserData()],
   );
 }
 
@@ -720,153 +658,6 @@ test("question paper delete allows owner and denies another teacher", async () =
   );
 
   await assertSucceeds(deleteDoc(doc(teacherDb(), ownerPaperPath)));
-});
-
-test("teacher creates own question paper template", async () => {
-  await seedTeacherTemplateSetup();
-
-  await assertSucceeds(
-    setDoc(
-      doc(
-        teacherDb(),
-        `schools/${SCHOOL_ID}/questionPaperTemplates/template-create`,
-      ),
-      templateCreateData(),
-    ),
-  );
-});
-
-test("teacher lists own question paper templates", async () => {
-  await seedTeacherTemplateSetup();
-  await seed(
-    [`users/${TEACHER_2_ID}`, teacher2UserData()],
-    [
-      `schools/${SCHOOL_ID}/questionPaperTemplates/template-own`,
-      templateData(),
-    ],
-    [
-      `schools/${SCHOOL_ID}/questionPaperTemplates/template-other`,
-      templateData({
-        createdBy: creatorData({
-          uid: TEACHER_2_ID,
-          name: "Teacher Two",
-          email: TEACHER_2_EMAIL,
-        }),
-      }),
-    ],
-  );
-
-  const templatesQuery = query(
-    collection(teacherDb(), `schools/${SCHOOL_ID}/questionPaperTemplates`),
-    where("createdBy.uid", "==", TEACHER_ID),
-  );
-  const templatesSnapshot = await assertSucceeds(getDocs(templatesQuery));
-
-  assert.equal(templatesSnapshot.docs.length, 1);
-});
-
-test("teacher updates own question paper template", async () => {
-  const templatePath = `schools/${SCHOOL_ID}/questionPaperTemplates/template-update`;
-  await seedTeacherTemplateSetup();
-  await seed([templatePath, templateData()]);
-
-  await assertSucceeds(
-    updateDoc(doc(teacherDb(), templatePath), {
-      name: "Updated Template",
-      updatedAt: serverTimestamp(),
-    }),
-  );
-});
-
-test("teacher archives own question paper template", async () => {
-  const templatePath = `schools/${SCHOOL_ID}/questionPaperTemplates/template-archive`;
-  await seedTeacherTemplateSetup();
-  await seed([templatePath, templateData()]);
-
-  await assertSucceeds(
-    updateDoc(doc(teacherDb(), templatePath), {
-      status: "archived",
-      updatedAt: serverTimestamp(),
-    }),
-  );
-});
-
-test("teacher cannot read another teacher's question paper template", async () => {
-  const templatePath = `schools/${SCHOOL_ID}/questionPaperTemplates/template-other-read`;
-  await seedTeacherTemplateSetup();
-  await seed([
-    templatePath,
-    templateData({
-      createdBy: creatorData({
-        uid: TEACHER_2_ID,
-        name: "Teacher Two",
-        email: TEACHER_2_EMAIL,
-      }),
-    }),
-  ]);
-
-  await assertFails(getDoc(doc(teacherDb(), templatePath)));
-});
-
-test("teacher cannot write question paper templates across schools", async () => {
-  await seed(
-    [`schools/${SCHOOL_ID}`, schoolData()],
-    [`schools/${OTHER_SCHOOL_ID}`, schoolData({ code: "OS" })],
-    [`users/${TEACHER_ID}`, teacherUserData()],
-  );
-
-  await assertFails(
-    setDoc(
-      doc(
-        teacherDb(),
-        `schools/${OTHER_SCHOOL_ID}/questionPaperTemplates/template-cross-school`,
-      ),
-      templateCreateData(),
-    ),
-  );
-});
-
-test("inactive or pending teacher cannot create question paper templates", async () => {
-  await seed(
-    [`schools/${SCHOOL_ID}`, schoolData()],
-    [
-      `users/${TEACHER_ID}`,
-      teacherUserData({
-        status: "pending_approval",
-      }),
-    ],
-    [
-      `users/${TEACHER_2_ID}`,
-      teacher2UserData({
-        status: "disabled",
-      }),
-    ],
-  );
-
-  await assertFails(
-    setDoc(
-      doc(
-        teacherDb(),
-        `schools/${SCHOOL_ID}/questionPaperTemplates/template-pending`,
-      ),
-      templateCreateData(),
-    ),
-  );
-  await assertFails(
-    setDoc(
-      doc(
-        teacherDb(TEACHER_2_ID, TEACHER_2_EMAIL),
-        `schools/${SCHOOL_ID}/questionPaperTemplates/template-disabled`,
-      ),
-      templateCreateData({
-        createdBy: creatorData({
-          uid: TEACHER_2_ID,
-          name: "Teacher Two",
-          email: TEACHER_2_EMAIL,
-        }),
-      }),
-    ),
-  );
 });
 
 test("invitation redemption commits invitation, invitee profile, and school roster", async () => {

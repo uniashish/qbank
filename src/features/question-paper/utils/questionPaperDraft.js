@@ -32,6 +32,13 @@ function cloneJson(value, fallback = null) {
   }
 }
 
+export function createEmptyQuestionPaperDocument() {
+  return cloneJson(EMPTY_QUESTION_PAPER_DOCUMENT, {
+    content: [{ type: "paragraph" }],
+    type: "doc",
+  });
+}
+
 function normalizeText(value) {
   return String(value ?? "").trim();
 }
@@ -51,11 +58,11 @@ function normalizeOptionalPositiveInteger(value) {
 function normalizeDocumentContent(documentContent) {
   const clonedDocument = cloneJson(
     documentContent,
-    EMPTY_QUESTION_PAPER_DOCUMENT,
+    createEmptyQuestionPaperDocument(),
   );
 
   if (clonedDocument?.type !== "doc" || !Array.isArray(clonedDocument.content)) {
-    return EMPTY_QUESTION_PAPER_DOCUMENT;
+    return createEmptyQuestionPaperDocument();
   }
 
   return clonedDocument;
