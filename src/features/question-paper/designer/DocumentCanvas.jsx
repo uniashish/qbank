@@ -4,6 +4,7 @@ const EMPTY_EXTENSIONS = [];
 
 function DocumentCanvas({
   ariaLabel = "Document editor",
+  children = null,
   className = "",
   documentContent,
   extensions = EMPTY_EXTENSIONS,
@@ -33,6 +34,7 @@ function DocumentCanvas({
         readOnly={readOnly}
         value={documentContent}
       />
+      {children}
     </section>
   );
 }

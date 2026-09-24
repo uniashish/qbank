@@ -1,0 +1,165 @@
+.question-paper-print-host {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.question-paper-print-document {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.question-paper-print-section {
+  background: var(--color-surface);
+}
+
+.question-paper-print-answer-key {
+  display: grid;
+  gap: 18px;
+  padding: 42px 44px;
+  border: 1px solid var(--color-border);
+}
+
+.question-paper-print-answer-key__header {
+  display: grid;
+  gap: 4px;
+}
+
+.question-paper-print-answer-key__header h1,
+.question-paper-print-answer-key__header p {
+  margin: 0;
+}
+
+.question-paper-print-answer-key__header h1 {
+  color: var(--color-text);
+  font-size: 1.55rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.question-paper-print-answer-key__header p:not(.question-papers-header__eyebrow) {
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+  font-weight: 760;
+}
+
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
+@media print {
+  body.question-paper-printing {
+    min-width: 0;
+    background: #ffffff !important;
+  }
+
+  body.question-paper-printing > :not(.question-paper-print-host) {
+    display: none !important;
+  }
+
+  body.question-paper-printing .question-paper-print-host {
+    position: static !important;
+    z-index: auto !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    background: #ffffff !important;
+  }
+
+  body.question-paper-printing .question-paper-print-host *,
+  body.question-paper-printing .question-paper-print-host *::before,
+  body.question-paper-printing .question-paper-print-host *::after {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .question-paper-print-document {
+    display: block;
+    width: 100%;
+    background: #ffffff;
+  }
+
+  .question-paper-print-section {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .question-paper-print-section:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .question-paper-print-paper .rich-text-editor__document,
+  .question-paper-print-paper .rich-text-editor__prose,
+  .question-paper-print-answer-key {
+    background: #ffffff !important;
+  }
+
+  .question-paper-print-paper .rich-text-editor__document {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .question-paper-print-paper .rich-text-editor__prose {
+    width: min(100%, 840px);
+    min-height: 0;
+    margin-inline: auto;
+    padding: 42px 44px;
+    border: 1px solid var(--color-border);
+    box-shadow: none;
+  }
+
+  .question-paper-print-paper .rich-text-editor__prose:focus-visible {
+    box-shadow: none;
+  }
+
+  .question-paper-print-paper .rich-text-editor-toolbar,
+  .question-paper-print-paper .question-block-toolbar,
+  .question-paper-print-paper .rich-text-editor-image-node__resize-handle,
+  .question-paper-print-paper .rich-text-editor__empty::before,
+  .question-paper-print-paper .rich-text-editor__empty-node::before {
+    display: none !important;
+  }
+
+  .question-paper-print-paper .ProseMirror-selectednode,
+  .question-paper-print-paper .question-block-node--selected,
+  .question-paper-print-paper .rich-text-editor-image-node--selected .rich-text-editor-image-node__image {
+    outline: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .question-paper-print-paper .question-block-node--print,
+  .question-paper-print-answer-key .answer-key-question {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .question-paper-print-paper .rich-text-editor__prose .tableWrapper {
+    overflow: visible;
+  }
+
+  .question-paper-print-answer-key {
+    width: min(100%, 840px);
+    margin-inline: auto;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .question-paper-print-answer-key .answer-key-dialog__body {
+    overflow: visible;
+  }
+
+  .question-paper-print-answer-key .answer-key-rich-answer .rich-text-editor__prose {
+    width: 100%;
+    border: 0;
+  }
+}

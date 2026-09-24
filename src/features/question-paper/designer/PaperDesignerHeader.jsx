@@ -4,10 +4,8 @@ import PaperSaveStatus from "./PaperSaveStatus.jsx";
 
 function PaperDesignerHeader({
   answerKeyAction = null,
-  canAddQuestion = false,
   finalizeAction = null,
   isReadOnly = false,
-  onAddQuestion,
   onBack,
   onSaveDraft,
   isSaving = false,
@@ -30,15 +28,6 @@ function PaperDesignerHeader({
         {answerKeyAction}
         {!isReadOnly && (
           <>
-            <Button
-              disabled={!canAddQuestion}
-              onClick={onAddQuestion}
-              type="button"
-              variant="secondary"
-            >
-              <Icon name="plus" size={18} />
-              <span>Add Question</span>
-            </Button>
             <Button isLoading={isSaving} onClick={onSaveDraft} type="button">
               <Icon name="save" size={18} />
               <span>Save Draft</span>

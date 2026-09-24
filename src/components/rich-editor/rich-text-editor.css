@@ -203,6 +203,13 @@
   margin: 0.2rem 0;
 }
 
+.rich-text-editor__prose hr {
+  height: 0;
+  margin: 1.35rem 0;
+  border: 0;
+  border-top: 1px solid var(--color-border-strong);
+}
+
 .rich-text-editor__prose img.rich-text-editor__image {
   display: block;
   max-width: 100%;

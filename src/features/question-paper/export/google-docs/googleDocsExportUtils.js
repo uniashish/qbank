@@ -234,6 +234,10 @@ export function renderRichBlocks(blocks = []) {
         return renderImageBlock(block);
       }
 
+      if (block.type === "divider") {
+        return "<hr>";
+      }
+
       if (block.type === "paragraph") {
         const content = renderRuns(block.runs);
 
@@ -357,6 +361,18 @@ function renderQuestion(question) {
   ].join("");
 }
 
+function renderDocumentItem(item) {
+  if (item?.type === "divider") {
+    return "<hr class=\"paper-divider\">";
+  }
+
+  if (item?.type === "question" && item.question) {
+    return renderQuestion(item.question);
+  }
+
+  return "";
+}
+
 function renderAnswerKeyEntry(entry) {
   const answer = entry.answer ?? {};
 
@@ -442,6 +458,10 @@ function renderAnswerKey(answerKey) {
 }
 
 function renderPaper(model) {
+  const questionContent = model.documentItems?.length
+    ? model.documentItems.map(renderDocumentItem).join("")
+    : model.questions.map(renderQuestion).join("");
+
   return [
     `<h1 class="paper-title">${escapeHtml(model.title)}</h1>`,
     renderMetaRows(model.metaRows),
@@ -449,7 +469,7 @@ function renderPaper(model) {
       ? `<h2>Instructions</h2>${renderRichBlocks(model.instructions)}`
       : "",
     "<h2>Questions</h2>",
-    model.questions.map(renderQuestion).join(""),
+    questionContent,
   ].join("");
 }
 
@@ -464,6 +484,7 @@ function getDocumentCss() {
     table { border-collapse: collapse; margin: 8pt 0 12pt; width: 100%; }
     th, td { border: 1px solid #9ca3af; padding: 5pt; vertical-align: top; }
     th { background: #f3f4f6; font-weight: 700; }
+    hr { border: 0; border-top: 1px solid #9ca3af; margin: 14pt 0; }
     ul, ol { margin: 0 0 8pt 20pt; padding-left: 16pt; }
     li { margin-bottom: 3pt; }
     .paper-title { text-align: center; }

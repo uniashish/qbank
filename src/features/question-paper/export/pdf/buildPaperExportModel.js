@@ -367,6 +367,40 @@ function getOrderedQuestionBlocks(paper = {}) {
   }));
 }
 
+function createDocumentItems(documentContent, questions) {
+  const topLevelNodes = Array.isArray(documentContent?.content)
+    ? documentContent.content
+    : [];
+  const items = [];
+  let questionIndex = 0;
+
+  topLevelNodes.forEach((node, index) => {
+    if (node?.type === "questionBlock") {
+      const question = questions[questionIndex];
+      questionIndex += 1;
+
+      if (question) {
+        items.push({
+          id: question.id,
+          question,
+          type: "question",
+        });
+      }
+
+      return;
+    }
+
+    if (node?.type === "horizontalRule") {
+      items.push({
+        id: createId("divider", index),
+        type: "divider",
+      });
+    }
+  });
+
+  return items;
+}
+
 function normalizeAnswerEntry(entry) {
   const answer = entry?.answer ?? {};
 
@@ -480,6 +514,7 @@ export function buildPaperExportModel({
   const safePaper = paper ?? {};
   const title = normalizeText(safePaper.title, DEFAULT_TITLE);
   const orderedQuestionBlocks = getOrderedQuestionBlocks(safePaper);
+  const questions = orderedQuestionBlocks.map(normalizeQuestionBlock);
   const answerKey = generateAnswerKeyModel({
     documentContent: safePaper.documentContent,
     questionBlocks: safePaper.questions,
@@ -491,9 +526,10 @@ export function buildPaperExportModel({
     filenameBase: sanitizeExportFilename(title),
     instructions: extractPaperInstructions(safePaper.documentContent),
     metaRows: createMetaRows(safePaper),
+    documentItems: createDocumentItems(safePaper.documentContent, questions),
     pageSize,
     paperId: normalizeText(safePaper.id),
-    questions: orderedQuestionBlocks.map(normalizeQuestionBlock),
+    questions,
     status: normalizeText(safePaper.status),
     summary: {
       maximumMarks: normalizePositiveNumber(

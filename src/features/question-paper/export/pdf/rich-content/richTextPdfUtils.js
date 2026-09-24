@@ -239,6 +239,10 @@ function hasBlockContent(block) {
     return block.rows.length > 0;
   }
 
+  if (block.type === "divider") {
+    return true;
+  }
+
   return Boolean(block.src);
 }
 
@@ -313,6 +317,13 @@ export function normalizeRichTextBlocks(content) {
       blocks.push({
         ...normalizeTableRows(node),
         type: "table",
+      });
+      return;
+    }
+
+    if (node.type === "horizontalRule") {
+      blocks.push({
+        type: "divider",
       });
       return;
     }

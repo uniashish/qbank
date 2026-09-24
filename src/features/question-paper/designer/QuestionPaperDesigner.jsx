@@ -15,6 +15,10 @@ import {
   createQuestionBlockFromQuestion,
   createQuestionBlockNode,
 } from "../nodes/questionBlockUtils.js";
+import {
+  createHorizontalRuleNode,
+  insertAtPaperInsertionPoint,
+} from "../editor-elements/paperInsertUtils.js";
 import QuestionPickerDialog from "../picker/QuestionPickerDialog.jsx";
 import {
   createQuestionPaperDraft,
@@ -65,6 +69,7 @@ function QuestionPaperDesigner({ initialDraft }) {
     userProfile,
   });
   const isMountedRef = useRef(true);
+  const pendingInsertionPointRef = useRef(null);
   const pendingPaperIdRef = useRef(paperId);
   const savePromiseRef = useRef(null);
   const isReadOnly = designerState.status === FINAL_STATUS;
@@ -239,6 +244,7 @@ function QuestionPaperDesigner({ initialDraft }) {
       );
 
       if (nextQuestions.length === 0) {
+        pendingInsertionPointRef.current = null;
         setIsQuestionPickerOpen(false);
         return;
       }
@@ -252,19 +258,40 @@ function QuestionPaperDesigner({ initialDraft }) {
         ),
       );
 
-      editor.chain().focus().insertContent(questionNodes).run();
+      insertAtPaperInsertionPoint({
+        content: questionNodes,
+        editor,
+        insertionPoint: pendingInsertionPointRef.current,
+      });
+      pendingInsertionPointRef.current = null;
       setIsQuestionPickerOpen(false);
     },
     [alreadyAddedQuestionIds, designerState.questions.length, editor, isReadOnly],
   );
 
-  const handleOpenQuestionPicker = useCallback(() => {
+  const handleOpenQuestionPicker = useCallback((insertionPoint) => {
     if (isReadOnly || !editor) {
       return;
     }
 
+    pendingInsertionPointRef.current = insertionPoint;
     setIsQuestionPickerOpen(true);
   }, [editor, isReadOnly]);
+
+  const handleInsertDivider = useCallback(
+    (insertionPoint) => {
+      if (isReadOnly || !editor) {
+        return;
+      }
+
+      insertAtPaperInsertionPoint({
+        content: createHorizontalRuleNode(),
+        editor,
+        insertionPoint,
+      });
+    },
+    [editor, isReadOnly],
+  );
 
   return (
     <PageContainer className="question-papers-page paper-designer-page">
@@ -281,7 +308,6 @@ function QuestionPaperDesigner({ initialDraft }) {
             </Button>
           ) : null
         }
-        canAddQuestion={!isReadOnly && Boolean(editor)}
         finalizeAction={
           canShowFinalize ? (
             <FinalizePaperButton
@@ -294,7 +320,6 @@ function QuestionPaperDesigner({ initialDraft }) {
           ) : null
         }
         isReadOnly={isReadOnly}
-        onAddQuestion={handleOpenQuestionPicker}
         onBack={() => {
           if (paperId) {
             navigate("/teacher/exam-papers");
@@ -316,8 +341,11 @@ function QuestionPaperDesigner({ initialDraft }) {
       <div className="paper-designer-layout">
         <PaperCanvas
           documentContent={designerState.documentContent}
+          editor={editor}
           onDocumentChange={updateDocumentContent}
           onEditorReady={setEditor}
+          onInsertDivider={handleInsertDivider}
+          onOpenQuestionPicker={handleOpenQuestionPicker}
           readOnly={isReadOnly}
         />
         <PaperSummary summary={summary} />
@@ -328,7 +356,10 @@ function QuestionPaperDesigner({ initialDraft }) {
           alreadyAddedQuestionIds={alreadyAddedQuestionIds}
           isOpen={isQuestionPickerOpen}
           onAddQuestions={handleAddQuestions}
-          onClose={() => setIsQuestionPickerOpen(false)}
+          onClose={() => {
+            pendingInsertionPointRef.current = null;
+            setIsQuestionPickerOpen(false);
+          }}
         />
       )}
 
