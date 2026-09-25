@@ -7,15 +7,17 @@ function QuestionBlockPrint({ node }) {
   const attrs = node.attrs;
   const questionNumber = attrs.questionNumber || "";
   const marks = normalizePositiveWholeNumber(attrs.marks);
+  const marksLabel = `${marks} mark${marks === 1 ? "" : "s"}`;
 
   return (
     <NodeViewWrapper
       as="section"
-      className="question-block-node question-block-node--print"
+      className="paper-question"
       contentEditable={false}
+      data-question-block-id={attrs.blockId}
     >
-      <div className="question-block-node__body">
-        <div className="question-block-node__content">
+      <div className="paper-question-header">
+        <div className="paper-question-main">
           <QuestionBlockContent
             mode="print"
             questionNumber={questionNumber}
@@ -23,9 +25,7 @@ function QuestionBlockPrint({ node }) {
             snapshot={attrs.snapshot}
           />
         </div>
-        <span className="question-block-node__marks">
-          {marks} mark{marks === 1 ? "" : "s"}
-        </span>
+        <span className="paper-question-marks">[{marksLabel}]</span>
       </div>
     </NodeViewWrapper>
   );

@@ -31,7 +31,16 @@ function renderAnswer(entry) {
   }
 }
 
-function AnswerKeyQuestion({ entry }) {
+function AnswerKeyQuestion({ entry, mode = "preview" }) {
+  if (mode === "print") {
+    return (
+      <article className="paper-answer-key-question">
+        <h2 className="paper-answer-key-number">{entry.questionNumber}.</h2>
+        <div className="paper-answer-key-answer">{renderAnswer(entry)}</div>
+      </article>
+    );
+  }
+
   return (
     <article className="answer-key-question">
       <h3>Question {entry.questionNumber}</h3>

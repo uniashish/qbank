@@ -10,42 +10,31 @@
 }
 
 .question-paper-print-document {
-  color: var(--color-text);
-  background: var(--color-surface);
+  background: #ffffff;
+  color: #000000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11pt;
+  line-height: 1.4;
 }
 
 .question-paper-print-section {
-  background: var(--color-surface);
+  background: #ffffff;
 }
 
 .question-paper-print-answer-key {
-  display: grid;
-  gap: 18px;
-  padding: 42px 44px;
-  border: 1px solid var(--color-border);
+  background: #ffffff;
 }
 
 .question-paper-print-answer-key__header {
-  display: grid;
-  gap: 4px;
-}
-
-.question-paper-print-answer-key__header h1,
-.question-paper-print-answer-key__header p {
-  margin: 0;
+  margin-bottom: 14px;
 }
 
 .question-paper-print-answer-key__header h1 {
-  color: var(--color-text);
-  font-size: 1.55rem;
+  margin: 0;
+  color: #000000;
+  font-size: 14pt;
   line-height: 1.2;
   letter-spacing: 0;
-}
-
-.question-paper-print-answer-key__header p:not(.question-papers-header__eyebrow) {
-  color: var(--color-text-secondary);
-  font-size: 0.92rem;
-  font-weight: 760;
 }
 
 .question-paper-print-host--pdf {
@@ -55,20 +44,14 @@
   left: 0;
   z-index: -1;
   display: block;
-  width: 182mm;
-  min-height: 297mm;
+  width: 178mm;
   height: auto;
+  min-height: 0;
   overflow: visible;
   opacity: 1;
   pointer-events: none;
-  color: var(--color-text);
   background: #ffffff;
-  --question-paper-export-border: #cbd5e1;
-  --question-paper-export-muted: #64748b;
-  --question-paper-export-primary: #1d4ed8;
-  --question-paper-export-primary-soft: #dbeafe;
-  --question-paper-export-surface-muted: #f8fafc;
-  --question-paper-export-text: #0f172a;
+  color: #000000;
 }
 
 .question-paper-print-host--pdf *,
@@ -79,53 +62,56 @@
 }
 
 .question-paper-print-host--pdf .question-paper-print-document,
-.question-paper-print-host--pdf .question-paper-print-document * {
-  background-color: transparent;
-  background-image: none;
-  border-color: var(--question-paper-export-border);
-  box-shadow: none;
-  color: var(--question-paper-export-text);
-  outline-color: var(--question-paper-export-primary);
-  text-decoration-color: currentColor;
-}
-
-.question-paper-print-host--pdf .question-paper-print-document {
+body.question-paper-printing .question-paper-print-document {
   display: block;
   width: 100%;
   background: #ffffff;
+  color: #000000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11pt;
+  line-height: 1.4;
 }
 
-.question-paper-print-host--pdf .question-paper-print-section {
+.question-paper-print-host--pdf .question-paper-print-section,
+body.question-paper-printing .question-paper-print-section {
   break-after: page;
   page-break-after: always;
 }
 
-.question-paper-print-host--pdf .question-paper-print-section:last-child {
+.question-paper-print-host--pdf .question-paper-print-section:last-child,
+body.question-paper-printing .question-paper-print-section:last-child {
   break-after: auto;
   page-break-after: auto;
 }
 
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor,
 .question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__document,
 .question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose,
-.question-paper-print-host--pdf .question-paper-print-answer-key {
-  background: #ffffff !important;
-}
-
-.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__document {
-  border: 0;
-  border-radius: 0;
-}
-
-.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose {
-  width: min(100%, 840px);
+body.question-paper-printing .question-paper-print-paper .rich-text-editor,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__document,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__prose {
+  width: 100%;
   min-height: 0;
-  margin-inline: auto;
-  padding: 42px 44px;
-  border: 1px solid var(--color-border);
-  box-shadow: none;
+  margin: 0;
+  padding: 0;
+  border: 0 !important;
+  border-inline: 0 !important;
+  border-radius: 0 !important;
+  outline: 0;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  color: #000000;
+  font: inherit;
+  line-height: inherit;
 }
 
-.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose:focus-visible {
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__prose {
+  display: flow-root;
+}
+
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose:focus-visible,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__prose:focus-visible {
   box-shadow: none;
 }
 
@@ -133,74 +119,360 @@
 .question-paper-print-host--pdf .question-paper-print-paper .question-block-toolbar,
 .question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor-image-node__resize-handle,
 .question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__empty::before,
-.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__empty-node::before {
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__empty-node::before,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor-toolbar,
+body.question-paper-printing .question-paper-print-paper .question-block-toolbar,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor-image-node__resize-handle,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__empty::before,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__empty-node::before {
   display: none !important;
 }
 
 .question-paper-print-host--pdf .question-paper-print-paper .ProseMirror-selectednode,
 .question-paper-print-host--pdf .question-paper-print-paper .question-block-node--selected,
-.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor-image-node--selected .rich-text-editor-image-node__image {
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor-image-node--selected .rich-text-editor-image-node__image,
+body.question-paper-printing .question-paper-print-paper .ProseMirror-selectednode,
+body.question-paper-printing .question-paper-print-paper .question-block-node--selected,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor-image-node--selected .rich-text-editor-image-node__image {
   outline: 0 !important;
   box-shadow: none !important;
 }
 
-.question-paper-print-host--pdf .question-paper-print-paper .question-block-node--print,
-.question-paper-print-host--pdf .question-paper-print-answer-key .answer-key-question {
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose p,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__prose p {
+  margin: 0 0 8pt;
+}
+
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose hr,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__prose hr {
+  height: 0;
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid #000000;
+}
+
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose .tableWrapper,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__prose .tableWrapper {
+  overflow: visible;
+}
+
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose table.rich-text-editor__table,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__prose table.rich-text-editor__table {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid #000000;
+  background: #ffffff !important;
+}
+
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose table.rich-text-editor__table th,
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose table.rich-text-editor__table td,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__prose table.rich-text-editor__table th,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor__prose table.rich-text-editor__table td {
+  min-width: 0;
+  height: auto;
+  padding: 5px 6px;
+  border: 1px solid #000000;
+  background: #ffffff !important;
+  color: #000000;
+}
+
+.question-paper-print-host--pdf .question-paper-print-paper img.rich-text-editor__image,
+.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor-image-node__image,
+body.question-paper-printing .question-paper-print-paper img.rich-text-editor__image,
+body.question-paper-printing .question-paper-print-paper .rich-text-editor-image-node__image {
+  max-width: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+.question-paper-print-host--pdf .paper-question,
+body.question-paper-printing .paper-question {
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   break-inside: avoid;
   page-break-inside: avoid;
 }
 
-.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose .tableWrapper {
-  overflow: visible;
+.question-paper-print-host--pdf .paper-question-header,
+body.question-paper-printing .paper-question-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
 }
 
-.question-paper-print-host--pdf .question-paper-print-paper .rich-text-editor__prose table.rich-text-editor__table th {
-  background: var(--question-paper-export-surface-muted) !important;
+.question-paper-print-host--pdf .paper-question-main,
+body.question-paper-printing .paper-question-main {
+  min-width: 0;
 }
 
-.question-paper-print-host--pdf .question-block-node,
-.question-paper-print-host--pdf .question-block-static {
-  border-color: var(--question-paper-export-border) !important;
-  background: #ffffff !important;
+.question-paper-print-host--pdf .paper-question-prompt,
+body.question-paper-printing .paper-question-prompt {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+  align-items: start;
 }
 
-.question-paper-print-host--pdf .question-block-node__marks {
-  color: var(--question-paper-export-primary);
-  background: var(--question-paper-export-primary-soft);
+.question-paper-print-host--pdf .paper-question-number,
+body.question-paper-printing .paper-question-number {
+  font-weight: 700;
 }
 
-.question-paper-print-host--pdf .question-block-node__match-heading,
-.question-paper-print-host--pdf .question-block-node__match-item > span,
-.question-paper-print-host--pdf .question-block-node__instructions,
-.question-paper-print-host--pdf .question-paper-print-answer-key__header p:not(.question-papers-header__eyebrow) {
-  color: var(--question-paper-export-muted);
+.question-paper-print-host--pdf .paper-question-content,
+.question-paper-print-host--pdf .paper-option-content,
+.question-paper-print-host--pdf .paper-match-content,
+body.question-paper-printing .paper-question-content,
+body.question-paper-printing .paper-option-content,
+body.question-paper-printing .paper-match-content {
+  min-width: 0;
 }
 
-.question-paper-print-host--pdf .rich-text-editor__prose .rich-text-editor-math-node__fallback {
-  border-color: #fecaca;
-  color: #991b1b;
-  background: #fef2f2;
-}
-
-.question-paper-print-host--pdf .question-paper-print-answer-key {
+.question-paper-print-host--pdf .paper-question-content .rich-text-editor,
+.question-paper-print-host--pdf .paper-question-content .rich-text-editor__document,
+.question-paper-print-host--pdf .paper-question-content .rich-text-editor__prose,
+.question-paper-print-host--pdf .paper-option-content .rich-text-editor,
+.question-paper-print-host--pdf .paper-option-content .rich-text-editor__document,
+.question-paper-print-host--pdf .paper-option-content .rich-text-editor__prose,
+.question-paper-print-host--pdf .paper-match-content .rich-text-editor,
+.question-paper-print-host--pdf .paper-match-content .rich-text-editor__document,
+.question-paper-print-host--pdf .paper-match-content .rich-text-editor__prose,
+body.question-paper-printing .paper-question-content .rich-text-editor,
+body.question-paper-printing .paper-question-content .rich-text-editor__document,
+body.question-paper-printing .paper-question-content .rich-text-editor__prose,
+body.question-paper-printing .paper-option-content .rich-text-editor,
+body.question-paper-printing .paper-option-content .rich-text-editor__document,
+body.question-paper-printing .paper-option-content .rich-text-editor__prose,
+body.question-paper-printing .paper-match-content .rich-text-editor,
+body.question-paper-printing .paper-match-content .rich-text-editor__document,
+body.question-paper-printing .paper-match-content .rich-text-editor__prose {
   width: 100%;
-  margin-inline: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0 !important;
+  border-inline: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font: inherit;
+  line-height: inherit;
+}
+
+.question-paper-print-host--pdf .paper-question-content .rich-text-editor__prose p,
+.question-paper-print-host--pdf .paper-option-content .rich-text-editor__prose p,
+.question-paper-print-host--pdf .paper-match-content .rich-text-editor__prose p,
+body.question-paper-printing .paper-question-content .rich-text-editor__prose p,
+body.question-paper-printing .paper-option-content .rich-text-editor__prose p,
+body.question-paper-printing .paper-match-content .rich-text-editor__prose p {
+  margin: 0 0 4px;
+}
+
+.question-paper-print-host--pdf .paper-question-content .rich-text-editor__prose p:last-child,
+.question-paper-print-host--pdf .paper-option-content .rich-text-editor__prose p:last-child,
+.question-paper-print-host--pdf .paper-match-content .rich-text-editor__prose p:last-child,
+body.question-paper-printing .paper-question-content .rich-text-editor__prose p:last-child,
+body.question-paper-printing .paper-option-content .rich-text-editor__prose p:last-child,
+body.question-paper-printing .paper-match-content .rich-text-editor__prose p:last-child {
+  margin-bottom: 0;
+}
+
+.question-paper-print-host--pdf .paper-question-marks,
+body.question-paper-printing .paper-question-marks {
+  display: inline;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: #000000;
+  font-size: inherit;
+  font-weight: 600;
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+.question-paper-print-host--pdf .paper-question-instructions,
+body.question-paper-printing .paper-question-instructions {
+  margin: 4px 0 0;
+  color: #000000;
+  font-size: 10pt;
+  line-height: 1.35;
+}
+
+.question-paper-print-host--pdf .paper-question-options,
+body.question-paper-printing .paper-question-options {
+  margin: 8px 0 0 28px;
+  padding: 0;
+}
+
+.question-paper-print-host--pdf .paper-option,
+body.question-paper-printing .paper-option {
+  margin: 4px 0;
+  padding-left: 4px;
+}
+
+.question-paper-print-host--pdf .paper-true-false-options,
+body.question-paper-printing .paper-true-false-options {
+  margin: 8px 0 0 28px;
+}
+
+.question-paper-print-host--pdf .paper-match-table,
+body.question-paper-printing .paper-match-table {
+  width: 100%;
+  margin: 8px 0 0;
+  border: 1px solid #000000;
+  border-collapse: collapse;
+  background: #ffffff;
+  color: #000000;
+  font: inherit;
+}
+
+.question-paper-print-host--pdf .paper-match-table th,
+.question-paper-print-host--pdf .paper-match-table td,
+body.question-paper-printing .paper-match-table th,
+body.question-paper-printing .paper-match-table td {
+  width: 50%;
+  padding: 5px 6px;
+  border: 1px solid #000000;
+  background: #ffffff;
+  color: #000000;
+  text-align: left;
+  vertical-align: top;
+}
+
+.question-paper-print-host--pdf .paper-match-table th,
+body.question-paper-printing .paper-match-table th {
+  font-weight: 700;
+}
+
+.question-paper-print-host--pdf .paper-match-item,
+body.question-paper-printing .paper-match-item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 6px;
+  align-items: start;
+}
+
+.question-paper-print-host--pdf .paper-match-label,
+body.question-paper-printing .paper-match-label {
+  font-weight: 600;
+}
+
+.question-paper-print-host--pdf .question-paper-print-answer-key,
+body.question-paper-printing .question-paper-print-answer-key {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  box-shadow: none;
+  color: #000000;
   break-inside: auto;
   page-break-inside: auto;
 }
 
-.question-paper-print-host--pdf .question-paper-print-answer-key .answer-key-dialog__body {
-  overflow: visible;
+.question-paper-print-host--pdf .question-paper-print-answer-key .answer-key-preview,
+body.question-paper-printing .question-paper-print-answer-key .answer-key-preview {
+  display: block;
 }
 
-.question-paper-print-host--pdf .question-paper-print-answer-key .answer-key-rich-answer .rich-text-editor__prose {
-  width: 100%;
+.question-paper-print-host--pdf .paper-answer-key-question,
+body.question-paper-printing .paper-answer-key-question {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  margin: 0 0 8px;
+  padding: 0;
   border: 0;
+  background: transparent;
+  box-shadow: none;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.question-paper-print-host--pdf .paper-answer-key-number,
+body.question-paper-printing .paper-answer-key-number {
+  margin: 0;
+  color: #000000;
+  font-size: inherit;
+  font-weight: 700;
+  line-height: inherit;
+}
+
+.question-paper-print-host--pdf .paper-answer-key-answer,
+body.question-paper-printing .paper-answer-key-answer {
+  min-width: 0;
+}
+
+.question-paper-print-host--pdf .paper-answer-key-answer .answer-key-answer,
+.question-paper-print-host--pdf .paper-answer-key-answer .answer-key-empty,
+body.question-paper-printing .paper-answer-key-answer .answer-key-answer,
+body.question-paper-printing .paper-answer-key-answer .answer-key-empty {
+  margin: 0;
+  color: #000000;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.question-paper-print-host--pdf .paper-answer-key-answer .answer-key-list,
+body.question-paper-printing .paper-answer-key-answer .answer-key-list {
+  display: block;
+  margin: 0;
+  padding-left: 18px;
+  color: #000000;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.question-paper-print-host--pdf .paper-answer-key-answer .answer-key-list li,
+body.question-paper-printing .paper-answer-key-answer .answer-key-list li {
+  margin: 2px 0;
+}
+
+.question-paper-print-host--pdf .paper-answer-key-answer .answer-key-list--matches li,
+body.question-paper-printing .paper-answer-key-answer .answer-key-list--matches li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.question-paper-print-host--pdf .paper-answer-key-answer .answer-key-rich-answer .rich-text-editor,
+.question-paper-print-host--pdf .paper-answer-key-answer .answer-key-rich-answer .rich-text-editor__document,
+.question-paper-print-host--pdf .paper-answer-key-answer .answer-key-rich-answer .rich-text-editor__prose,
+body.question-paper-printing .paper-answer-key-answer .answer-key-rich-answer .rich-text-editor,
+body.question-paper-printing .paper-answer-key-answer .answer-key-rich-answer .rich-text-editor__document,
+body.question-paper-printing .paper-answer-key-answer .answer-key-rich-answer .rich-text-editor__prose {
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0 !important;
+  border-inline: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #000000;
+  font: inherit;
+  line-height: inherit;
+}
+
+.question-paper-print-host--pdf .rich-text-editor__prose .rich-text-editor-math-node__fallback,
+body.question-paper-printing .rich-text-editor__prose .rich-text-editor-math-node__fallback {
+  border-color: #000000;
+  background: #ffffff;
+  color: #000000;
 }
 
 @page {
   size: A4;
-  margin: 14mm;
+  margin: 18mm 16mm;
 }
 
 @media print {
@@ -230,86 +502,5 @@
   body.question-paper-printing .question-paper-print-host *::after {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
-  }
-
-  .question-paper-print-document {
-    display: block;
-    width: 100%;
-    background: #ffffff;
-  }
-
-  .question-paper-print-section {
-    break-after: page;
-    page-break-after: always;
-  }
-
-  .question-paper-print-section:last-child {
-    break-after: auto;
-    page-break-after: auto;
-  }
-
-  .question-paper-print-paper .rich-text-editor__document,
-  .question-paper-print-paper .rich-text-editor__prose,
-  .question-paper-print-answer-key {
-    background: #ffffff !important;
-  }
-
-  .question-paper-print-paper .rich-text-editor__document {
-    border: 0;
-    border-radius: 0;
-  }
-
-  .question-paper-print-paper .rich-text-editor__prose {
-    width: min(100%, 840px);
-    min-height: 0;
-    margin-inline: auto;
-    padding: 42px 44px;
-    border: 1px solid var(--color-border);
-    box-shadow: none;
-  }
-
-  .question-paper-print-paper .rich-text-editor__prose:focus-visible {
-    box-shadow: none;
-  }
-
-  .question-paper-print-paper .rich-text-editor-toolbar,
-  .question-paper-print-paper .question-block-toolbar,
-  .question-paper-print-paper .rich-text-editor-image-node__resize-handle,
-  .question-paper-print-paper .rich-text-editor__empty::before,
-  .question-paper-print-paper .rich-text-editor__empty-node::before {
-    display: none !important;
-  }
-
-  .question-paper-print-paper .ProseMirror-selectednode,
-  .question-paper-print-paper .question-block-node--selected,
-  .question-paper-print-paper .rich-text-editor-image-node--selected .rich-text-editor-image-node__image {
-    outline: 0 !important;
-    box-shadow: none !important;
-  }
-
-  .question-paper-print-paper .question-block-node--print,
-  .question-paper-print-answer-key .answer-key-question {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  .question-paper-print-paper .rich-text-editor__prose .tableWrapper {
-    overflow: visible;
-  }
-
-  .question-paper-print-answer-key {
-    width: min(100%, 840px);
-    margin-inline: auto;
-    break-inside: auto;
-    page-break-inside: auto;
-  }
-
-  .question-paper-print-answer-key .answer-key-dialog__body {
-    overflow: visible;
-  }
-
-  .question-paper-print-answer-key .answer-key-rich-answer .rich-text-editor__prose {
-    width: 100%;
-    border: 0;
   }
 }

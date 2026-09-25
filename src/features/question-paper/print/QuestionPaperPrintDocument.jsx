@@ -36,18 +36,17 @@ function QuestionPaperPrintDocument({
           className="question-paper-print-section question-paper-print-answer-key"
         >
           <header className="question-paper-print-answer-key__header">
-            <p className="question-papers-header__eyebrow">Answer Key</p>
             <h1 id="question-paper-print-answer-key-title">ANSWER KEY</h1>
-            <p>
-              {answerEntries.length} question
-              {answerEntries.length === 1 ? "" : "s"}
-            </p>
           </header>
 
           {answerEntries.length > 0 ? (
             <div className="answer-key-preview">
               {answerEntries.map((entry) => (
-                <AnswerKeyQuestion entry={entry} key={entry.blockId} />
+                <AnswerKeyQuestion
+                  entry={entry}
+                  key={entry.blockId}
+                  mode="print"
+                />
               ))}
             </div>
           ) : (
