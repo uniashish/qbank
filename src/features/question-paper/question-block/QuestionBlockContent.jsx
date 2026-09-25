@@ -234,6 +234,24 @@ function QuestionAnswerStructure({ classes, mode, snapshot }) {
   return null;
 }
 
+function hasQuestionAnswerStructure(snapshot, mode) {
+  const answerData = snapshot?.answerData ?? {};
+
+  if (snapshot?.questionType === QUESTION_TYPES.MULTIPLE_CHOICE) {
+    return Array.isArray(answerData.options) && answerData.options.length > 0;
+  }
+
+  if (snapshot?.questionType === QUESTION_TYPES.TRUE_FALSE) {
+    return mode === "print";
+  }
+
+  if (snapshot?.questionType === QUESTION_TYPES.MATCH_FOLLOWING) {
+    return Array.isArray(answerData.pairs) && answerData.pairs.length > 0;
+  }
+
+  return false;
+}
+
 function getInstructions(snapshot) {
   const instructions = snapshot?.instructions;
 
@@ -241,6 +259,7 @@ function getInstructions(snapshot) {
 }
 
 function QuestionBlockContent({
+  marksLabel = "",
   mode = "preview",
   questionNumber = "",
   showInstructions = false,
@@ -250,26 +269,44 @@ function QuestionBlockContent({
   const instructions = showInstructions ? getInstructions(snapshot) : "";
 
   if (mode === "print") {
+    const hasExtraContent =
+      Boolean(instructions) || hasQuestionAnswerStructure(snapshot, mode);
+
     return (
-      <div className="paper-question-main">
-        <span className="paper-question-number">Q{questionNumber || "?"}.</span>
-        <div className="paper-question-content">
-          <RichDocumentRenderer
-            ariaLabel={`Question ${questionNumber || "unknown"} prompt`}
-            className="paper-question-prompt"
-            content={getQuestionBlockPromptContent(snapshot)}
-            mode={mode}
-          />
-          {instructions && (
-            <p className={classes.instructions}>{instructions}</p>
+      <>
+        <div className="paper-question-header">
+          <div className="paper-question-main">
+            <span className="paper-question-number">
+              Q{questionNumber || "?"}.
+            </span>
+            <div className="paper-question-content">
+              <RichDocumentRenderer
+                ariaLabel={`Question ${questionNumber || "unknown"} prompt`}
+                className="paper-question-prompt"
+                content={getQuestionBlockPromptContent(snapshot)}
+                mode={mode}
+              />
+            </div>
+          </div>
+
+          {marksLabel && (
+            <div className="paper-question-marks">[{marksLabel}]</div>
           )}
-          <QuestionAnswerStructure
-            classes={classes}
-            mode={mode}
-            snapshot={snapshot}
-          />
         </div>
-      </div>
+
+        {hasExtraContent && (
+          <div className="paper-question-extra">
+            {instructions && (
+              <p className={classes.instructions}>{instructions}</p>
+            )}
+            <QuestionAnswerStructure
+              classes={classes}
+              mode={mode}
+              snapshot={snapshot}
+            />
+          </div>
+        )}
+      </>
     );
   }
 

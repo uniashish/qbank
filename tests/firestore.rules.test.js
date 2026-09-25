@@ -3,6 +3,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from "@firebase/rules-unit-testing";
+import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { after, before, beforeEach, test } from "node:test";
 import {
@@ -15,6 +16,10 @@ import {
   updateDoc,
   writeBatch,
 } from "firebase/firestore";
+import {
+  createQuestionPaperDraftDocument,
+  createQuestionPaperDraftFields,
+} from "../src/features/question-paper/utils/questionPaperDraft.js";
 
 const PROJECT_ID = "qbank-bb945";
 const SCHOOL_ID = "school-1";
@@ -28,6 +33,34 @@ const TEACHER_2_EMAIL = "teacher2@example.com";
 const ADMIN_EMAIL = "admin@example.com";
 const NOW = Timestamp.fromMillis(1700000000000);
 const FUTURE = Timestamp.fromMillis(4102444800000);
+const EXPECTED_APP_DRAFT_KEYS = [
+  "academicYear",
+  "classId",
+  "createdAt",
+  "createdBy",
+  "difficultySummary",
+  "documentContent",
+  "durationMinutes",
+  "examName",
+  "maximumMarks",
+  "questions",
+  "status",
+  "subjectId",
+  "term",
+  "title",
+  "totalMarks",
+  "totalQuestions",
+  "updatedAt",
+];
+const EXPECTED_APP_PAPER_QUESTION_KEYS = [
+  "blockId",
+  "difficulty",
+  "marks",
+  "questionId",
+  "questionNumber",
+  "questionType",
+  "snapshot",
+];
 
 let testEnv;
 
@@ -261,7 +294,7 @@ function emptyPaperDoc() {
   };
 }
 
-function paperQuestion() {
+function paperQuestion(overrides = {}) {
   return {
     blockId: "block-1",
     questionId: "question-1",
@@ -270,6 +303,116 @@ function paperQuestion() {
     difficulty: "easy",
     questionType: "true_false",
     snapshot: { prompt: "Prompt" },
+    ...overrides,
+  };
+}
+
+function richSnapshotPaperQuestions() {
+  return [
+    {
+      blockId: "block-1",
+      questionId: "question-1",
+      questionNumber: "1",
+      marks: 1,
+      difficulty: "easy",
+      questionType: "multiple_choice",
+      snapshot: {
+        answerData: {
+          correctOptionId: "opt-1",
+          options: [
+            {
+              id: "opt-1",
+              text: "(x + 1)^2",
+              content: mathDoc("(x + 1)^2"),
+            },
+            {
+              id: "opt-2",
+              text: "(x - 1)^2",
+              content: richTextDoc("(x - 1)^2"),
+            },
+          ],
+        },
+        difficulty: "easy",
+        image: { storagePath: null, downloadUrl: null },
+        instructions: "",
+        prompt: "x^2 + 2x + 1",
+        promptContent: mathDoc("x^2 + 2x + 1"),
+        questionType: "multiple_choice",
+        tags: [],
+        topicName: "Algebra",
+      },
+    },
+    {
+      blockId: "block-2",
+      questionId: "question-2",
+      questionNumber: "2",
+      marks: 1,
+      difficulty: "easy",
+      questionType: "match_following",
+      snapshot: {
+        answerData: {
+          pairs: [
+            {
+              id: "pair-1",
+              left: "x^2",
+              leftContent: mathDoc("x^2"),
+              right: "quadratic",
+              rightContent: richTextDoc("quadratic"),
+            },
+            {
+              id: "pair-2",
+              left: "x^3",
+              leftContent: mathDoc("x^3"),
+              right: "cubic",
+              rightContent: richTextDoc("cubic"),
+            },
+          ],
+        },
+        difficulty: "easy",
+        image: { storagePath: null, downloadUrl: null },
+        instructions: "",
+        prompt: "Match expressions",
+        promptContent: richTextDoc("Match expressions"),
+        questionType: "match_following",
+        tags: [],
+        topicName: "Algebra",
+      },
+    },
+    {
+      blockId: "block-3",
+      questionId: "question-3",
+      questionNumber: "3",
+      marks: 1,
+      difficulty: "easy",
+      questionType: "short_answer",
+      snapshot: {
+        answerData: {
+          modelAnswer: richTextDoc("Model answer"),
+          questionContent: richTextDoc("Explain briefly"),
+        },
+        difficulty: "easy",
+        image: { storagePath: null, downloadUrl: null },
+        instructions: "",
+        prompt: "Explain briefly",
+        promptContent: richTextDoc("Explain briefly"),
+        questionType: "short_answer",
+        tags: [],
+        topicName: "Algebra",
+      },
+    },
+  ];
+}
+
+function questionBlockDocWithLeadingParagraph(questions = []) {
+  return {
+    type: "doc",
+    content: [
+      { type: "paragraph" },
+      ...questions.map((question) => ({
+        type: "questionBlock",
+        attrs: question,
+      })),
+    ],
   };
 }
 
@@ -319,6 +462,94 @@ function paperData(overrides = {}) {
     updatedAt: NOW,
     ...overrides,
   };
+}
+
+function appTeacherProfile(overrides = {}) {
+  return {
+    uid: TEACHER_ID,
+    name: "Teacher One",
+    email: TEACHER_EMAIL,
+    schoolId: SCHOOL_ID,
+    ...overrides,
+  };
+}
+
+function appQuestionPaperSetup(overrides = {}) {
+  return {
+    academicYear: "2026",
+    classId: CLASS_ID,
+    durationMinutes: 60,
+    examName: "Exam",
+    maximumMarks: 10,
+    subjectId: SUBJECT_ID,
+    term: "Term 1",
+    title: "Midterm",
+    ...overrides,
+  };
+}
+
+function appQuestionPaperDesignerState({
+  documentContent,
+  questions = [],
+  setup = {},
+} = {}) {
+  return {
+    documentContent:
+      documentContent ??
+      (questions.length ? questionBlockDocWithLeadingParagraph(questions) : emptyPaperDoc()),
+    setup: appQuestionPaperSetup(setup),
+  };
+}
+
+function appQuestionPaperDraftCreateData({
+  overrides = {},
+  userProfile = appTeacherProfile(),
+  ...designerOptions
+} = {}) {
+  return {
+    ...createQuestionPaperDraftDocument({
+      designerState: appQuestionPaperDesignerState(designerOptions),
+      userProfile,
+    }),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  };
+}
+
+function appQuestionPaperDraftSeedData({
+  overrides = {},
+  userProfile = appTeacherProfile(),
+  ...designerOptions
+} = {}) {
+  return {
+    ...createQuestionPaperDraftDocument({
+      designerState: appQuestionPaperDesignerState(designerOptions),
+      userProfile,
+    }),
+    createdAt: NOW,
+    updatedAt: NOW,
+    ...overrides,
+  };
+}
+
+function appQuestionPaperDraftUpdateFields({ overrides = {}, ...designerOptions } = {}) {
+  return {
+    ...createQuestionPaperDraftFields(appQuestionPaperDesignerState(designerOptions)),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  };
+}
+
+function assertAppDraftShape(draft) {
+  assert.deepEqual(Object.keys(draft).sort(), EXPECTED_APP_DRAFT_KEYS);
+
+  draft.questions.forEach((question) => {
+    assert.deepEqual(
+      Object.keys(question).sort(),
+      EXPECTED_APP_PAPER_QUESTION_KEYS,
+    );
+  });
 }
 
 async function seedTeacherQuestionSetup() {
@@ -639,6 +870,219 @@ test("role change teacher to school_admin and back requires roster update", asyn
   await assertSucceeds(demote.commit());
 });
 
+test("question paper draft create allows actual app empty draft shape", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-app-empty`;
+  const draft = appQuestionPaperDraftCreateData();
+  await seedTeacherQuestionSetup();
+
+  assertAppDraftShape(draft);
+  assert.equal(draft.questions.length, 0);
+  await assertSucceeds(setDoc(doc(teacherDb(), paperPath), draft));
+});
+
+test("question paper draft create allows actual app one-question draft shape", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-app-one-question`;
+  const draft = appQuestionPaperDraftCreateData({
+    questions: [paperQuestion()],
+  });
+  await seedTeacherQuestionSetup();
+
+  assertAppDraftShape(draft);
+  assert.equal(typeof draft.questions[0].questionNumber, "string");
+  assert.equal(draft.questions[0].questionNumber, "1");
+  await assertSucceeds(setDoc(doc(teacherDb(), paperPath), draft));
+});
+
+test("question paper draft update allows actual app one-question update shape", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-app-update`;
+  await seedTeacherQuestionSetup();
+
+  await assertSucceeds(
+    setDoc(
+      doc(teacherDb(), paperPath),
+      appQuestionPaperDraftCreateData({ questions: [paperQuestion()] }),
+    ),
+  );
+
+  await assertSucceeds(
+    updateDoc(
+      doc(teacherDb(), paperPath),
+      appQuestionPaperDraftUpdateFields({
+        questions: [paperQuestion()],
+        setup: { title: "Updated Midterm" },
+      }),
+    ),
+  );
+});
+
+test("question paper draft create allows actual app multi-question draft shape", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-app-multi`;
+  const questions = [
+    paperQuestion(),
+    paperQuestion({
+      blockId: "block-2",
+      difficulty: "medium",
+      marks: 2,
+      questionId: "question-2",
+      questionNumber: "2",
+      questionType: "short_answer",
+      snapshot: {
+        answerData: {
+          modelAnswer: richTextDoc("Model answer"),
+          questionContent: richTextDoc("Explain briefly"),
+        },
+        difficulty: "medium",
+        prompt: "Explain briefly",
+        questionType: "short_answer",
+        topicName: "Algebra",
+      },
+    }),
+    paperQuestion({
+      blockId: "block-3",
+      difficulty: "hard",
+      marks: 3,
+      questionId: "question-3",
+      questionNumber: "3",
+      questionType: "long_answer",
+      snapshot: {
+        answerData: {
+          modelAnswer: richTextDoc("Model answer"),
+          questionContent: richTextDoc("Discuss in detail"),
+          suggestedWordCount: 500,
+        },
+        difficulty: "hard",
+        prompt: "Discuss in detail",
+        questionType: "long_answer",
+        topicName: "Algebra",
+      },
+    }),
+  ];
+  const draft = appQuestionPaperDraftCreateData({
+    questions,
+    setup: { maximumMarks: 6 },
+  });
+  await seedTeacherQuestionSetup();
+
+  assertAppDraftShape(draft);
+  assert.deepEqual(
+    draft.questions.map((question) => question.questionNumber),
+    ["1", "2", "3"],
+  );
+  await assertSucceeds(setDoc(doc(teacherDb(), paperPath), draft));
+});
+
+test("question paper draft create rejects more than twenty questions", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-app-question-21`;
+  const questions = Array.from({ length: 21 }, (_, index) =>
+    paperQuestion({
+      blockId: `block-${index + 1}`,
+      questionId: `question-${index + 1}`,
+      questionNumber: String(index + 1),
+    }),
+  );
+  const draft = appQuestionPaperDraftCreateData({
+    questions,
+    setup: { maximumMarks: 21 },
+  });
+  await seedTeacherQuestionSetup();
+
+  await assertFails(setDoc(doc(teacherDb(), paperPath), draft));
+});
+
+test("question paper draft create normalizes integer questionNumber input to app string shape", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-app-integer-input`;
+  const draft = appQuestionPaperDraftCreateData({
+    questions: [paperQuestion({ questionNumber: 7 })],
+  });
+  await seedTeacherQuestionSetup();
+
+  assertAppDraftShape(draft);
+  assert.equal(draft.questions[0].questionNumber, "1");
+  assert.equal(typeof draft.questions[0].questionNumber, "string");
+  await assertSucceeds(setDoc(doc(teacherDb(), paperPath), draft));
+});
+
+test("question paper draft create rejects persisted integer questionNumber", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-app-integer-reject`;
+  const draft = appQuestionPaperDraftCreateData({
+    questions: [paperQuestion()],
+  });
+  await seedTeacherQuestionSetup();
+
+  await assertFails(
+    setDoc(doc(teacherDb(), paperPath), {
+      ...draft,
+      questions: [
+        {
+          ...draft.questions[0],
+          questionNumber: 1,
+        },
+      ],
+    }),
+  );
+});
+
+test("question paper draft create allows actual app rich math question snapshot", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-app-rich-math`;
+  const question = richSnapshotPaperQuestions()[0];
+  const draft = appQuestionPaperDraftCreateData({
+    questions: [question],
+    setup: { maximumMarks: 1 },
+  });
+  await seedTeacherQuestionSetup();
+
+  assertAppDraftShape(draft);
+  assert.equal(
+    draft.questions[0].snapshot.promptContent.content[0].type,
+    "mathBlock",
+  );
+  await assertSucceeds(setDoc(doc(teacherDb(), paperPath), draft));
+});
+
+test("question paper draft update rejects unauthorized teacher", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-app-other-teacher`;
+  await seedTeacherQuestionSetup();
+  await seed([`users/${TEACHER_2_ID}`, teacher2UserData()]);
+  await assertSucceeds(
+    setDoc(
+      doc(teacherDb(), paperPath),
+      appQuestionPaperDraftCreateData({ questions: [paperQuestion()] }),
+    ),
+  );
+
+  await assertFails(
+    updateDoc(
+      doc(teacherDb(TEACHER_2_ID, TEACHER_2_EMAIL), paperPath),
+      appQuestionPaperDraftUpdateFields({
+        questions: [paperQuestion()],
+        setup: { title: "Other teacher edit" },
+      }),
+    ),
+  );
+});
+
+test("question paper final paper mutation is rejected", async () => {
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-app-final-mutation`;
+  await seedTeacherQuestionSetup();
+  await seed([
+    paperPath,
+    appQuestionPaperDraftSeedData({
+      overrides: {
+        finalizedAt: NOW,
+        status: "final",
+      },
+      questions: [paperQuestion()],
+    }),
+  ]);
+
+  await assertFails(
+    updateDoc(doc(teacherDb(), paperPath), {
+      title: "Edited after finalization",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
 test("question paper draft create, update, and finalize are allowed for owner", async () => {
   const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-1`;
   await seedTeacherQuestionSetup();
@@ -679,6 +1123,48 @@ test("question paper draft create allows question block document content", async
         questions: [paperQuestionBlock],
       }),
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("question paper draft create and update allow rich question snapshots", async () => {
+  const questions = richSnapshotPaperQuestions();
+  const documentContent = questionBlockDocWithLeadingParagraph(questions);
+  const difficulty = difficultySummary();
+  const paperPath = `schools/${SCHOOL_ID}/questionPapers/paper-rich-snapshots`;
+  const paper = paperData({
+    difficultySummary: {
+      ...difficulty,
+      distribution: difficulty.distribution.map((item) => ({
+        ...item,
+        marks: item.difficulty === "easy" ? 3 : 0,
+      })),
+    },
+    documentContent,
+    maximumMarks: 3,
+    questions,
+  });
+  const paperUpdateFields = { ...paper };
+
+  delete paperUpdateFields.createdAt;
+  delete paperUpdateFields.createdBy;
+  delete paperUpdateFields.updatedAt;
+
+  await seedTeacherQuestionSetup();
+
+  await assertSucceeds(
+    setDoc(doc(teacherDb(), paperPath), {
+      ...paper,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+
+  await assertSucceeds(
+    updateDoc(doc(teacherDb(), paperPath), {
+      ...paperUpdateFields,
+      title: "Updated rich snapshots paper",
       updatedAt: serverTimestamp(),
     }),
   );

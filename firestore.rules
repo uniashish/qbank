@@ -1186,24 +1186,34 @@ service cloud.firestore {
 
     function isValidQuestionPaperQuestion(question) {
       return question is map
-        && question.keys().size() == 7
-        && question.blockId is string
-        && question.blockId.size() > 0
-        && question.questionId is string
-        && question.questionId.size() > 0
+        && question.keys().hasAll([
+          "blockId",
+          "questionId",
+          "questionNumber",
+          "marks",
+          "difficulty",
+          "questionType",
+          "snapshot"
+        ])
+        && question.keys().hasOnly([
+          "blockId",
+          "questionId",
+          "questionNumber",
+          "marks",
+          "difficulty",
+          "questionType",
+          "snapshot"
+        ])
         && question.questionNumber is string
         && question.questionNumber.size() > 0
-        && question.marks is int
-        && question.marks > 0
-        && validQuestionDifficulty(question.difficulty)
-        && isValidQuestionType(question.questionType)
-        && question.snapshot is map;
+        && (
+          question.snapshot == null
+          || question.snapshot is map
+        );
     }
 
-    function isValidQuestionPaperQuestions(questions) {
-      return questions is list
-        && questions.size() <= 100
-        && (questions.size() < 1 || isValidQuestionPaperQuestion(questions[0]))
+    function isValidQuestionPaperQuestions1To20(questions) {
+      return (questions.size() < 1 || isValidQuestionPaperQuestion(questions[0]))
         && (questions.size() < 2 || isValidQuestionPaperQuestion(questions[1]))
         && (questions.size() < 3 || isValidQuestionPaperQuestion(questions[2]))
         && (questions.size() < 4 || isValidQuestionPaperQuestion(questions[3]))
@@ -1223,6 +1233,12 @@ service cloud.firestore {
         && (questions.size() < 18 || isValidQuestionPaperQuestion(questions[17]))
         && (questions.size() < 19 || isValidQuestionPaperQuestion(questions[18]))
         && (questions.size() < 20 || isValidQuestionPaperQuestion(questions[19]));
+    }
+
+    function isValidQuestionPaperQuestions(questions) {
+      return questions is list
+        && questions.size() <= 20
+        && isValidQuestionPaperQuestions1To20(questions);
     }
 
     function isValidQuestionPaperDifficultySummaryItem(item) {
@@ -1258,29 +1274,122 @@ service cloud.firestore {
 
     function isValidQuestionPaperPayload(data) {
       return isValidQuestionPaperSetupPayload(data)
-        && isValidQuestionPaperDocumentShape(data.documentContent)
-        && isValidQuestionPaperQuestions(data.questions)
+        && data.keys().hasAll([
+          "documentContent",
+          "questions",
+          "difficultySummary",
+          "totalQuestions",
+          "totalMarks"
+        ])
         && data.totalQuestions is int
-        && data.totalQuestions == data.questions.size()
+        && data.totalQuestions >= 0
+        && data.totalQuestions <= 20
         && data.totalMarks is int
         && data.totalMarks >= 0
+        && isValidQuestionPaperDocumentShape(data.documentContent)
+        && isValidQuestionPaperQuestions(data.questions)
         && isValidQuestionPaperDifficultySummary(data.difficultySummary);
     }
 
+    function hasValidQuestionPaperDraftKeys(data) {
+      return data.keys().hasAll([
+          "title",
+          "classId",
+          "subjectId",
+          "examName",
+          "term",
+          "academicYear",
+          "durationMinutes",
+          "maximumMarks",
+          "documentContent",
+          "questions",
+          "difficultySummary",
+          "totalQuestions",
+          "totalMarks",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ])
+        && data.keys().hasOnly([
+          "title",
+          "classId",
+          "subjectId",
+          "examName",
+          "term",
+          "academicYear",
+          "durationMinutes",
+          "maximumMarks",
+          "documentContent",
+          "questions",
+          "difficultySummary",
+          "totalQuestions",
+          "totalMarks",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ]);
+    }
+
+    function hasValidQuestionPaperFinalKeys(data) {
+      return data.keys().hasAll([
+          "title",
+          "classId",
+          "subjectId",
+          "examName",
+          "term",
+          "academicYear",
+          "durationMinutes",
+          "maximumMarks",
+          "documentContent",
+          "questions",
+          "difficultySummary",
+          "totalQuestions",
+          "totalMarks",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "finalizedAt"
+        ])
+        && data.keys().hasOnly([
+          "title",
+          "classId",
+          "subjectId",
+          "examName",
+          "term",
+          "academicYear",
+          "durationMinutes",
+          "maximumMarks",
+          "documentContent",
+          "questions",
+          "difficultySummary",
+          "totalQuestions",
+          "totalMarks",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "finalizedAt"
+        ]);
+    }
+
     function isValidQuestionPaperDraftPayload(data) {
-      return data.keys().size() == 17
+      return hasValidQuestionPaperDraftKeys(data)
         && isValidQuestionPaperPayload(data)
         && data.status == "draft"
         && !data.keys().hasAny(["finalizedAt"]);
     }
 
     function isValidQuestionPaperDraftUpdatePayload(data) {
-      return isValidQuestionPaperPayload(data)
+      return hasValidQuestionPaperDraftKeys(data)
+        && isValidQuestionPaperPayload(data)
         && data.status == "draft";
     }
 
     function isValidQuestionPaperFinalPayload(data) {
-      return data.keys().size() == 18
+      return hasValidQuestionPaperFinalKeys(data)
         && isValidQuestionPaperPayload(data)
         && data.status == "final"
         && data.finalizedAt is timestamp
@@ -1310,24 +1419,7 @@ service cloud.firestore {
         && request.resource.data.createdBy == resource.data.createdBy
         && request.resource.data.createdBy.uid == request.auth.uid
         && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.updatedAt == request.time
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          "title",
-          "classId",
-          "subjectId",
-          "examName",
-          "term",
-          "academicYear",
-          "durationMinutes",
-          "maximumMarks",
-          "documentContent",
-          "questions",
-          "totalQuestions",
-          "totalMarks",
-          "difficultySummary",
-          "status",
-          "updatedAt"
-        ]);
+        && request.resource.data.updatedAt == request.time;
     }
 
     function isValidQuestionPaperFinalization(schoolId) {

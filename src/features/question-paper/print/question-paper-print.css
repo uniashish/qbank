@@ -187,6 +187,7 @@ body.question-paper-printing .question-paper-print-paper .rich-text-editor-image
 
 .question-paper-print-host--pdf .paper-question,
 body.question-paper-printing .paper-question {
+  --paper-question-number-indent: 32px;
   margin: 0 0 16px;
   padding: 0;
   border: 0;
@@ -199,17 +200,18 @@ body.question-paper-printing .paper-question {
 
 .question-paper-print-host--pdf .paper-question-header,
 body.question-paper-printing .paper-question-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: 12px;
-  align-items: start;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   width: 100%;
+  gap: 12px;
 }
 
 .question-paper-print-host--pdf .paper-question-main,
 body.question-paper-printing .paper-question-main {
   display: flex;
   align-items: flex-start;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -220,9 +222,11 @@ body.question-paper-printing .paper-question-prompt {
 
 .question-paper-print-host--pdf .paper-question-number,
 body.question-paper-printing .paper-question-number {
+  display: inline-block;
   flex: 0 0 auto;
   font-weight: 700;
   margin-right: 6px;
+  white-space: nowrap;
 }
 
 .question-paper-print-host--pdf .paper-question-content,
@@ -237,17 +241,22 @@ body.question-paper-printing .paper-match-content {
 
 .question-paper-print-host--pdf .paper-question-content > :first-child,
 body.question-paper-printing .paper-question-content > :first-child {
-  margin-top: 0;
+  margin-top: 0 !important;
+}
+
+.question-paper-print-host--pdf .paper-question-content .rich-document-renderer > :first-child,
+body.question-paper-printing .paper-question-content .rich-document-renderer > :first-child {
+  margin-top: 0 !important;
 }
 
 .question-paper-print-host--pdf .paper-question-content p,
 body.question-paper-printing .paper-question-content p {
-  margin-top: 0;
+  margin: 0 0 6px;
 }
 
-.question-paper-print-host--pdf .paper-question-content p:first-child,
-body.question-paper-printing .paper-question-content p:first-child {
-  margin-top: 0;
+.question-paper-print-host--pdf .paper-question-content p:last-child,
+body.question-paper-printing .paper-question-content p:last-child {
+  margin-bottom: 0;
 }
 
 .question-paper-print-host--pdf .paper-question-content .rich-text-editor__prose > :first-child,
@@ -292,7 +301,7 @@ body.question-paper-printing .paper-match-content .rich-text-editor__prose {
 body.question-paper-printing .paper-question-content .rich-text-editor__prose p,
 body.question-paper-printing .paper-option-content .rich-text-editor__prose p,
 body.question-paper-printing .paper-match-content .rich-text-editor__prose p {
-  margin: 0 0 4px;
+  margin: 0 0 6px;
 }
 
 .question-paper-print-host--pdf .paper-question-content .rich-text-editor__prose p:last-child,
@@ -308,6 +317,8 @@ body.question-paper-printing .paper-match-content .rich-text-editor__prose p:las
 body.question-paper-printing .paper-question-marks {
   display: block;
   align-self: start;
+  flex: 0 0 auto;
+  margin-left: 12px;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -320,9 +331,25 @@ body.question-paper-printing .paper-question-marks {
   white-space: nowrap;
 }
 
+.question-paper-print-host--pdf .paper-question-extra,
+body.question-paper-printing .paper-question-extra {
+  margin-left: var(--paper-question-number-indent);
+  margin-top: 6px;
+}
+
+.question-paper-print-host--pdf .paper-question-extra > :first-child,
+body.question-paper-printing .paper-question-extra > :first-child {
+  margin-top: 0;
+}
+
+.question-paper-print-host--pdf .paper-question-extra > * + *,
+body.question-paper-printing .paper-question-extra > * + * {
+  margin-top: 8px;
+}
+
 .question-paper-print-host--pdf .paper-question-instructions,
 body.question-paper-printing .paper-question-instructions {
-  margin: 4px 0 0;
+  margin: 0;
   color: #000000;
   font-size: 10pt;
   line-height: 1.35;
@@ -330,7 +357,7 @@ body.question-paper-printing .paper-question-instructions {
 
 .question-paper-print-host--pdf .paper-question-options,
 body.question-paper-printing .paper-question-options {
-  margin: 8px 0 0;
+  margin: 0;
   padding-left: 22px;
 }
 
@@ -342,13 +369,13 @@ body.question-paper-printing .paper-option {
 
 .question-paper-print-host--pdf .paper-true-false-options,
 body.question-paper-printing .paper-true-false-options {
-  margin: 8px 0 0;
+  margin: 0;
 }
 
 .question-paper-print-host--pdf .paper-match-table,
 body.question-paper-printing .paper-match-table {
   width: 100%;
-  margin: 8px 0 0;
+  margin: 0;
   border: 1px solid #000000;
   border-collapse: collapse;
   background: #ffffff;

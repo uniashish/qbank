@@ -50,6 +50,7 @@ const PDF_SAFE_CAPTURE_CSS = `
   }
 
   .paper-question {
+    --paper-question-number-indent: 32px !important;
     margin: 0 0 16px !important;
     padding: 0 !important;
     border: 0 !important;
@@ -58,13 +59,87 @@ const PDF_SAFE_CAPTURE_CSS = `
     box-shadow: none !important;
   }
 
+  .paper-question-header {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 12px !important;
+  }
+
+  .paper-question-main {
+    display: flex !important;
+    align-items: flex-start !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .paper-question-number {
+    display: inline-block !important;
+    flex: 0 0 auto !important;
+    margin-right: 6px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+  }
+
+  .paper-question-content {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .paper-question-content > :first-child,
+  .paper-question-content .rich-document-renderer > :first-child {
+    margin-top: 0 !important;
+  }
+
+  .paper-question-content p {
+    margin: 0 0 6px 0 !important;
+  }
+
+  .paper-question-content p:last-child {
+    margin-bottom: 0 !important;
+  }
+
   .paper-question-marks {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    margin-left: 12px !important;
     padding: 0 !important;
     border: 0 !important;
     border-radius: 0 !important;
     background: none !important;
     color: #000000 !important;
     font-weight: 600 !important;
+    text-align: right !important;
+  }
+
+  .paper-question-extra {
+    margin-left: var(--paper-question-number-indent) !important;
+    margin-top: 6px !important;
+  }
+
+  .paper-question-extra > :first-child {
+    margin-top: 0 !important;
+  }
+
+  .paper-question-extra > * + * {
+    margin-top: 8px !important;
+  }
+
+  .paper-question-instructions,
+  .paper-question-options,
+  .paper-true-false-options,
+  .paper-match-table {
+    margin: 0 !important;
+  }
+
+  .paper-question-options {
+    padding-left: 22px !important;
+  }
+
+  .paper-option {
+    margin: 4px 0 !important;
+    padding-left: 4px !important;
   }
 
   .paper-match-table,
