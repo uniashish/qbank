@@ -17,15 +17,13 @@ function QuestionBlockPrint({ node }) {
       data-question-block-id={attrs.blockId}
     >
       <div className="paper-question-header">
-        <div className="paper-question-main">
-          <QuestionBlockContent
-            mode="print"
-            questionNumber={questionNumber}
-            showInstructions
-            snapshot={attrs.snapshot}
-          />
-        </div>
-        <span className="paper-question-marks">[{marksLabel}]</span>
+        <QuestionBlockContent
+          mode="print"
+          questionNumber={questionNumber}
+          showInstructions
+          snapshot={attrs.snapshot}
+        />
+        <div className="paper-question-marks">[{marksLabel}]</div>
       </div>
     </NodeViewWrapper>
   );

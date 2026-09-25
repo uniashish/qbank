@@ -201,26 +201,28 @@ body.question-paper-printing .paper-question {
 body.question-paper-printing .paper-question-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+  column-gap: 12px;
   align-items: start;
+  width: 100%;
 }
 
 .question-paper-print-host--pdf .paper-question-main,
 body.question-paper-printing .paper-question-main {
+  display: flex;
+  align-items: flex-start;
   min-width: 0;
 }
 
 .question-paper-print-host--pdf .paper-question-prompt,
 body.question-paper-printing .paper-question-prompt {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 6px;
-  align-items: start;
+  min-width: 0;
 }
 
 .question-paper-print-host--pdf .paper-question-number,
 body.question-paper-printing .paper-question-number {
+  flex: 0 0 auto;
   font-weight: 700;
+  margin-right: 6px;
 }
 
 .question-paper-print-host--pdf .paper-question-content,
@@ -229,7 +231,28 @@ body.question-paper-printing .paper-question-number {
 body.question-paper-printing .paper-question-content,
 body.question-paper-printing .paper-option-content,
 body.question-paper-printing .paper-match-content {
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+.question-paper-print-host--pdf .paper-question-content > :first-child,
+body.question-paper-printing .paper-question-content > :first-child {
+  margin-top: 0;
+}
+
+.question-paper-print-host--pdf .paper-question-content p,
+body.question-paper-printing .paper-question-content p {
+  margin-top: 0;
+}
+
+.question-paper-print-host--pdf .paper-question-content p:first-child,
+body.question-paper-printing .paper-question-content p:first-child {
+  margin-top: 0;
+}
+
+.question-paper-print-host--pdf .paper-question-content .rich-text-editor__prose > :first-child,
+body.question-paper-printing .paper-question-content .rich-text-editor__prose > :first-child {
+  margin-top: 0;
 }
 
 .question-paper-print-host--pdf .paper-question-content .rich-text-editor,
@@ -283,7 +306,8 @@ body.question-paper-printing .paper-match-content .rich-text-editor__prose p:las
 
 .question-paper-print-host--pdf .paper-question-marks,
 body.question-paper-printing .paper-question-marks {
-  display: inline;
+  display: block;
+  align-self: start;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -292,6 +316,7 @@ body.question-paper-printing .paper-question-marks {
   font-size: inherit;
   font-weight: 600;
   line-height: inherit;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -305,8 +330,8 @@ body.question-paper-printing .paper-question-instructions {
 
 .question-paper-print-host--pdf .paper-question-options,
 body.question-paper-printing .paper-question-options {
-  margin: 8px 0 0 28px;
-  padding: 0;
+  margin: 8px 0 0;
+  padding-left: 22px;
 }
 
 .question-paper-print-host--pdf .paper-option,
@@ -317,7 +342,7 @@ body.question-paper-printing .paper-option {
 
 .question-paper-print-host--pdf .paper-true-false-options,
 body.question-paper-printing .paper-true-false-options {
-  margin: 8px 0 0 28px;
+  margin: 8px 0 0;
 }
 
 .question-paper-print-host--pdf .paper-match-table,

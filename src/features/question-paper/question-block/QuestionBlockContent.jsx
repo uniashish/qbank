@@ -249,6 +249,30 @@ function QuestionBlockContent({
   const classes = getContentClasses(mode);
   const instructions = showInstructions ? getInstructions(snapshot) : "";
 
+  if (mode === "print") {
+    return (
+      <div className="paper-question-main">
+        <span className="paper-question-number">Q{questionNumber || "?"}.</span>
+        <div className="paper-question-content">
+          <RichDocumentRenderer
+            ariaLabel={`Question ${questionNumber || "unknown"} prompt`}
+            className="paper-question-prompt"
+            content={getQuestionBlockPromptContent(snapshot)}
+            mode={mode}
+          />
+          {instructions && (
+            <p className={classes.instructions}>{instructions}</p>
+          )}
+          <QuestionAnswerStructure
+            classes={classes}
+            mode={mode}
+            snapshot={snapshot}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className={classes.prompt}>
