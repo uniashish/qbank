@@ -515,7 +515,7 @@
 
 .paper-save-status {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   width: fit-content;
   max-width: 100%;
@@ -528,8 +528,22 @@
   width: 9px;
   height: 9px;
   flex: 0 0 auto;
+  margin-top: 0.35em;
   border-radius: 999px;
   background: var(--color-text-muted);
+}
+
+.paper-save-status__copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.paper-save-status__error {
+  max-width: min(52ch, 100%);
+  color: var(--color-danger);
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 .paper-save-status--unsaved > span {

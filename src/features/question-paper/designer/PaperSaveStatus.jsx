@@ -27,7 +27,15 @@ function getStatusCopy(saveStatus) {
   return "Unsaved changes";
 }
 
+function getSaveErrorMessage(saveStatus) {
+  const errorMessage = String(saveStatus.error ?? "").trim();
+
+  return errorMessage || "Draft could not be saved. Try again.";
+}
+
 function PaperSaveStatus({ saveStatus }) {
+  const showError = saveStatus.state === "save-failed";
+
   return (
     <div
       className={[
@@ -37,7 +45,14 @@ function PaperSaveStatus({ saveStatus }) {
       role="status"
     >
       <span aria-hidden="true" />
-      <p>{getStatusCopy(saveStatus)}</p>
+      <div className="paper-save-status__copy">
+        <p>{getStatusCopy(saveStatus)}</p>
+        {showError && (
+          <p className="paper-save-status__error">
+            {getSaveErrorMessage(saveStatus)}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

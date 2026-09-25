@@ -127,23 +127,33 @@ function QuestionPaperDesigner({ initialDraft }) {
       }
 
       const confirmedPaperId = draftSnapshot.paperId;
-      const targetPaperId =
-        confirmedPaperId ||
-        pendingPaperIdRef.current ||
-        createQuestionPaperDraftId(draftSnapshot.userProfile?.schoolId);
+      const pendingPaperId = pendingPaperIdRef.current;
+      const shouldCreateDraft = !confirmedPaperId && !pendingPaperId;
+      let targetPaperId;
+
+      try {
+        targetPaperId =
+          confirmedPaperId ||
+          pendingPaperId ||
+          createQuestionPaperDraftId(draftSnapshot.userProfile?.schoolId);
+      } catch (error) {
+        markSaveFailed(error);
+        throw error;
+      }
+
       const fingerprintAtSaveStart = draftSnapshot.draftFingerprint;
 
       pendingPaperIdRef.current = targetPaperId;
       markSaving();
 
       const savePromise = (async () => {
-        const savedPaper = confirmedPaperId
-          ? await updateQuestionPaperDraft({
+        const savedPaper = shouldCreateDraft
+          ? await createQuestionPaperDraft({
               designerState: draftSnapshot.designerState,
               paperId: targetPaperId,
               userProfile: draftSnapshot.userProfile,
             })
-          : await createQuestionPaperDraft({
+          : await updateQuestionPaperDraft({
               designerState: draftSnapshot.designerState,
               paperId: targetPaperId,
               userProfile: draftSnapshot.userProfile,
@@ -179,6 +189,10 @@ function QuestionPaperDesigner({ initialDraft }) {
             paperId: targetPaperId,
             source,
           });
+
+          if (!confirmedPaperId) {
+            pendingPaperIdRef.current = "";
+          }
 
           if (isMountedRef.current) {
             markSaveFailed(error);
